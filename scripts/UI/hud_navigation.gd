@@ -19,6 +19,14 @@ var left_cursor: Texture2D
 var right_cursor: Texture2D
 var down_cursor: Texture2D
 
+# Preloaded room scenes.
+var room_scenes := {
+	LIVING_ROOM: preload("res://game_scenes/levels/living_room.tscn"),
+	KITCHEN: preload("res://game_scenes/levels/kitchen.tscn"),
+	MIGS_ROOM: preload("res://game_scenes/levels/migs_room.tscn"),
+	BACKYARD: preload("res://game_scenes/levels/backyard.tscn")
+}
+
 func _ready() -> void:
 	left_cursor = _prepare_cursor(LEFT_CURSOR)
 	right_cursor = _prepare_cursor(RIGHT_CURSOR)
@@ -156,7 +164,15 @@ func _change_scene(scene_path: String) -> void:
 	navigation_locked = true
 	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 	current_direction = ""
-	get_tree().change_scene_to_file(scene_path)
+
+	# Use an already-loaded PackedScene so room changes do not have to
+	# load and parse the .tscn file at the moment the player clicks.
+	var next_room: PackedScene = room_scenes.get(scene_path)
+	if next_room == null:
+		navigation_locked = false
+		return
+
+	get_tree().change_scene_to_packed(next_room)
 
 func _exit_tree() -> void:
 	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
