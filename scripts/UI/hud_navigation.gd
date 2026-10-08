@@ -18,6 +18,8 @@ var navigation_locked := false
 var left_cursor: Texture2D
 var right_cursor: Texture2D
 var down_cursor: Texture2D
+var fade_rect: ColorRect
+var fade_tween: Tween
 
 # Preloaded room scenes.
 var room_scenes := {
@@ -37,6 +39,7 @@ func _ready() -> void:
 	_create_edge_button("DownNavigation", Vector2(_screen_width(), EDGE_SIZE), Vector2(0, _screen_height() - EDGE_SIZE), Callable(self, "_go_down"))
 
 	get_viewport().size_changed.connect(_on_viewport_resized)
+	_create_fade_overlay()
 
 func _process(_delta: float) -> void:
 	if navigation_locked:
@@ -68,6 +71,16 @@ func _create_edge_button(button_name: String, button_size: Vector2, button_posit
 
 	add_child(button)
 
+func _create_fade_overlay() -> void:
+	fade_rect = ColorRect.new()
+	fade_rect.name = "RoomTransitionFade"
+	fade_rect.color = Color(0, 0, 0, 0)
+	fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
+	fade_rect.position = Vector2.ZERO
+	fade_rect.size = Vector2(_screen_width(), _screen_height())
+	fade_rect.z_index = 1000
+	add_child(fade_rect)
+
 func _resize_navigation_buttons() -> void:
 	var left_button := get_node_or_null("LeftNavigation") as Button
 	var right_button := get_node_or_null("RightNavigation") as Button
@@ -87,6 +100,9 @@ func _resize_navigation_buttons() -> void:
 	if down_button:
 		down_button.position = Vector2(0, height - EDGE_SIZE)
 		down_button.size = Vector2(width, EDGE_SIZE)
+
+	if fade_rect:
+		fade_rect.size = Vector2(width, height)
 
 func _update_cursor(mouse_position: Vector2) -> void:
 	var width := _screen_width()
@@ -169,19 +185,31 @@ func _change_scene(scene_path: String) -> void:
 	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 	current_direction = ""
 
-	# Use an already-loaded PackedScene so room changes do not have to
-	# load and parse the .tscn file at the moment the player clicks.
 	var next_room: PackedScene = room_scenes.get(scene_path)
 	if next_room == null:
 		navigation_locked = false
 		return
 
+	# Block every mouse click with the fade overlay and fade the current room to black.
+	if fade_tween:
+		fade_tween.kill()
+
+	fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
+	fade_tween = create_tween()
+	fade_tween.tween_property(fade_rect, "color:a", 1.0, 0.25)
+	await fade_tween.finished
+
 	get_tree().change_scene_to_packed(next_room)
 
-	# The HUD persists between rooms, so unlock navigation after the
-	# new room has become the current scene.
+	# Keep the screen black until the new room is ready.
 	await get_tree().process_frame
+
+	fade_tween = create_tween()
+	fade_tween.tween_property(fade_rect, "color:a", 0.0, 0.25)
+	await fade_tween.finished
+
 	navigation_locked = false
+	fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_update_cursor(get_viewport().get_mouse_position())
 
 func _exit_tree() -> void:
