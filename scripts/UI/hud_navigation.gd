@@ -1,7 +1,11 @@
 extends CanvasLayer
 
-const NAV_HOTSPOT_WIDTH := 160.0
-const NAV_HOTSPOT_HEIGHT := 100.0
+const LEFT_NAV_WIDTH := 160.0
+const LEFT_NAV_HEIGHT := 100.0
+const RIGHT_NAV_WIDTH := 160.0
+const RIGHT_NAV_HEIGHT := 100.0
+const DOWN_NAV_WIDTH := 160.0
+const DOWN_NAV_HEIGHT := 100.0
 
 const LEFT_NAV_POSITION := Vector2(165.5, 265.0)
 const RIGHT_NAV_POSITION := Vector2(1104.0, 263.0)
@@ -73,11 +77,23 @@ func _create_navigation_button(button_name: String, center_position: Vector2, ca
 	button.add_theme_stylebox_override("pressed", empty_style)
 	button.add_theme_stylebox_override("focus", empty_style)
 
-	button.position = center_position - Vector2(NAV_HOTSPOT_WIDTH, NAV_HOTSPOT_HEIGHT) * 0.5
-	button.size = Vector2(NAV_HOTSPOT_WIDTH, NAV_HOTSPOT_HEIGHT)
+	var hotspot_size := _get_hotspot_size(button_name)
+	button.position = center_position - hotspot_size * 0.5
+	button.size = hotspot_size
 	button.pressed.connect(callback)
 
 	add_child(button)
+
+func _get_hotspot_size(button_name: String) -> Vector2:
+	match button_name:
+		"LeftNavigation":
+			return Vector2(LEFT_NAV_WIDTH, LEFT_NAV_HEIGHT)
+		"RightNavigation":
+			return Vector2(RIGHT_NAV_WIDTH, RIGHT_NAV_HEIGHT)
+		"DownNavigation":
+			return Vector2(DOWN_NAV_WIDTH, DOWN_NAV_HEIGHT)
+		_:
+			return Vector2.ZERO
 
 func _create_footsteps_player() -> void:
 	footsteps_player = AudioStreamPlayer.new()
@@ -101,38 +117,45 @@ func _resize_navigation_buttons() -> void:
 	var down_button := get_node_or_null("DownNavigation") as Button
 
 	if left_button:
-		left_button.position = LEFT_NAV_POSITION - Vector2(NAV_HOTSPOT_WIDTH, NAV_HOTSPOT_HEIGHT) * 0.5
-		left_button.size = Vector2(NAV_HOTSPOT_WIDTH, NAV_HOTSPOT_HEIGHT)
+		var left_size := Vector2(LEFT_NAV_WIDTH, LEFT_NAV_HEIGHT)
+		left_button.position = LEFT_NAV_POSITION - left_size * 0.5
+		left_button.size = left_size
 
 	if right_button:
-		right_button.position = RIGHT_NAV_POSITION - Vector2(NAV_HOTSPOT_WIDTH, NAV_HOTSPOT_HEIGHT) * 0.5
-		right_button.size = Vector2(NAV_HOTSPOT_WIDTH, NAV_HOTSPOT_HEIGHT)
+		var right_size := Vector2(RIGHT_NAV_WIDTH, RIGHT_NAV_HEIGHT)
+		right_button.position = RIGHT_NAV_POSITION - right_size * 0.5
+		right_button.size = right_size
 
 	if down_button:
-		down_button.position = DOWN_NAV_POSITION - Vector2(NAV_HOTSPOT_WIDTH, NAV_HOTSPOT_HEIGHT) * 0.5
-		down_button.size = Vector2(NAV_HOTSPOT_WIDTH, NAV_HOTSPOT_HEIGHT)
+		var down_size := Vector2(DOWN_NAV_WIDTH, DOWN_NAV_HEIGHT)
+		down_button.position = DOWN_NAV_POSITION - down_size * 0.5
+		down_button.size = down_size
 
 	if fade_rect:
 		fade_rect.size = Vector2(_screen_width(), _screen_height())
 
 func _update_cursor(mouse_position: Vector2) -> void:
 	var direction := ""
-	var hotspot_size := Vector2(NAV_HOTSPOT_WIDTH, NAV_HOTSPOT_HEIGHT)
-	var hotspot_offset := hotspot_size * 0.5
+	var left_hotspot_size := Vector2(LEFT_NAV_WIDTH, LEFT_NAV_HEIGHT)
+	var right_hotspot_size := Vector2(RIGHT_NAV_WIDTH, RIGHT_NAV_HEIGHT)
+	var down_hotspot_size := Vector2(DOWN_NAV_WIDTH, DOWN_NAV_HEIGHT)
+	var left_hotspot_offset := left_hotspot_size * 0.5
+	var right_hotspot_offset := right_hotspot_size * 0.5
+	var down_hotspot_offset := down_hotspot_size * 0.5
 
 	if Rect2(
-		LEFT_NAV_POSITION - hotspot_offset,
-		hotspot_size
+		LEFT_NAV_POSITION - left_hotspot_offset,
+		left_hotspot_size
 	).has_point(mouse_position):
 		direction = "left"
 	elif Rect2(
-		RIGHT_NAV_POSITION - hotspot_offset,
-		hotspot_size
+		RIGHT_NAV_POSITION - right_hotspot_offset,
+		right_hotspot_size
 	).has_point(mouse_position):
 		direction = "right"
 	elif Rect2(
-		DOWN_NAV_POSITION - hotspot_offset,
-		hotspot_size
+		DOWN_NAV_POSITION - down_hotspot_offset,
+		down_hotspot_size
 	).has_point(mouse_position):
 		direction = "down"
 
