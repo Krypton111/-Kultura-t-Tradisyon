@@ -18,6 +18,9 @@ func _ready() -> void:
 
 	# Other interactive objects keep their automatically generated
 	# transparent UI interaction regions.
+	# The interaction areas stay active even after the artwork changes state,
+	# so the player can click the curtain and Lola Nena again to return them
+	# to their normal states.
 	_create_interaction_button(window_open, Callable(self, "_on_window_clicked"), "WindowButton")
 	_create_interaction_button(couch, Callable(self, "_on_couch_clicked"), "CouchButton")
 	_create_interaction_button(lola_not_looking, Callable(self, "_on_lola_clicked"), "LolaNenaButton")
@@ -91,13 +94,15 @@ func _on_tv_clicked() -> void:
 	open_tv.visible = not open_tv.visible
 
 func _on_window_clicked() -> void:
-	window_open.visible = false
-	window_closed.visible = true
+	# Toggle the curtain/window between its open and normal closed state.
+	window_open.visible = not window_open.visible
+	window_closed.visible = not window_closed.visible
 
 func _on_couch_clicked() -> void:
 	# Interaction area is ready for the couch/plant event.
 	pass
 
 func _on_lola_clicked() -> void:
-	lola_not_looking.visible = false
-	lola_looking.visible = true
+	# Toggle Lola Nena between her normal pose and looking-at-Migs pose.
+	lola_not_looking.visible = not lola_not_looking.visible
+	lola_looking.visible = not lola_looking.visible
