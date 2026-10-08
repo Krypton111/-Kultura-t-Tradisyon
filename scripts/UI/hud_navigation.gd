@@ -174,6 +174,12 @@ func _change_scene(scene_path: String) -> void:
 
 	get_tree().change_scene_to_packed(next_room)
 
+	# The HUD persists between rooms, so unlock navigation after the
+	# new room has become the current scene.
+	await get_tree().process_frame
+	navigation_locked = false
+	_update_cursor(get_viewport().get_mouse_position())
+
 func _exit_tree() -> void:
 	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 
