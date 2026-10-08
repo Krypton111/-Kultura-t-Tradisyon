@@ -47,6 +47,12 @@ position = Vector2(576, 324)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("4_6fccx")
 
+[node name="WindowClosed" type="Sprite2D" parent="." unique_id=2117117831]
+visible = false
+position = Vector2(576, 323.99994)
+scale = Vector2(0.24000001, 0.24000001)
+texture = ExtResource("3_x3ibj")
+
 [node name="Couch+plant" type="Sprite2D" parent="." unique_id=1593791168]
 position = Vector2(575.99994, 323.99997)
 scale = Vector2(0.24000002, 0.24000001)
@@ -62,11 +68,5 @@ visible = false
 position = Vector2(576, 324)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("7_3pyx6")
-
-[node name="WindowClosed" type="Sprite2D" parent="." unique_id=2117117831]
-visible = false
-position = Vector2(576, 323.99994)
-scale = Vector2(0.24000001, 0.24000001)
-texture = ExtResource("3_x3ibj")
 
 [node name="HUD" parent="." instance=ExtResource("10_hud")]
