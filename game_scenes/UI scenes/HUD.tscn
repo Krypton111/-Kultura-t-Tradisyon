@@ -6,13 +6,8 @@
 [ext_resource type="Texture2D" uid="uid://8un8hewhj1c3" path="res://GAME ASSETS/HUD/journal_open.png" id="4_ogk7k"]
 [ext_resource type="Texture2D" uid="uid://bih7b0kx1pr3p" path="res://GAME ASSETS/HUD/camera.png" id="5_i4v7e"]
 
-[node name="Control" type="Control" unique_id=395861787]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="HUD" type="CanvasLayer" unique_id=395861787]
+layer = 100
 
 [node name="Hotbar" type="Sprite2D" parent="." unique_id=1249443412]
 position = Vector2(576, 324)
