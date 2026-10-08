@@ -1,9 +1,6 @@
 extends CanvasLayer
 
 const EDGE_SIZE := 48.0
-const SIDE_CURSOR_MAX_SIZE := 96.0
-const DOWN_CURSOR_MAX_SIZE := 128.0
-
 # Target arrow-center positions on a 1280x720 game window.
 const LEFT_ARROW_POSITION := Vector2(165.5, 265.0)
 const RIGHT_ARROW_POSITION := Vector2(1104.0, 263.0)
@@ -24,10 +21,18 @@ var left_cursor: Texture2D
 var right_cursor: Texture2D
 var down_cursor: Texture2D
 
+var left_arrow: Sprite2D
+var right_arrow: Sprite2D
+var down_arrow: Sprite2D
+
 func _ready() -> void:
-	left_cursor = _prepare_cursor(LEFT_CURSOR, SIDE_CURSOR_MAX_SIZE)
-	right_cursor = _prepare_cursor(RIGHT_CURSOR, SIDE_CURSOR_MAX_SIZE)
-	down_cursor = _prepare_cursor(DOWN_CURSOR, DOWN_CURSOR_MAX_SIZE)
+	left_cursor = LEFT_CURSOR
+	right_cursor = RIGHT_CURSOR
+	down_cursor = DOWN_CURSOR
+
+	left_arrow = _create_arrow("LeftArrow", left_cursor, LEFT_ARROW_POSITION)
+	right_arrow = _create_arrow("RightArrow", right_cursor, RIGHT_ARROW_POSITION)
+	down_arrow = _create_arrow("DownArrow", down_cursor, DOWN_ARROW_POSITION)
 
 	_create_edge_button("LeftNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(0, 0), Callable(self, "_go_left"))
 	_create_edge_button("RightNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(_screen_width() - EDGE_SIZE, 0), Callable(self, "_go_right"))
@@ -85,6 +90,17 @@ func _resize_navigation_buttons() -> void:
 		down_button.position = Vector2(0, height - EDGE_SIZE)
 		down_button.size = Vector2(width, EDGE_SIZE)
 
+func _create_arrow(arrow_name: String, texture: Texture2D, position: Vector2) -> Sprite2D:
+	var arrow := Sprite2D.new()
+	arrow.name = arrow_name
+	arrow.texture = texture
+	arrow.position = position
+	arrow.centered = true
+	arrow.visible = false
+	add_child(arrow)
+	move_child(arrow, 0)
+	return arrow
+
 func _update_cursor(mouse_position: Vector2) -> void:
 	var width := _screen_width()
 	var height := _screen_height()
@@ -103,45 +119,20 @@ func _update_cursor(mouse_position: Vector2) -> void:
 	if not _is_direction_available(direction):
 		direction = ""
 
+	_update_arrow_visibility(direction)
+
 	if direction == current_direction:
 		return
 
 	current_direction = direction
 
-	match direction:
-		"left":
-			Input.set_custom_mouse_cursor(
-				left_cursor,
-				Input.CURSOR_ARROW,
-				_calculate_hotspot(left_cursor, LEFT_ARROW_POSITION, mouse_position)
-			)
-		"right":
-			Input.set_custom_mouse_cursor(
-				right_cursor,
-				Input.CURSOR_ARROW,
-				_calculate_hotspot(right_cursor, RIGHT_ARROW_POSITION, mouse_position)
-			)
-		"down":
-			Input.set_custom_mouse_cursor(
-				down_cursor,
-				Input.CURSOR_ARROW,
-				_calculate_hotspot(down_cursor, DOWN_ARROW_POSITION, mouse_position)
-			)
-		_:
-			Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
-
-func _calculate_hotspot(cursor: Texture2D, target_position: Vector2, mouse_position: Vector2) -> Vector2:
-	# The custom cursor follows the mouse. This hotspot makes the center of the
-	# arrow land on the requested target position at the moment the direction
-	# becomes active.
-	var cursor_center := Vector2(
-		cursor.get_width() / 2.0,
-		cursor.get_height() / 2.0
-	)
-
-	var desired_image_center_offset := target_position - mouse_position
-
-	return cursor_center - desired_image_center_offset
+func _update_arrow_visibility(direction: String) -> void:
+	if left_arrow:
+		left_arrow.visible = direction == "left"
+	if right_arrow:
+		right_arrow.visible = direction == "right"
+	if down_arrow:
+		down_arrow.visible = direction == "down"
 
 func _is_direction_available(direction: String) -> bool:
 	var current_scene_path := get_tree().current_scene.scene_file_path
@@ -190,35 +181,6 @@ func _change_scene(scene_path: String) -> void:
 
 func _exit_tree() -> void:
 	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
-
-func _prepare_cursor(source: Texture2D, max_size: float) -> Texture2D:
-	var image := source.get_image()
-	if image == null:
-		return source
-
-	var source_size := Vector2(
-		float(image.get_width()),
-		float(image.get_height())
-	)
-
-	var scale_factor: float = minf(
-		max_size / source_size.x,
-		max_size / source_size.y
-	)
-	scale_factor = minf(scale_factor, 1.0)
-
-	if scale_factor < 1.0:
-		var new_width: int = maxi(1, int(source_size.x * scale_factor))
-		var new_height: int = maxi(1, int(source_size.y * scale_factor))
-		var new_size := Vector2i(new_width, new_height)
-
-		image.resize(
-			new_size.x,
-			new_size.y,
-			Image.INTERPOLATE_LANCZOS
-		)
-
-	return ImageTexture.create_from_image(image)
 
 func _screen_width() -> float:
 	return get_viewport().get_visible_rect().size.x
