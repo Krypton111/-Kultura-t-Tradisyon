@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 const NAV_HOTSPOT_SIZE := 96.0
+const EDGE_SIZE := 48.0
 const LEFT_NAV_POSITION := Vector2(165.5, 265.0)
 const RIGHT_NAV_POSITION := Vector2(1104.0, 263.0)
 const DOWN_NAV_POSITION := Vector2(566.5, 607.0)
@@ -56,7 +57,7 @@ func _process(_delta: float) -> void:
 func _on_viewport_resized() -> void:
 	_resize_navigation_buttons()
 
-func _create_edge_button(button_name: String, button_size: Vector2, button_position: Vector2, callback: Callable) -> void:
+func _create_navigation_button(button_name: String, center_position: Vector2, callback: Callable) -> void:
 	var button := Button.new()
 	button.name = button_name
 	button.text = ""
