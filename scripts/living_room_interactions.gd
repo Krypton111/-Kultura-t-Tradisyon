@@ -13,13 +13,38 @@ func _ready() -> void:
     open_tv.visible = false
 
     # The artwork stays exactly where it was placed in Canva.
-    # These transparent UI buttons are created from each PNG's
-    # non-transparent pixel bounds, so they act as point-and-click
-    # interaction regions without using physics collisions.
-    _create_interaction_button(closed_tv, Callable(self, "_on_tv_clicked"), "TVButton")
+    # The TV uses a fixed point-and-click area.
+    _create_tv_button()
+
+    # Other interactive objects keep their automatically generated
+    # transparent UI interaction regions.
     _create_interaction_button(window_open, Callable(self, "_on_window_clicked"), "WindowButton")
     _create_interaction_button(couch, Callable(self, "_on_couch_clicked"), "CouchButton")
     _create_interaction_button(lola_not_looking, Callable(self, "_on_lola_clicked"), "LolaNenaButton")
+
+func _create_tv_button() -> void:
+    var button := Button.new()
+    button.name = "TVButton"
+    button.text = ""
+    button.flat = true
+    button.focus_mode = Control.FOCUS_NONE
+    button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+    button.mouse_filter = Control.MOUSE_FILTER_STOP
+
+    var empty_style := StyleBoxEmpty.new()
+    button.add_theme_stylebox_override("normal", empty_style)
+    button.add_theme_stylebox_override("hover", empty_style)
+    button.add_theme_stylebox_override("pressed", empty_style)
+    button.add_theme_stylebox_override("focus", empty_style)
+
+    # TV interaction area:
+    # Center = X 189.5, Y 329.0
+    # Size = 192 x 185
+    button.size = Vector2(192, 185)
+    button.position = Vector2(189.5, 329.0) - (button.size / 2.0)
+
+    button.pressed.connect(_on_tv_clicked)
+    add_child(button)
 
 func _create_interaction_button(sprite: Sprite2D, callback: Callable, button_name: String) -> void:
     if sprite.texture == null:
@@ -61,8 +86,9 @@ func _create_interaction_button(sprite: Sprite2D, callback: Callable, button_nam
     add_child(button)
 
 func _on_tv_clicked() -> void:
-    closed_tv.visible = false
-    open_tv.visible = true
+    # Toggle the TV every time the player clicks it.
+    closed_tv.visible = not closed_tv.visible
+    open_tv.visible = not open_tv.visible
 
 func _on_window_clicked() -> void:
     window_open.visible = false
