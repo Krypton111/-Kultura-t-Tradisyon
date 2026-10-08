@@ -13,8 +13,15 @@ const BACKYARD := "res://game_scenes/levels/backyard.tscn"
 
 var current_direction := ""
 var navigation_locked := false
+var left_cursor: Texture2D
+var right_cursor: Texture2D
+var down_cursor: Texture2D
 
 func _ready() -> void:
+    left_cursor = _prepare_cursor(LEFT_CURSOR)
+    right_cursor = _prepare_cursor(RIGHT_CURSOR)
+    down_cursor = _prepare_cursor(DOWN_CURSOR)
+
     _create_edge_button("LeftNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(0, 0), Callable(self, "_go_left"))
     _create_edge_button("RightNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(_screen_width() - EDGE_SIZE, 0), Callable(self, "_go_right"))
     _create_edge_button("DownNavigation", Vector2(_screen_width(), EDGE_SIZE), Vector2(0, _screen_height() - EDGE_SIZE), Callable(self, "_go_down"))
@@ -92,11 +99,11 @@ func _update_cursor(mouse_position: Vector2) -> void:
 
     match direction:
         "left":
-            Input.set_custom_mouse_cursor(LEFT_CURSOR, Input.CURSOR_ARROW, Vector2(LEFT_CURSOR.get_width() / 2.0, LEFT_CURSOR.get_height() / 2.0))
+            Input.set_custom_mouse_cursor(left_cursor, Input.CURSOR_ARROW, Vector2(left_cursor.get_width() / 2.0, left_cursor.get_height() / 2.0))
         "right":
-            Input.set_custom_mouse_cursor(RIGHT_CURSOR, Input.CURSOR_ARROW, Vector2(RIGHT_CURSOR.get_width() / 2.0, RIGHT_CURSOR.get_height() / 2.0))
+            Input.set_custom_mouse_cursor(right_cursor, Input.CURSOR_ARROW, Vector2(right_cursor.get_width() / 2.0, right_cursor.get_height() / 2.0))
         "down":
-            Input.set_custom_mouse_cursor(DOWN_CURSOR, Input.CURSOR_ARROW, Vector2(DOWN_CURSOR.get_width() / 2.0, DOWN_CURSOR.get_height() / 2.0))
+            Input.set_custom_mouse_cursor(down_cursor, Input.CURSOR_ARROW, Vector2(down_cursor.get_width() / 2.0, down_cursor.get_height() / 2.0))
         _:
             Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 
@@ -134,6 +141,21 @@ func _change_scene(scene_path: String) -> void:
 
 func _exit_tree() -> void:
     Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+
+func _prepare_cursor(source: Texture2D) -> Texture2D:
+    var image := source.get_image()
+    if image == null:
+        return source
+
+    var max_size := 128.0
+    var source_size := Vector2(image.get_width(), image.get_height())
+    var scale_factor := min(max_size / source_size.x, max_size / source_size.y, 1.0)
+
+    if scale_factor < 1.0:
+        var new_size := Vector2i(max(1, int(source_size.x * scale_factor)), max(1, int(source_size.y * scale_factor)))
+        image.resize(new_size.x, new_size.y, Image.INTERPOLATE_LANCZOS)
+
+    return ImageTexture.create_from_image(image)
 
 func _screen_width() -> float:
     return get_viewport().get_visible_rect().size.x
