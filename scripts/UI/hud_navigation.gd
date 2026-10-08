@@ -2,6 +2,7 @@ extends CanvasLayer
 
 const EDGE_SIZE := 48.0
 const CURSOR_MAX_SIZE := 96.0
+const DOWN_CURSOR_MAX_SIZE := 128.0
 
 const LEFT_CURSOR := preload("res://GAME ASSETS/UI/HUD/left room.png")
 const RIGHT_CURSOR := preload("res://GAME ASSETS/UI/HUD/right room.png")
@@ -21,7 +22,7 @@ var down_cursor: Texture2D
 func _ready() -> void:
 	left_cursor = _prepare_cursor(LEFT_CURSOR)
 	right_cursor = _prepare_cursor(RIGHT_CURSOR)
-	down_cursor = _prepare_cursor(DOWN_CURSOR)
+	down_cursor = _prepare_cursor(DOWN_CURSOR, DOWN_CURSOR_MAX_SIZE)
 
 	_create_edge_button("LeftNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(0, 0), Callable(self, "_go_left"))
 	_create_edge_button("RightNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(_screen_width() - EDGE_SIZE, 0), Callable(self, "_go_right"))
@@ -160,16 +161,16 @@ func _change_scene(scene_path: String) -> void:
 func _exit_tree() -> void:
 	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 
-func _prepare_cursor(texture: Texture2D) -> Texture2D:
+func _prepare_cursor(texture: Texture2D, max_size: float = CURSOR_MAX_SIZE) -> Texture2D:
 	var image := texture.get_image()
 	if image == null or image.is_empty():
 		return texture
 
 	var max_dimension: int = maxi(image.get_width(), image.get_height())
-	if max_dimension <= CURSOR_MAX_SIZE:
+	if max_dimension <= max_size:
 		return texture
 
-	var scale_factor: float = CURSOR_MAX_SIZE / float(max_dimension)
+	var scale_factor: float = max_size / float(max_dimension)
 	var new_width: int = maxi(1, roundi(image.get_width() * scale_factor))
 	var new_height: int = maxi(1, roundi(image.get_height() * scale_factor))
 	image.resize(new_width, new_height, Image.INTERPOLATE_NEAREST)
