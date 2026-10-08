@@ -124,6 +124,8 @@ func _go_right() -> void:
             _change_scene(MIGS_ROOM)
         MIGS_ROOM:
             _change_scene(BACKYARD)
+        BACKYARD:
+            return
 
 func _go_down() -> void:
     match get_tree().current_scene.scene_file_path:
