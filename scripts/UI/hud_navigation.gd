@@ -25,203 +25,203 @@ var right_cursor: Texture2D
 var down_cursor: Texture2D
 
 func _ready() -> void:
-    left_cursor = _prepare_cursor(LEFT_CURSOR, SIDE_CURSOR_MAX_SIZE)
-    right_cursor = _prepare_cursor(RIGHT_CURSOR, SIDE_CURSOR_MAX_SIZE)
-    down_cursor = _prepare_cursor(DOWN_CURSOR, DOWN_CURSOR_MAX_SIZE)
+	left_cursor = _prepare_cursor(LEFT_CURSOR, SIDE_CURSOR_MAX_SIZE)
+	right_cursor = _prepare_cursor(RIGHT_CURSOR, SIDE_CURSOR_MAX_SIZE)
+	down_cursor = _prepare_cursor(DOWN_CURSOR, DOWN_CURSOR_MAX_SIZE)
 
-    _create_edge_button("LeftNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(0, 0), Callable(self, "_go_left"))
-    _create_edge_button("RightNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(_screen_width() - EDGE_SIZE, 0), Callable(self, "_go_right"))
-    _create_edge_button("DownNavigation", Vector2(_screen_width(), EDGE_SIZE), Vector2(0, _screen_height() - EDGE_SIZE), Callable(self, "_go_down"))
+	_create_edge_button("LeftNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(0, 0), Callable(self, "_go_left"))
+	_create_edge_button("RightNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(_screen_width() - EDGE_SIZE, 0), Callable(self, "_go_right"))
+	_create_edge_button("DownNavigation", Vector2(_screen_width(), EDGE_SIZE), Vector2(0, _screen_height() - EDGE_SIZE), Callable(self, "_go_down"))
 
-    get_viewport().size_changed.connect(_on_viewport_resized)
+	get_viewport().size_changed.connect(_on_viewport_resized)
 
 func _process(_delta: float) -> void:
-    if navigation_locked:
-        return
+	if navigation_locked:
+		return
 
-    _update_cursor(get_viewport().get_mouse_position())
+	_update_cursor(get_viewport().get_mouse_position())
 
 func _on_viewport_resized() -> void:
-    _resize_navigation_buttons()
+	_resize_navigation_buttons()
 
 func _create_edge_button(button_name: String, button_size: Vector2, button_position: Vector2, callback: Callable) -> void:
-    var button := Button.new()
-    button.name = button_name
-    button.text = ""
-    button.flat = true
-    button.focus_mode = Control.FOCUS_NONE
-    button.mouse_default_cursor_shape = Control.CURSOR_ARROW
-    button.mouse_filter = Control.MOUSE_FILTER_STOP
+	var button := Button.new()
+	button.name = button_name
+	button.text = ""
+	button.flat = true
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_ARROW
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
 
-    var empty_style := StyleBoxEmpty.new()
-    button.add_theme_stylebox_override("normal", empty_style)
-    button.add_theme_stylebox_override("hover", empty_style)
-    button.add_theme_stylebox_override("pressed", empty_style)
-    button.add_theme_stylebox_override("focus", empty_style)
+	var empty_style := StyleBoxEmpty.new()
+	button.add_theme_stylebox_override("normal", empty_style)
+	button.add_theme_stylebox_override("hover", empty_style)
+	button.add_theme_stylebox_override("pressed", empty_style)
+	button.add_theme_stylebox_override("focus", empty_style)
 
-    button.position = button_position
-    button.size = button_size
-    button.pressed.connect(callback)
+	button.position = button_position
+	button.size = button_size
+	button.pressed.connect(callback)
 
-    add_child(button)
+	add_child(button)
 
 func _resize_navigation_buttons() -> void:
-    var left_button := get_node_or_null("LeftNavigation") as Button
-    var right_button := get_node_or_null("RightNavigation") as Button
-    var down_button := get_node_or_null("DownNavigation") as Button
+	var left_button := get_node_or_null("LeftNavigation") as Button
+	var right_button := get_node_or_null("RightNavigation") as Button
+	var down_button := get_node_or_null("DownNavigation") as Button
 
-    var width := _screen_width()
-    var height := _screen_height()
+	var width := _screen_width()
+	var height := _screen_height()
 
-    if left_button:
-        left_button.position = Vector2(0, 0)
-        left_button.size = Vector2(EDGE_SIZE, height - EDGE_SIZE)
+	if left_button:
+		left_button.position = Vector2(0, 0)
+		left_button.size = Vector2(EDGE_SIZE, height - EDGE_SIZE)
 
-    if right_button:
-        right_button.position = Vector2(width - EDGE_SIZE, 0)
-        right_button.size = Vector2(EDGE_SIZE, height - EDGE_SIZE)
+	if right_button:
+		right_button.position = Vector2(width - EDGE_SIZE, 0)
+		right_button.size = Vector2(EDGE_SIZE, height - EDGE_SIZE)
 
-    if down_button:
-        down_button.position = Vector2(0, height - EDGE_SIZE)
-        down_button.size = Vector2(width, EDGE_SIZE)
+	if down_button:
+		down_button.position = Vector2(0, height - EDGE_SIZE)
+		down_button.size = Vector2(width, EDGE_SIZE)
 
 func _update_cursor(mouse_position: Vector2) -> void:
-    var width := _screen_width()
-    var height := _screen_height()
+	var width := _screen_width()
+	var height := _screen_height()
 
-    var direction := ""
+	var direction := ""
 
-    # The bottom edge has priority at the corners.
-    if mouse_position.y >= height - EDGE_SIZE:
-        direction = "down"
-    elif mouse_position.x <= EDGE_SIZE:
-        direction = "left"
-    elif mouse_position.x >= width - EDGE_SIZE:
-        direction = "right"
+	# The bottom edge has priority at the corners.
+	if mouse_position.y >= height - EDGE_SIZE:
+		direction = "down"
+	elif mouse_position.x <= EDGE_SIZE:
+		direction = "left"
+	elif mouse_position.x >= width - EDGE_SIZE:
+		direction = "right"
 
-    # Do not show an arrow when that direction has no destination in the current room.
-    if not _is_direction_available(direction):
-        direction = ""
+	# Do not show an arrow when that direction has no destination in the current room.
+	if not _is_direction_available(direction):
+		direction = ""
 
-    if direction == current_direction:
-        return
+	if direction == current_direction:
+		return
 
-    current_direction = direction
+	current_direction = direction
 
-    match direction:
-        "left":
-            Input.set_custom_mouse_cursor(
-                left_cursor,
-                Input.CURSOR_ARROW,
-                _calculate_hotspot(left_cursor, LEFT_ARROW_POSITION, mouse_position)
-            )
-        "right":
-            Input.set_custom_mouse_cursor(
-                right_cursor,
-                Input.CURSOR_ARROW,
-                _calculate_hotspot(right_cursor, RIGHT_ARROW_POSITION, mouse_position)
-            )
-        "down":
-            Input.set_custom_mouse_cursor(
-                down_cursor,
-                Input.CURSOR_ARROW,
-                _calculate_hotspot(down_cursor, DOWN_ARROW_POSITION, mouse_position)
-            )
-        _:
-            Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+	match direction:
+		"left":
+			Input.set_custom_mouse_cursor(
+				left_cursor,
+				Input.CURSOR_ARROW,
+				_calculate_hotspot(left_cursor, LEFT_ARROW_POSITION, mouse_position)
+			)
+		"right":
+			Input.set_custom_mouse_cursor(
+				right_cursor,
+				Input.CURSOR_ARROW,
+				_calculate_hotspot(right_cursor, RIGHT_ARROW_POSITION, mouse_position)
+			)
+		"down":
+			Input.set_custom_mouse_cursor(
+				down_cursor,
+				Input.CURSOR_ARROW,
+				_calculate_hotspot(down_cursor, DOWN_ARROW_POSITION, mouse_position)
+			)
+		_:
+			Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 
 func _calculate_hotspot(cursor: Texture2D, target_position: Vector2, mouse_position: Vector2) -> Vector2:
-    # The custom cursor follows the mouse. This hotspot makes the center of the
-    # arrow land on the requested target position at the moment the direction
-    # becomes active.
-    var cursor_center := Vector2(
-        cursor.get_width() / 2.0,
-        cursor.get_height() / 2.0
-    )
+	# The custom cursor follows the mouse. This hotspot makes the center of the
+	# arrow land on the requested target position at the moment the direction
+	# becomes active.
+	var cursor_center := Vector2(
+		cursor.get_width() / 2.0,
+		cursor.get_height() / 2.0
+	)
 
-    var desired_image_center_offset := target_position - mouse_position
+	var desired_image_center_offset := target_position - mouse_position
 
-    return cursor_center - desired_image_center_offset
+	return cursor_center - desired_image_center_offset
 
 func _is_direction_available(direction: String) -> bool:
-    var current_scene_path := get_tree().current_scene.scene_file_path
+	var current_scene_path := get_tree().current_scene.scene_file_path
 
-    match current_scene_path:
-        LIVING_ROOM:
-            return direction in ["left", "right", "down"]
-        MIGS_ROOM:
-            return direction == "left"
-        KITCHEN:
-            return direction == "right"
-        BACKYARD:
-            return direction == "down"
-        _:
-            return false
+	match current_scene_path:
+		LIVING_ROOM:
+			return direction in ["left", "right", "down"]
+		MIGS_ROOM:
+			return direction == "left"
+		KITCHEN:
+			return direction == "right"
+		BACKYARD:
+			return direction == "down"
+		_:
+			return false
 
 func _go_left() -> void:
-    match get_tree().current_scene.scene_file_path:
-        LIVING_ROOM:
-            _change_scene(KITCHEN)
-        MIGS_ROOM:
-            _change_scene(LIVING_ROOM)
+	match get_tree().current_scene.scene_file_path:
+		LIVING_ROOM:
+			_change_scene(KITCHEN)
+		MIGS_ROOM:
+			_change_scene(LIVING_ROOM)
 
 func _go_right() -> void:
-    match get_tree().current_scene.scene_file_path:
-        LIVING_ROOM:
-            _change_scene(MIGS_ROOM)
-        KITCHEN:
-            _change_scene(LIVING_ROOM)
+	match get_tree().current_scene.scene_file_path:
+		LIVING_ROOM:
+			_change_scene(MIGS_ROOM)
+		KITCHEN:
+			_change_scene(LIVING_ROOM)
 
 func _go_down() -> void:
-    match get_tree().current_scene.scene_file_path:
-        LIVING_ROOM:
-            _change_scene(BACKYARD)
-        BACKYARD:
-            _change_scene(LIVING_ROOM)
+	match get_tree().current_scene.scene_file_path:
+		LIVING_ROOM:
+			_change_scene(BACKYARD)
+		BACKYARD:
+			_change_scene(LIVING_ROOM)
 
 func _change_scene(scene_path: String) -> void:
-    if navigation_locked:
-        return
+	if navigation_locked:
+		return
 
-    navigation_locked = true
-    Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
-    current_direction = ""
-    get_tree().change_scene_to_file(scene_path)
+	navigation_locked = true
+	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+	current_direction = ""
+	get_tree().change_scene_to_file(scene_path)
 
 func _exit_tree() -> void:
-    Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 
 func _prepare_cursor(source: Texture2D, max_size: float) -> Texture2D:
-    var image := source.get_image()
-    if image == null:
-        return source
+	var image := source.get_image()
+	if image == null:
+		return source
 
-    var source_size := Vector2(
-        float(image.get_width()),
-        float(image.get_height())
-    )
+	var source_size := Vector2(
+		float(image.get_width()),
+		float(image.get_height())
+	)
 
-    var scale_factor: float = minf(
-        max_size / source_size.x,
-        max_size / source_size.y
-    )
-    scale_factor = minf(scale_factor, 1.0)
+	var scale_factor: float = minf(
+		max_size / source_size.x,
+		max_size / source_size.y
+	)
+	scale_factor = minf(scale_factor, 1.0)
 
-    if scale_factor < 1.0:
-        var new_width: int = maxi(1, int(source_size.x * scale_factor))
-        var new_height: int = maxi(1, int(source_size.y * scale_factor))
-        var new_size := Vector2i(new_width, new_height)
+	if scale_factor < 1.0:
+		var new_width: int = maxi(1, int(source_size.x * scale_factor))
+		var new_height: int = maxi(1, int(source_size.y * scale_factor))
+		var new_size := Vector2i(new_width, new_height)
 
-        image.resize(
-            new_size.x,
-            new_size.y,
-            Image.INTERPOLATE_LANCZOS
-        )
+		image.resize(
+			new_size.x,
+			new_size.y,
+			Image.INTERPOLATE_LANCZOS
+		)
 
-    return ImageTexture.create_from_image(image)
+	return ImageTexture.create_from_image(image)
 
 func _screen_width() -> float:
-    return get_viewport().get_visible_rect().size.x
+	return get_viewport().get_visible_rect().size.x
 
 func _screen_height() -> float:
-    return get_viewport().get_visible_rect().size.y
+	return get_viewport().get_visible_rect().size.y
