@@ -3,7 +3,11 @@ extends CanvasLayer
 const EDGE_SIZE := 48.0
 const SIDE_CURSOR_MAX_SIZE := 96.0
 const DOWN_CURSOR_MAX_SIZE := 128.0
-const LEFT_CURSOR_SHIFT_RIGHT := 14.0
+
+# Target arrow-center positions on a 1280x720 game window.
+const LEFT_ARROW_POSITION := Vector2(165.5, 265.0)
+const RIGHT_ARROW_POSITION := Vector2(1104.0, 263.0)
+const DOWN_ARROW_POSITION := Vector2(566.5, 607.0)
 
 const LEFT_CURSOR := preload("res://GAME ASSETS/UI/HUD/left room.png")
 const RIGHT_CURSOR := preload("res://GAME ASSETS/UI/HUD/right room.png")
@@ -106,17 +110,38 @@ func _update_cursor(mouse_position: Vector2) -> void:
 
     match direction:
         "left":
-            var left_hotspot := Vector2(
-                left_cursor.get_width() / 2.0 - LEFT_CURSOR_SHIFT_RIGHT,
-                left_cursor.get_height() / 2.0
+            Input.set_custom_mouse_cursor(
+                left_cursor,
+                Input.CURSOR_ARROW,
+                _calculate_hotspot(left_cursor, LEFT_ARROW_POSITION, mouse_position)
             )
-            Input.set_custom_mouse_cursor(left_cursor, Input.CURSOR_ARROW, left_hotspot)
         "right":
-            Input.set_custom_mouse_cursor(right_cursor, Input.CURSOR_ARROW, Vector2(right_cursor.get_width() / 2.0, right_cursor.get_height() / 2.0))
+            Input.set_custom_mouse_cursor(
+                right_cursor,
+                Input.CURSOR_ARROW,
+                _calculate_hotspot(right_cursor, RIGHT_ARROW_POSITION, mouse_position)
+            )
         "down":
-            Input.set_custom_mouse_cursor(down_cursor, Input.CURSOR_ARROW, Vector2(down_cursor.get_width() / 2.0, down_cursor.get_height() / 2.0))
+            Input.set_custom_mouse_cursor(
+                down_cursor,
+                Input.CURSOR_ARROW,
+                _calculate_hotspot(down_cursor, DOWN_ARROW_POSITION, mouse_position)
+            )
         _:
             Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+
+func _calculate_hotspot(cursor: Texture2D, target_position: Vector2, mouse_position: Vector2) -> Vector2:
+    # The custom cursor follows the mouse. This hotspot makes the center of the
+    # arrow land on the requested target position at the moment the direction
+    # becomes active.
+    var cursor_center := Vector2(
+        cursor.get_width() / 2.0,
+        cursor.get_height() / 2.0
+    )
+
+    var desired_image_center_offset := target_position - mouse_position
+
+    return cursor_center - desired_image_center_offset
 
 func _is_direction_available(direction: String) -> bool:
     var current_scene_path := get_tree().current_scene.scene_file_path
