@@ -109,8 +109,8 @@ func _update_cursor(mouse_position: Vector2) -> void:
 
 func _go_left() -> void:
     match get_tree().current_scene.scene_file_path:
-        KITCHEN:
-            _change_scene(LIVING_ROOM)
+        LIVING_ROOM:
+            _change_scene(KITCHEN)
         MIGS_ROOM:
             _change_scene(KITCHEN)
         BACKYARD:
@@ -119,7 +119,7 @@ func _go_left() -> void:
 func _go_right() -> void:
     match get_tree().current_scene.scene_file_path:
         LIVING_ROOM:
-            _change_scene(KITCHEN)
+            _change_scene(MIGS_ROOM)
         KITCHEN:
             _change_scene(MIGS_ROOM)
         MIGS_ROOM:
@@ -129,6 +129,8 @@ func _go_right() -> void:
 
 func _go_down() -> void:
     match get_tree().current_scene.scene_file_path:
+        LIVING_ROOM:
+            _change_scene(BACKYARD)
         KITCHEN:
             _change_scene(BACKYARD)
 
