@@ -3,6 +3,7 @@ extends CanvasLayer
 const EDGE_SIZE := 48.0
 const SIDE_CURSOR_MAX_SIZE := 96.0
 const DOWN_CURSOR_MAX_SIZE := 128.0
+const LEFT_CURSOR_SHIFT_RIGHT := 14.0
 
 const LEFT_CURSOR := preload("res://GAME ASSETS/UI/HUD/left room.png")
 const RIGHT_CURSOR := preload("res://GAME ASSETS/UI/HUD/right room.png")
@@ -105,7 +106,11 @@ func _update_cursor(mouse_position: Vector2) -> void:
 
     match direction:
         "left":
-            Input.set_custom_mouse_cursor(left_cursor, Input.CURSOR_ARROW, Vector2(left_cursor.get_width() / 2.0, left_cursor.get_height() / 2.0))
+            var left_hotspot := Vector2(
+                left_cursor.get_width() / 2.0 - LEFT_CURSOR_SHIFT_RIGHT,
+                left_cursor.get_height() / 2.0
+            )
+            Input.set_custom_mouse_cursor(left_cursor, Input.CURSOR_ARROW, left_hotspot)
         "right":
             Input.set_custom_mouse_cursor(right_cursor, Input.CURSOR_ARROW, Vector2(right_cursor.get_width() / 2.0, right_cursor.get_height() / 2.0))
         "down":
