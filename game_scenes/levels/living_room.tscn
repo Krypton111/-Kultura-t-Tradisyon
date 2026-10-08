@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://d3hd3dfl8sl31" path="res://GAME ASSETS/Living Room/lola_nena_looking.png" id="7_3pyx6"]
 [ext_resource type="Texture2D" uid="uid://ptubjp8wbhet" path="res://GAME ASSETS/Living Room/stand+open_tv.png" id="8_kpdbn"]
 [ext_resource type="Script" uid="uid://3dsuf08mooh8" path="res://scripts/living room/living_room_interactions.gd" id="9_tvscript"]
+[ext_resource type="PackedScene" uid="uid://bym537eb10qr6" path="res://game_scenes/UI scenes/HUD.tscn" id="10_hud"]
 
 [node name="Control" type="Control" unique_id=278341826]
 layout_mode = 3
@@ -67,3 +68,5 @@ visible = false
 position = Vector2(576, 323.99994)
 scale = Vector2(0.24000001, 0.24000001)
 texture = ExtResource("3_x3ibj")
+
+[node name="HUD" parent="." instance=ExtResource("10_hud")]
