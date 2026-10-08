@@ -75,7 +75,7 @@ func _create_fade_overlay() -> void:
 	fade_rect = ColorRect.new()
 	fade_rect.name = "RoomTransitionFade"
 	fade_rect.color = Color(0, 0, 0, 0)
-	fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
+	fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	fade_rect.position = Vector2.ZERO
 	fade_rect.size = Vector2(_screen_width(), _screen_height())
 	fade_rect.z_index = 1000
@@ -208,8 +208,8 @@ func _change_scene(scene_path: String) -> void:
 	fade_tween.tween_property(fade_rect, "color:a", 0.0, 0.25)
 	await fade_tween.finished
 
-	navigation_locked = false
 	fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	navigation_locked = false
 	_update_cursor(get_viewport().get_mouse_position())
 
 func _exit_tree() -> void:
