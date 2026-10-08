@@ -223,7 +223,7 @@ func _change_scene(scene_path: String) -> void:
 
 	fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
 	fade_tween = create_tween()
-	fade_tween.tween_property(fade_rect, "color:a", 1.0, 0.25)
+	fade_tween.tween_property(fade_rect, "color:a", 1.0, 1.0)
 	await fade_tween.finished
 
 	get_tree().change_scene_to_packed(next_room)
@@ -231,7 +231,7 @@ func _change_scene(scene_path: String) -> void:
 	await get_tree().process_frame
 
 	fade_tween = create_tween()
-	fade_tween.tween_property(fade_rect, "color:a", 0.0, 0.25)
+	fade_tween.tween_property(fade_rect, "color:a", 0.0, 1.0)
 	await fade_tween.finished
 
 	fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
