@@ -7,6 +7,7 @@ const DOWN_CURSOR_MAX_SIZE := 160.0
 const LEFT_CURSOR := preload("res://GAME ASSETS/UI/HUD/left room.png")
 const RIGHT_CURSOR := preload("res://GAME ASSETS/UI/HUD/right room.png")
 const DOWN_CURSOR := preload("res://GAME ASSETS/UI/HUD/bottom room.png")
+const FOOTSTEPS_SFX := preload("res://GAME ASSETS/SFX/footsteps.mp3")
 
 const LIVING_ROOM := "res://game_scenes/levels/living_room.tscn"
 const KITCHEN := "res://game_scenes/levels/kitchen.tscn"
@@ -20,6 +21,7 @@ var right_cursor: Texture2D
 var down_cursor: Texture2D
 var fade_rect: ColorRect
 var fade_tween: Tween
+var footsteps_player: AudioStreamPlayer
 
 # Preloaded room scenes.
 var room_scenes := {
@@ -40,6 +42,7 @@ func _ready() -> void:
 
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	_create_fade_overlay()
+	_create_footsteps_player()
 
 func _process(_delta: float) -> void:
 	if navigation_locked:
@@ -70,6 +73,12 @@ func _create_edge_button(button_name: String, button_size: Vector2, button_posit
 	button.pressed.connect(callback)
 
 	add_child(button)
+
+func _create_footsteps_player() -> void:
+	footsteps_player = AudioStreamPlayer.new()
+	footsteps_player.name = "FootstepsPlayer"
+	footsteps_player.stream = FOOTSTEPS_SFX
+	add_child(footsteps_player)
 
 func _create_fade_overlay() -> void:
 	fade_rect = ColorRect.new()
@@ -189,6 +198,10 @@ func _change_scene(scene_path: String) -> void:
 	if next_room == null:
 		navigation_locked = false
 		return
+
+	# Play one footstep sound for the room transition.
+	if footsteps_player:
+		footsteps_player.play()
 
 	# Block every mouse click with the fade overlay and fade the current room to black.
 	if fade_tween:
