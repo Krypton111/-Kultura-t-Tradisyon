@@ -1,10 +1,11 @@
 extends CanvasLayer
 
 const NAV_HOTSPOT_SIZE := 96.0
-const EDGE_SIZE := 48.0
+
 const LEFT_NAV_POSITION := Vector2(165.5, 265.0)
 const RIGHT_NAV_POSITION := Vector2(1104.0, 263.0)
 const DOWN_NAV_POSITION := Vector2(566.5, 607.0)
+
 const CURSOR_MAX_SIZE := 96.0
 const DOWN_CURSOR_MAX_SIZE := 160.0
 
@@ -27,7 +28,6 @@ var fade_rect: ColorRect
 var fade_tween: Tween
 var footsteps_player: AudioStreamPlayer
 
-# Preloaded room scenes.
 var room_scenes := {
 	LIVING_ROOM: preload("res://game_scenes/levels/living_room.tscn"),
 	KITCHEN: preload("res://game_scenes/levels/kitchen.tscn"),
@@ -40,9 +40,9 @@ func _ready() -> void:
 	right_cursor = _prepare_cursor(RIGHT_CURSOR)
 	down_cursor = _prepare_cursor(DOWN_CURSOR, DOWN_CURSOR_MAX_SIZE)
 
-	_create_edge_button("LeftNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(0, 0), Callable(self, "_go_left"))
-	_create_edge_button("RightNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(_screen_width() - EDGE_SIZE, 0), Callable(self, "_go_right"))
-	_create_edge_button("DownNavigation", Vector2(_screen_width(), EDGE_SIZE), Vector2(0, _screen_height() - EDGE_SIZE), Callable(self, "_go_down"))
+	_create_navigation_button("LeftNavigation", LEFT_NAV_POSITION, Callable(self, "_go_left"))
+	_create_navigation_button("RightNavigation", RIGHT_NAV_POSITION, Callable(self, "_go_right"))
+	_create_navigation_button("DownNavigation", DOWN_NAV_POSITION, Callable(self, "_go_down"))
 
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	_create_fade_overlay()
@@ -72,8 +72,8 @@ func _create_navigation_button(button_name: String, center_position: Vector2, ca
 	button.add_theme_stylebox_override("pressed", empty_style)
 	button.add_theme_stylebox_override("focus", empty_style)
 
-	button.position = button_position
-	button.size = button_size
+	button.position = center_position - Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE) * 0.5
+	button.size = Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE)
 	button.pressed.connect(callback)
 
 	add_child(button)
@@ -99,39 +99,41 @@ func _resize_navigation_buttons() -> void:
 	var right_button := get_node_or_null("RightNavigation") as Button
 	var down_button := get_node_or_null("DownNavigation") as Button
 
-	var width := _screen_width()
-	var height := _screen_height()
-
 	if left_button:
-		left_button.position = Vector2(0, 0)
-		left_button.size = Vector2(EDGE_SIZE, height - EDGE_SIZE)
+		left_button.position = LEFT_NAV_POSITION - Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE) * 0.5
+		left_button.size = Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE)
 
 	if right_button:
-		right_button.position = Vector2(width - EDGE_SIZE, 0)
-		right_button.size = Vector2(EDGE_SIZE, height - EDGE_SIZE)
+		right_button.position = RIGHT_NAV_POSITION - Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE) * 0.5
+		right_button.size = Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE)
 
 	if down_button:
-		down_button.position = Vector2(0, height - EDGE_SIZE)
-		down_button.size = Vector2(width, EDGE_SIZE)
+		down_button.position = DOWN_NAV_POSITION - Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE) * 0.5
+		down_button.size = Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE)
 
 	if fade_rect:
-		fade_rect.size = Vector2(width, height)
+		fade_rect.size = Vector2(_screen_width(), _screen_height())
 
 func _update_cursor(mouse_position: Vector2) -> void:
-	var width := _screen_width()
-	var height := _screen_height()
-
 	var direction := ""
+	var hotspot_half := NAV_HOTSPOT_SIZE * 0.5
 
-	# The bottom edge has priority at the corners.
-	if mouse_position.y >= height - EDGE_SIZE:
-		direction = "down"
-	elif mouse_position.x <= EDGE_SIZE:
+	if Rect2(
+		LEFT_NAV_POSITION - Vector2(hotspot_half, hotspot_half),
+		Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE)
+	).has_point(mouse_position):
 		direction = "left"
-	elif mouse_position.x >= width - EDGE_SIZE:
+	elif Rect2(
+		RIGHT_NAV_POSITION - Vector2(hotspot_half, hotspot_half),
+		Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE)
+	).has_point(mouse_position):
 		direction = "right"
+	elif Rect2(
+		DOWN_NAV_POSITION - Vector2(hotspot_half, hotspot_half),
+		Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE)
+	).has_point(mouse_position):
+		direction = "down"
 
-	# Do not show an arrow when that direction has no destination in the current room.
 	if not _is_direction_available(direction):
 		direction = ""
 
@@ -155,9 +157,7 @@ func _is_direction_available(direction: String) -> bool:
 	if current_scene == null:
 		return false
 
-	var current_scene_path := current_scene.scene_file_path
-
-	match current_scene_path:
+	match current_scene.scene_file_path:
 		LIVING_ROOM:
 			return direction in ["left", "right", "down"]
 		MIGS_ROOM:
@@ -170,21 +170,33 @@ func _is_direction_available(direction: String) -> bool:
 			return false
 
 func _go_left() -> void:
-	match get_tree().current_scene.scene_file_path:
+	var current_scene := get_tree().current_scene
+	if current_scene == null:
+		return
+
+	match current_scene.scene_file_path:
 		LIVING_ROOM:
 			_change_scene(KITCHEN)
 		MIGS_ROOM:
 			_change_scene(LIVING_ROOM)
 
 func _go_right() -> void:
-	match get_tree().current_scene.scene_file_path:
+	var current_scene := get_tree().current_scene
+	if current_scene == null:
+		return
+
+	match current_scene.scene_file_path:
 		LIVING_ROOM:
 			_change_scene(MIGS_ROOM)
 		KITCHEN:
 			_change_scene(LIVING_ROOM)
 
 func _go_down() -> void:
-	match get_tree().current_scene.scene_file_path:
+	var current_scene := get_tree().current_scene
+	if current_scene == null:
+		return
+
+	match current_scene.scene_file_path:
 		LIVING_ROOM:
 			_change_scene(BACKYARD)
 		BACKYARD:
@@ -203,11 +215,9 @@ func _change_scene(scene_path: String) -> void:
 		navigation_locked = false
 		return
 
-	# Play one footstep sound for the room transition.
 	if footsteps_player:
 		footsteps_player.play()
 
-	# Block every mouse click with the fade overlay and fade the current room to black.
 	if fade_tween:
 		fade_tween.kill()
 
@@ -218,7 +228,6 @@ func _change_scene(scene_path: String) -> void:
 
 	get_tree().change_scene_to_packed(next_room)
 
-	# Keep the screen black until the new room is ready.
 	await get_tree().process_frame
 
 	fade_tween = create_tween()
@@ -248,7 +257,6 @@ func _prepare_cursor(texture: Texture2D, max_size: float = CURSOR_MAX_SIZE) -> T
 	return ImageTexture.create_from_image(image)
 
 func _cursor_hotspot(texture: Texture2D) -> Vector2:
-	# Keep the hotspot inside the image so Godot accepts the custom cursor.
 	return Vector2(floor(texture.get_width() * 0.5), floor(texture.get_height() * 0.5))
 
 func _screen_width() -> float:
