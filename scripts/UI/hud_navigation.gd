@@ -1,6 +1,8 @@
 extends CanvasLayer
 
 const EDGE_SIZE := 48.0
+const SIDE_CURSOR_MAX_SIZE := 96.0
+const DOWN_CURSOR_MAX_SIZE := 128.0
 
 const LEFT_CURSOR := preload("res://GAME ASSETS/UI/HUD/left room.png")
 const RIGHT_CURSOR := preload("res://GAME ASSETS/UI/HUD/right room.png")
@@ -18,9 +20,9 @@ var right_cursor: Texture2D
 var down_cursor: Texture2D
 
 func _ready() -> void:
-    left_cursor = _prepare_cursor(LEFT_CURSOR)
-    right_cursor = _prepare_cursor(RIGHT_CURSOR)
-    down_cursor = _prepare_cursor(DOWN_CURSOR)
+    left_cursor = _prepare_cursor(LEFT_CURSOR, SIDE_CURSOR_MAX_SIZE)
+    right_cursor = _prepare_cursor(RIGHT_CURSOR, SIDE_CURSOR_MAX_SIZE)
+    down_cursor = _prepare_cursor(DOWN_CURSOR, DOWN_CURSOR_MAX_SIZE)
 
     _create_edge_button("LeftNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(0, 0), Callable(self, "_go_left"))
     _create_edge_button("RightNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(_screen_width() - EDGE_SIZE, 0), Callable(self, "_go_right"))
@@ -92,6 +94,10 @@ func _update_cursor(mouse_position: Vector2) -> void:
     elif mouse_position.x >= width - EDGE_SIZE:
         direction = "right"
 
+    # Do not show an arrow when that direction has no destination in the current room.
+    if not _is_direction_available(direction):
+        direction = ""
+
     if direction == current_direction:
         return
 
@@ -107,32 +113,41 @@ func _update_cursor(mouse_position: Vector2) -> void:
         _:
             Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 
+func _is_direction_available(direction: String) -> bool:
+    var current_scene_path := get_tree().current_scene.scene_file_path
+
+    match current_scene_path:
+        LIVING_ROOM:
+            return direction in ["left", "right", "down"]
+        MIGS_ROOM:
+            return direction == "left"
+        KITCHEN:
+            return direction == "right"
+        BACKYARD:
+            return direction == "down"
+        _:
+            return false
+
 func _go_left() -> void:
     match get_tree().current_scene.scene_file_path:
         LIVING_ROOM:
             _change_scene(KITCHEN)
         MIGS_ROOM:
-            _change_scene(KITCHEN)
-        BACKYARD:
-            _change_scene(MIGS_ROOM)
+            _change_scene(LIVING_ROOM)
 
 func _go_right() -> void:
     match get_tree().current_scene.scene_file_path:
         LIVING_ROOM:
             _change_scene(MIGS_ROOM)
         KITCHEN:
-            _change_scene(MIGS_ROOM)
-        MIGS_ROOM:
-            _change_scene(BACKYARD)
-        BACKYARD:
-            return
+            _change_scene(LIVING_ROOM)
 
 func _go_down() -> void:
     match get_tree().current_scene.scene_file_path:
         LIVING_ROOM:
             _change_scene(BACKYARD)
-        KITCHEN:
-            _change_scene(BACKYARD)
+        BACKYARD:
+            _change_scene(LIVING_ROOM)
 
 func _change_scene(scene_path: String) -> void:
     if navigation_locked:
@@ -146,12 +161,11 @@ func _change_scene(scene_path: String) -> void:
 func _exit_tree() -> void:
     Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 
-func _prepare_cursor(source: Texture2D) -> Texture2D:
+func _prepare_cursor(source: Texture2D, max_size: float) -> Texture2D:
     var image := source.get_image()
     if image == null:
         return source
 
-    var max_size: float = 128.0
     var source_size := Vector2(
         float(image.get_width()),
         float(image.get_height())
@@ -164,10 +178,9 @@ func _prepare_cursor(source: Texture2D) -> Texture2D:
     scale_factor = minf(scale_factor, 1.0)
 
     if scale_factor < 1.0:
-        var new_size := Vector2i(
-            max(1, int(source_size.x * scale_factor)),
-            max(1, int(source_size.y * scale_factor))
-        )
+        var new_width: int = maxi(1, int(source_size.x * scale_factor))
+        var new_height: int = maxi(1, int(source_size.y * scale_factor))
+        var new_size := Vector2i(new_width, new_height)
 
         image.resize(
             new_size.x,
