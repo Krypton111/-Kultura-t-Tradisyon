@@ -1,13 +1,13 @@
 extends CanvasLayer
 
-const LEFT_NAV_WIDTH := 160.0
-const LEFT_NAV_HEIGHT := 100.0
+const LEFT_NAV_WIDTH := 90.0
+const LEFT_NAV_HEIGHT := 800.0
 const RIGHT_NAV_WIDTH := 160.0
-const RIGHT_NAV_HEIGHT := 100.0
-const DOWN_NAV_WIDTH := 160.0
+const RIGHT_NAV_HEIGHT := 300.0
+const DOWN_NAV_WIDTH := 450.0
 const DOWN_NAV_HEIGHT := 100.0
 
-const LEFT_NAV_POSITION := Vector2(165.5, 265.0)
+const LEFT_NAV_POSITION := Vector2(180.0, 265.0)
 const RIGHT_NAV_POSITION := Vector2(1104.0, 263.0)
 const DOWN_NAV_POSITION := Vector2(566.5, 607.0)
 
