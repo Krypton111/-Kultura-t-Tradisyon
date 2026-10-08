@@ -122,7 +122,11 @@ func _update_cursor(mouse_position: Vector2) -> void:
 			Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 
 func _is_direction_available(direction: String) -> bool:
-	var current_scene_path := get_tree().current_scene.scene_file_path
+	var current_scene := get_tree().current_scene
+	if current_scene == null:
+		return false
+
+	var current_scene_path := current_scene.scene_file_path
 
 	match current_scene_path:
 		LIVING_ROOM:
