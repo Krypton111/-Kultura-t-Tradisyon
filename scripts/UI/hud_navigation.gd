@@ -126,13 +126,13 @@ func _update_cursor(mouse_position: Vector2) -> void:
 	).has_point(mouse_position):
 		direction = "left"
 	elif Rect2(
-		RIGHT_NAV_POSITION - Vector2(hotspot_half, hotspot_half),
-		Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE)
+		RIGHT_NAV_POSITION - hotspot_offset,
+		hotspot_size
 	).has_point(mouse_position):
 		direction = "right"
 	elif Rect2(
-		DOWN_NAV_POSITION - Vector2(hotspot_half, hotspot_half),
-		Vector2(NAV_HOTSPOT_SIZE, NAV_HOTSPOT_SIZE)
+		DOWN_NAV_POSITION - hotspot_offset,
+		hotspot_size
 	).has_point(mouse_position):
 		direction = "down"
 
