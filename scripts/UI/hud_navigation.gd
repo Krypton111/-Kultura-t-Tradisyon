@@ -1,6 +1,9 @@
 extends CanvasLayer
 
-const EDGE_SIZE := 48.0
+const NAV_HOTSPOT_SIZE := 96.0
+const LEFT_NAV_POSITION := Vector2(165.5, 265.0)
+const RIGHT_NAV_POSITION := Vector2(1104.0, 263.0)
+const DOWN_NAV_POSITION := Vector2(566.5, 607.0)
 const CURSOR_MAX_SIZE := 96.0
 const DOWN_CURSOR_MAX_SIZE := 160.0
 
