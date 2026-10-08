@@ -1,0 +1,41 @@
+[gd_scene format=3 uid="uid://bym537eb10qr6"]
+
+[ext_resource type="Texture2D" uid="uid://c2fur1byhubnv" path="res://GAME ASSETS/HUD/hotbar.png" id="1_oj0ty"]
+[ext_resource type="Texture2D" uid="uid://xvugreo6ioqx" path="res://GAME ASSETS/HUD/settings.png" id="2_oogva"]
+[ext_resource type="Texture2D" uid="uid://6oq354qqejg8" path="res://GAME ASSETS/HUD/journal_close.png" id="3_47qyw"]
+[ext_resource type="Texture2D" uid="uid://8un8hewhj1c3" path="res://GAME ASSETS/HUD/journal_open.png" id="4_ogk7k"]
+[ext_resource type="Texture2D" uid="uid://bih7b0kx1pr3p" path="res://GAME ASSETS/HUD/camera.png" id="5_i4v7e"]
+
+[node name="Control" type="Control" unique_id=395861787]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Hotbar" type="Sprite2D" parent="." unique_id=1249443412]
+position = Vector2(576, 324)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("1_oj0ty")
+
+[node name="Settings" type="Sprite2D" parent="." unique_id=2072121885]
+position = Vector2(1099.0001, 57.999996)
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_oogva")
+
+[node name="JournalClose" type="Sprite2D" parent="." unique_id=1123360718]
+position = Vector2(1095, 476.99997)
+scale = Vector2(0.11, 0.11)
+texture = ExtResource("3_47qyw")
+
+[node name="JournalOpen" type="Sprite2D" parent="." unique_id=700416073]
+visible = false
+position = Vector2(1078, 475)
+scale = Vector2(0.12, 0.12)
+texture = ExtResource("4_ogk7k")
+
+[node name="Camera" type="Sprite2D" parent="." unique_id=1701211630]
+position = Vector2(1073.6, 587.4)
+scale = Vector2(0.095, 0.095)
+texture = ExtResource("5_i4v7e")

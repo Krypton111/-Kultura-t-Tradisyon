@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://c8qiy55ygks35"]
+
+[ext_resource type="Texture2D" uid="uid://dsgt8qot2ipo2" path="res://GAME ASSETS/Living Room/base.png" id="1_c4qu1"]
+[ext_resource type="Texture2D" uid="uid://i0j50tsnw67s" path="res://GAME ASSETS/Living Room/stand+closed_tv.png" id="2_a8lmu"]
+[ext_resource type="Texture2D" uid="uid://de6rnknc54wmf" path="res://GAME ASSETS/Living Room/window_closed.png" id="3_x3ibj"]
+[ext_resource type="Texture2D" uid="uid://dw3xdm3ssrlm2" path="res://GAME ASSETS/Living Room/window_open.png" id="4_6fccx"]
+[ext_resource type="Texture2D" uid="uid://rp4vhikh0kda" path="res://GAME ASSETS/Living Room/couch+plant.png" id="5_wwvaw"]
+[ext_resource type="Texture2D" uid="uid://cmwblp26jy2j" path="res://GAME ASSETS/Living Room/lola_nena_not_looking.png" id="6_7vsc2"]
+[ext_resource type="Texture2D" uid="uid://d3hd3dfl8sl31" path="res://GAME ASSETS/Living Room/lola_nena_looking.png" id="7_3pyx6"]
+
+[node name="Control" type="Control" unique_id=278341826]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=338101747]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_c4qu1")
+expand_mode = 1
+
+[node name="Stand+closedTv" type="Sprite2D" parent="." unique_id=1163900824]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("2_a8lmu")
+
+[node name="WindowClosed" type="Sprite2D" parent="." unique_id=2117117831]
+visible = false
+position = Vector2(576, 323.99994)
+scale = Vector2(0.24000001, 0.24000001)
+texture = ExtResource("3_x3ibj")
+
+[node name="WindowOpen" type="Sprite2D" parent="." unique_id=1275995419]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("4_6fccx")
+
+[node name="Couch+plant" type="Sprite2D" parent="." unique_id=1593791168]
+position = Vector2(575.99994, 323.99997)
+scale = Vector2(0.24000002, 0.24000001)
+texture = ExtResource("5_wwvaw")
+
+[node name="LolaNenaNotLooking" type="Sprite2D" parent="." unique_id=1649439207]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("6_7vsc2")
+
+[node name="LolaNenaLooking" type="Sprite2D" parent="." unique_id=2094038768]
+visible = false
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("7_3pyx6")

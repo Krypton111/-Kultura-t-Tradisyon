@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://cqurl0ix4y2t3"]
+
+[ext_resource type="Texture2D" uid="uid://clgq41l36iy1l" path="res://GAME ASSETS/UI/dialogue/dialogue_box.png" id="1_tnwt8"]
+[ext_resource type="Texture2D" uid="uid://dvhomds0hasc" path="res://GAME ASSETS/UI/dialogue/dialogue_design.png" id="2_nhraa"]
+[ext_resource type="Texture2D" uid="uid://cd7ei2fofvgj7" path="res://GAME ASSETS/UI/dialogue/dialogue_name_box.png" id="3_sfr7b"]
+[ext_resource type="Texture2D" uid="uid://sa30f2jt3oqf" path="res://GAME ASSETS/UI/dialogue/lola_nena_name_dialogue_box.png" id="4_tsr54"]
+
+[node name="Control" type="Control" unique_id=1517289160]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DialogueBox" type="Sprite2D" parent="." unique_id=1011845970]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("1_tnwt8")
+
+[node name="DialogueDesign" type="Sprite2D" parent="." unique_id=830891069]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("2_nhraa")
+
+[node name="DialogueNameBox" type="Sprite2D" parent="." unique_id=57714727]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("3_sfr7b")
+
+[node name="LolaNenaNameDialogueBox" type="Sprite2D" parent="." unique_id=967066297]
+position = Vector2(576, 326.00003)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("4_tsr54")
