@@ -147,13 +147,29 @@ func _prepare_cursor(source: Texture2D) -> Texture2D:
     if image == null:
         return source
 
-    var max_size := 128.0
-    var source_size := Vector2(image.get_width(), image.get_height())
-    var scale_factor := min(min(max_size / source_size.x, max_size / source_size.y), 1.0)
+    var max_size: float = 128.0
+    var source_size := Vector2(
+        float(image.get_width()),
+        float(image.get_height())
+    )
+
+    var scale_factor: float = minf(
+        max_size / source_size.x,
+        max_size / source_size.y
+    )
+    scale_factor = minf(scale_factor, 1.0)
 
     if scale_factor < 1.0:
-        var new_size := Vector2i(max(1, int(source_size.x * scale_factor)), max(1, int(source_size.y * scale_factor)))
-        image.resize(new_size.x, new_size.y, Image.INTERPOLATE_LANCZOS)
+        var new_size := Vector2i(
+            max(1, int(source_size.x * scale_factor)),
+            max(1, int(source_size.y * scale_factor))
+        )
+
+        image.resize(
+            new_size.x,
+            new_size.y,
+            Image.INTERPOLATE_LANCZOS
+        )
 
     return ImageTexture.create_from_image(image)
 
