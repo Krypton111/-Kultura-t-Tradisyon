@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://cmwblp26jy2j" path="res://GAME ASSETS/Living Room/lola_nena_not_looking.png" id="6_7vsc2"]
 [ext_resource type="Texture2D" uid="uid://d3hd3dfl8sl31" path="res://GAME ASSETS/Living Room/lola_nena_looking.png" id="7_3pyx6"]
 [ext_resource type="Texture2D" uid="uid://ptubjp8wbhet" path="res://GAME ASSETS/Living Room/stand+open_tv.png" id="8_kpdbn"]
+[ext_resource type="Script" path="res://scripts/living_room_interactions.gd" id="9_tvscript"]
 
 [node name="Control" type="Control" unique_id=278341826]
 layout_mode = 3
@@ -28,6 +29,8 @@ texture = ExtResource("1_c4qu1")
 expand_mode = 1
 
 [node name="Area2D" type="Area2D" parent="." unique_id=128619394]
+script = ExtResource("9_tvscript")
+input_pickable = true
 
 [node name="Stand+closedTV" type="Sprite2D" parent="Area2D" unique_id=1163900824]
 position = Vector2(576, 324)
@@ -35,9 +38,13 @@ scale = Vector2(0.24, 0.24)
 texture = ExtResource("2_a8lmu")
 
 [node name="Stand+openTv" type="Sprite2D" parent="Area2D" unique_id=1888162062]
+visible = false
 position = Vector2(576, 324)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("8_kpdbn")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2(576, 324)
 
 [node name="WindowOpen" type="Sprite2D" parent="." unique_id=1275995419]
 position = Vector2(576, 324)
