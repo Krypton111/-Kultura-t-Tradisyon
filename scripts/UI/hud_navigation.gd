@@ -2,7 +2,7 @@ extends CanvasLayer
 
 const EDGE_SIZE := 48.0
 const CURSOR_MAX_SIZE := 96.0
-const DOWN_CURSOR_MAX_SIZE := 128.0
+const DOWN_CURSOR_MAX_SIZE := 160.0
 
 const LEFT_CURSOR := preload("res://GAME ASSETS/UI/HUD/left room.png")
 const RIGHT_CURSOR := preload("res://GAME ASSETS/UI/HUD/right room.png")
