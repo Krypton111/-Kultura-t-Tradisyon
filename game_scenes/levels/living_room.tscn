@@ -10,9 +10,6 @@
 [ext_resource type="Texture2D" uid="uid://ptubjp8wbhet" path="res://GAME ASSETS/Living Room/stand+open_tv.png" id="8_kpdbn"]
 [ext_resource type="Script" uid="uid://3dsuf08mooh8" path="res://scripts/living_room_interactions.gd" id="9_tvscript"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_b6cbq"]
-size = Vector2(192, 185)
-
 [node name="Control" type="Control" unique_id=278341826]
 layout_mode = 3
 anchors_preset = 15
@@ -20,6 +17,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("9_tvscript")
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=338101747]
 layout_mode = 1
@@ -30,24 +28,18 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("1_c4qu1")
 expand_mode = 1
+mouse_filter = 2
 
-[node name="Area2D" type="Area2D" parent="." unique_id=128619394]
-script = ExtResource("9_tvscript")
-
-[node name="Stand+closedTV" type="Sprite2D" parent="Area2D" unique_id=1163900824]
+[node name="Stand+closedTV" type="Sprite2D" parent="." unique_id=1163900824]
 position = Vector2(576, 324)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("2_a8lmu")
 
-[node name="Stand+openTv" type="Sprite2D" parent="Area2D" unique_id=1888162062]
+[node name="Stand+openTv" type="Sprite2D" parent="." unique_id=1888162062]
 visible = false
 position = Vector2(576, 324)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("8_kpdbn")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1518739231]
-position = Vector2(576, 324)
-shape = SubResource("RectangleShape2D_b6cbq")
 
 [node name="WindowOpen" type="Sprite2D" parent="." unique_id=1275995419]
 position = Vector2(576, 324)
