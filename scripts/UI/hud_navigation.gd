@@ -1,10 +1,7 @@
 extends CanvasLayer
 
 const EDGE_SIZE := 48.0
-# Target arrow-center positions on a 1280x720 game window.
-const LEFT_ARROW_POSITION := Vector2(165.5, 265.0)
-const RIGHT_ARROW_POSITION := Vector2(1104.0, 263.0)
-const DOWN_ARROW_POSITION := Vector2(566.5, 607.0)
+const CURSOR_MAX_SIZE := 96.0
 
 const LEFT_CURSOR := preload("res://GAME ASSETS/UI/HUD/left room.png")
 const RIGHT_CURSOR := preload("res://GAME ASSETS/UI/HUD/right room.png")
@@ -21,18 +18,10 @@ var left_cursor: Texture2D
 var right_cursor: Texture2D
 var down_cursor: Texture2D
 
-var left_arrow: Sprite2D
-var right_arrow: Sprite2D
-var down_arrow: Sprite2D
-
 func _ready() -> void:
-	left_cursor = LEFT_CURSOR
-	right_cursor = RIGHT_CURSOR
-	down_cursor = DOWN_CURSOR
-
-	left_arrow = _create_arrow("LeftArrow", left_cursor, LEFT_ARROW_POSITION)
-	right_arrow = _create_arrow("RightArrow", right_cursor, RIGHT_ARROW_POSITION)
-	down_arrow = _create_arrow("DownArrow", down_cursor, DOWN_ARROW_POSITION)
+	left_cursor = _prepare_cursor(LEFT_CURSOR)
+	right_cursor = _prepare_cursor(RIGHT_CURSOR)
+	down_cursor = _prepare_cursor(DOWN_CURSOR)
 
 	_create_edge_button("LeftNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(0, 0), Callable(self, "_go_left"))
 	_create_edge_button("RightNavigation", Vector2(EDGE_SIZE, _screen_height() - EDGE_SIZE), Vector2(_screen_width() - EDGE_SIZE, 0), Callable(self, "_go_right"))
@@ -91,16 +80,6 @@ func _resize_navigation_buttons() -> void:
 		down_button.size = Vector2(width, EDGE_SIZE)
 
 func _create_arrow(arrow_name: String, texture: Texture2D, position: Vector2) -> Sprite2D:
-	var arrow := Sprite2D.new()
-	arrow.name = arrow_name
-	arrow.texture = texture
-	arrow.position = position
-	arrow.centered = true
-	arrow.visible = false
-	add_child(arrow)
-	move_child(arrow, 0)
-	return arrow
-
 func _update_cursor(mouse_position: Vector2) -> void:
 	var width := _screen_width()
 	var height := _screen_height()
@@ -119,20 +98,20 @@ func _update_cursor(mouse_position: Vector2) -> void:
 	if not _is_direction_available(direction):
 		direction = ""
 
-	_update_arrow_visibility(direction)
-
 	if direction == current_direction:
 		return
 
 	current_direction = direction
 
-func _update_arrow_visibility(direction: String) -> void:
-	if left_arrow:
-		left_arrow.visible = direction == "left"
-	if right_arrow:
-		right_arrow.visible = direction == "right"
-	if down_arrow:
-		down_arrow.visible = direction == "down"
+	match direction:
+		"left":
+			Input.set_custom_mouse_cursor(left_cursor, Input.CURSOR_ARROW, _cursor_hotspot(left_cursor))
+		"right":
+			Input.set_custom_mouse_cursor(right_cursor, Input.CURSOR_ARROW, _cursor_hotspot(right_cursor))
+		"down":
+			Input.set_custom_mouse_cursor(down_cursor, Input.CURSOR_ARROW, _cursor_hotspot(down_cursor))
+		_:
+			Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 
 func _is_direction_available(direction: String) -> bool:
 	var current_scene_path := get_tree().current_scene.scene_file_path
@@ -181,6 +160,25 @@ func _change_scene(scene_path: String) -> void:
 
 func _exit_tree() -> void:
 	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+
+func _prepare_cursor(texture: Texture2D) -> Texture2D:
+	var image := texture.get_image()
+	if image == null or image.is_empty():
+		return texture
+
+	var max_dimension: int = maxi(image.get_width(), image.get_height())
+	if max_dimension <= CURSOR_MAX_SIZE:
+		return texture
+
+	var scale_factor: float = CURSOR_MAX_SIZE / float(max_dimension)
+	var new_width: int = maxi(1, roundi(image.get_width() * scale_factor))
+	var new_height: int = maxi(1, roundi(image.get_height() * scale_factor))
+	image.resize(new_width, new_height, Image.INTERPOLATE_NEAREST)
+	return ImageTexture.create_from_image(image)
+
+func _cursor_hotspot(texture: Texture2D) -> Vector2:
+	# Keep the hotspot inside the image so Godot accepts the custom cursor.
+	return Vector2(floor(texture.get_width() * 0.5), floor(texture.get_height() * 0.5))
 
 func _screen_width() -> float:
 	return get_viewport().get_visible_rect().size.x
