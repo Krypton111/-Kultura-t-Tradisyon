@@ -79,7 +79,6 @@ func _resize_navigation_buttons() -> void:
 		down_button.position = Vector2(0, height - EDGE_SIZE)
 		down_button.size = Vector2(width, EDGE_SIZE)
 
-func _create_arrow(arrow_name: String, texture: Texture2D, position: Vector2) -> Sprite2D:
 func _update_cursor(mouse_position: Vector2) -> void:
 	var width := _screen_width()
 	var height := _screen_height()
