@@ -34,11 +34,10 @@ position = Vector2(576, 324)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("2_a8lmu")
 
-[node name="WindowClosed" type="Sprite2D" parent="Area2D" unique_id=2117117831]
-visible = false
-position = Vector2(576, 323.99994)
-scale = Vector2(0.24000001, 0.24000001)
-texture = ExtResource("3_x3ibj")
+[node name="Stand+openTv" type="Sprite2D" parent="Area2D" unique_id=1888162062]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("8_kpdbn")
 
 [node name="WindowOpen" type="Sprite2D" parent="." unique_id=1275995419]
 position = Vector2(576, 324)
@@ -61,7 +60,8 @@ position = Vector2(576, 324)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("7_3pyx6")
 
-[node name="Stand+openTv" type="Sprite2D" parent="." unique_id=1888162062]
-position = Vector2(576, 324)
-scale = Vector2(0.24, 0.24)
-texture = ExtResource("8_kpdbn")
+[node name="WindowClosed" type="Sprite2D" parent="." unique_id=2117117831]
+visible = false
+position = Vector2(576, 323.99994)
+scale = Vector2(0.24000001, 0.24000001)
+texture = ExtResource("3_x3ibj")
