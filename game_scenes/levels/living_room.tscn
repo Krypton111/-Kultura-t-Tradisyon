@@ -69,4 +69,4 @@ position = Vector2(576, 324)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("7_3pyx6")
 
-[node name="HUD" parent="." instance=ExtResource("10_hud")]
+[node name="HUD" parent="." unique_id=288243813 instance=ExtResource("10_hud")]
