@@ -17,14 +17,22 @@ func _input(event: InputEvent) -> void:
 		var hud := get_node_or_null("/root/HUD")
 		if hud and hud.has_method("reveal_camera"):
 			hud.reveal_camera()
-			get_viewport().set_input_as_handled()
+		if camera_sprite:
+			camera_sprite.queue_free()
+		get_viewport().set_input_as_handled()
 		return
 
 	if _is_opaque_pixel_at(journal_sprite, mouse_position):
 		var hud := get_node_or_null("/root/HUD")
 		if hud and hud.has_method("reveal_journal"):
 			hud.reveal_journal()
-			get_viewport().set_input_as_handled()
+		if journal_sprite:
+			journal_sprite.queue_free()
+		get_viewport().set_input_as_handled()
+
+func is_hovering_room_interactable(global_position: Vector2) -> bool:
+	return _is_opaque_pixel_at(get_node_or_null("Journal") as Sprite2D, global_position) \
+		or _is_opaque_pixel_at(get_node_or_null("Camera") as Sprite2D, global_position)
 
 func _is_opaque_pixel_at(sprite: Sprite2D, global_position: Vector2) -> bool:
 	if sprite == null or not sprite.visible or sprite.texture == null:
