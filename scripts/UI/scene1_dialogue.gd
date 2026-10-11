@@ -136,10 +136,12 @@ func _finish_dialogue() -> void:
 	_set_lola_dialogue_pose(false)
 	dialogue_active = false
 	visible = false
-	sequence_finished.emit()
 	var hud := get_node_or_null("/root/HUD")
 	if hud != null:
 		hud.set("navigation_locked", false)
+	# Emit last so a follow-up sequence can lock navigation without this one
+	# accidentally unlocking it afterward.
+	sequence_finished.emit()
 	queue_free()
 
 
