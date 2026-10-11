@@ -6,6 +6,7 @@ signal close_requested
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	z_index = 1100 # Render above the HUD transition fade and navigation layer.
 	_create_leave_button()
 
 func _unhandled_key_input(event: InputEvent) -> void:
