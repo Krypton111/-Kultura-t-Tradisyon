@@ -50,7 +50,8 @@ var typewriter_tween: Tween
 func _ready() -> void:
 	visible = false
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	generic_name_box.visible = false
+	# Keep the generic nameplate visible behind the character-specific name images.
+	generic_name_box.visible = true
 	migs_name_box.visible = false
 	lola_name_box.visible = false
 
