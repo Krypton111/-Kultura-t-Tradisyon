@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://btxa7awki5bhm" path="res://GAME ASSETS/Migs Room/camera.png" id="5_h1phc"]
 [ext_resource type="Texture2D" uid="uid://bmbxb4ag5xqxl" path="res://GAME ASSETS/Migs Room/journal.png" id="6_4poho"]
 [ext_resource type="Texture2D" uid="uid://b4dddi4qdbebe" path="res://GAME ASSETS/Migs Room/phone.png" id="7_2n41w"]
+[ext_resource type="Script" path="res://scripts/migs room/migs_room.gd" id="8_interact"]
 
 [node name="Control" type="Control" unique_id=805999452]
 layout_mode = 3
@@ -15,6 +16,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("8_interact")
 
 [node name="Mig\'sRoom" type="Sprite2D" parent="." unique_id=1069283325]
 position = Vector2(576, 323.99997)
