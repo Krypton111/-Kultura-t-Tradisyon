@@ -134,6 +134,10 @@ func _input(event: InputEvent) -> void:
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
 		return
+	var hud := get_node_or_null("/root/HUD")
+	# Do not intercept clicks intended for the opening dialogue or room transitions.
+	if hud == null or bool(hud.get("navigation_locked")):
+		return
 
 	var mouse_position := get_global_mouse_position()
 	var children := get_children()
