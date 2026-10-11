@@ -1,11 +1,45 @@
-extends Node
+extends Control
 
+const HIT_ALPHA_THRESHOLD := 0.1
 
-# Called when the node enters the scene tree for the first time.
-func _ready() -> void:
-	pass # Replace with function body.
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton):
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
+		return
 
+	var mouse_position := get_global_mouse_position()
+	var journal_sprite := get_node_or_null("Journal") as Sprite2D
+	var camera_sprite := get_node_or_null("Camera") as Sprite2D
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+	# Check the camera first so its opaque pixels win if the artwork overlaps.
+	if _is_opaque_pixel_at(camera_sprite, mouse_position):
+		var hud := get_node_or_null("/root/HUD")
+		if hud and hud.has_method("reveal_camera"):
+			hud.reveal_camera()
+			get_viewport().set_input_as_handled()
+		return
+
+	if _is_opaque_pixel_at(journal_sprite, mouse_position):
+		var hud := get_node_or_null("/root/HUD")
+		if hud and hud.has_method("reveal_journal"):
+			hud.reveal_journal()
+			get_viewport().set_input_as_handled()
+
+func _is_opaque_pixel_at(sprite: Sprite2D, global_position: Vector2) -> bool:
+	if sprite == null or not sprite.visible or sprite.texture == null:
+		return false
+
+	var local_position := sprite.to_local(global_position)
+	var rect := sprite.get_rect()
+	if not rect.has_point(local_position):
+		return false
+
+	var image := sprite.texture.get_image()
+	if image == null or image.is_empty():
+		return false
+
+	var uv := (local_position - rect.position) / rect.size
+	var pixel_x := clampi(int(uv.x * image.get_width()), 0, image.get_width() - 1)
+	var pixel_y := clampi(int(uv.y * image.get_height()), 0, image.get_height() - 1)
+	return image.get_pixel(pixel_x, pixel_y).a > HIT_ALPHA_THRESHOLD
