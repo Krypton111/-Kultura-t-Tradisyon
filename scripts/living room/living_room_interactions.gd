@@ -14,7 +14,9 @@ func _ready() -> void:
 
 	# Once both items have been collected, Lola has moved to the kitchen.
 	var hud := get_node_or_null("/root/HUD")
-	var lola_has_moved := hud != null and hud.has_method("has_collected_room_items") and hud.has_collected_room_items()
+	var lola_has_moved: bool = false
+	if hud != null and hud.has_method("has_collected_room_items"):
+		lola_has_moved = bool(hud.call("has_collected_room_items"))
 	if lola_has_moved:
 		lola_not_looking.visible = false
 		lola_looking.visible = false
