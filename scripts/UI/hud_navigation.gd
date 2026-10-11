@@ -24,6 +24,7 @@ const LIVING_ROOM := "res://game_scenes/levels/living_room.tscn"
 const KITCHEN := "res://game_scenes/levels/kitchen.tscn"
 const MIGS_ROOM := "res://game_scenes/levels/migs_room.tscn"
 const BACKYARD := "res://game_scenes/levels/backyard.tscn"
+const JOURNAL_SCENE: PackedScene = preload("res://game_scenes/UI scenes/journal.tscn")
 
 var current_direction := ""
 var navigation_locked := false
@@ -35,6 +36,7 @@ var fade_rect: ColorRect
 var fade_tween: Tween
 var footsteps_player: AudioStreamPlayer
 var journal_is_open := false
+var journal_overlay_instance: Control
 var journal_close: Sprite2D
 var journal_open: Sprite2D
 var camera_icon: Sprite2D
@@ -142,6 +144,9 @@ func _is_hovering_journal() -> bool:
 	return over_close or over_open
 
 func _input(event: InputEvent) -> void:
+	# While the journal overlay is open, let it handle its own controls.
+	if journal_is_open:
+		return
 	if not (event is InputEventMouseButton):
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
@@ -153,10 +158,37 @@ func _input(event: InputEvent) -> void:
 	var over_close := journal_close.visible and journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
 	var over_open := journal_open.visible and journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
 	if over_close or over_open:
-		journal_is_open = not journal_is_open
-		journal_close.visible = not journal_is_open
-		journal_open.visible = journal_is_open
+		_open_journal_overlay()
 		get_viewport().set_input_as_handled()
+
+func _open_journal_overlay() -> void:
+	if journal_is_open or JOURNAL_SCENE == null:
+		return
+
+	journal_overlay_instance = JOURNAL_SCENE.instantiate() as Control
+	if journal_overlay_instance == null:
+		push_warning("The journal scene root must be a Control node.")
+		return
+
+	journal_is_open = true
+	if journal_close:
+		journal_close.visible = false
+	if journal_open:
+		journal_open.visible = true
+
+	journal_overlay_instance.close_requested.connect(_close_journal_overlay)
+	add_child(journal_overlay_instance)
+
+func _close_journal_overlay() -> void:
+	journal_is_open = false
+	if is_instance_valid(journal_overlay_instance):
+		journal_overlay_instance.queue_free()
+	journal_overlay_instance = null
+
+	if journal_close:
+		journal_close.visible = journal_collected
+	if journal_open:
+		journal_open.visible = false
 
 func _on_viewport_resized() -> void:
 	_resize_navigation_buttons()
