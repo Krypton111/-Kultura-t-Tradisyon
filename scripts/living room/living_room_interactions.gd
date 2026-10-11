@@ -9,6 +9,9 @@ extends Control
 @onready var lola_looking: Sprite2D = get_node("LolaNenaLooking")
 
 func _ready() -> void:
+	# Shared hook for dialogue scenes: Lola looks toward Migs during
+	# living-room conversations and returns to her idle pose afterward.
+	add_to_group("living_room_scene")
 	closed_tv.visible = true
 	open_tv.visible = false
 
@@ -73,6 +76,14 @@ func _ready() -> void:
 		else:
 			push_warning("Could not load the opening dialogue scene.")
 			hud.set("navigation_locked", false)
+
+func set_lola_dialogue_pose(is_looking_at_migs: bool) -> void:
+	# If Lola has already moved out of the living room, leave both sprites hidden.
+	if not lola_not_looking.visible and not lola_looking.visible:
+		return
+
+	lola_looking.visible = is_looking_at_migs
+	lola_not_looking.visible = not is_looking_at_migs
 
 func _create_tv_button() -> void:
 	var button := Button.new()
