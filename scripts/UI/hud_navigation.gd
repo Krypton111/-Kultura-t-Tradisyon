@@ -90,9 +90,9 @@ func _is_hovering_journal() -> bool:
 		return false
 
 	var mouse_position := get_viewport().get_mouse_position()
-	if journal_is_open:
-		return journal_open.visible and journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
-	return journal_close.visible and journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
+	var over_close := journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
+	var over_open := journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
+	return over_close or over_open
 
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton):
