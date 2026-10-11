@@ -86,12 +86,22 @@ func reveal_journal() -> void:
 	if journal_close == null or journal_open == null:
 		return
 	journal_is_open = false
-	journal_close.visible = true
+	journal_close.visible = false
 	journal_open.visible = false
+	_fade_hud_sprite_in(journal_close)
 
 func reveal_camera() -> void:
 	if camera_icon:
-		camera_icon.visible = true
+		_fade_hud_sprite_in(camera_icon)
+
+func _fade_hud_sprite_in(sprite: Sprite2D) -> void:
+	if sprite == null:
+		return
+
+	sprite.visible = true
+	sprite.modulate.a = 0.0
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate:a", 1.0, 0.4)
 
 func _update_journal_hover() -> void:
 	if journal_close == null or journal_open == null or journal_is_open:
