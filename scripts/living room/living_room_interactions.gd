@@ -92,8 +92,6 @@ func _ready() -> void:
 	var lola_has_moved := false
 	if hud != null:
 		lola_has_moved = bool(hud.get_meta("living_room_heritage_completed", false))
-		if hud.has_method("has_collected_room_items"):
-			lola_has_moved = lola_has_moved or bool(hud.call("has_collected_room_items"))
 	if lola_has_moved:
 		lola_not_looking.visible = false
 		lola_looking.visible = false
