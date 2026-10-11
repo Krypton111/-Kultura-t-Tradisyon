@@ -37,6 +37,7 @@ var footsteps_player: AudioStreamPlayer
 var journal_is_open := false
 var journal_close: Sprite2D
 var journal_open: Sprite2D
+var camera_icon: Sprite2D
 
 var room_scenes := {
 	LIVING_ROOM: preload("res://game_scenes/levels/living_room.tscn"),
@@ -71,13 +72,29 @@ func _process(_delta: float) -> void:
 func _setup_journal_toggle() -> void:
 	journal_close = get_node_or_null("JournalClose") as Sprite2D
 	journal_open = get_node_or_null("JournalOpen") as Sprite2D
-	if journal_close and journal_open:
-		journal_is_open = false
-		journal_close.visible = true
+	camera_icon = get_node_or_null("Camera") as Sprite2D
+
+	journal_is_open = false
+	if journal_close:
+		journal_close.visible = false
+	if journal_open:
 		journal_open.visible = false
+	if camera_icon:
+		camera_icon.visible = false
+
+func reveal_journal() -> void:
+	if journal_close == null or journal_open == null:
+		return
+	journal_is_open = false
+	journal_close.visible = true
+	journal_open.visible = false
+
+func reveal_camera() -> void:
+	if camera_icon:
+		camera_icon.visible = true
 
 func _update_journal_hover() -> void:
-	if journal_close == null or journal_open == null or journal_is_open:
+	if journal_close == null or journal_open == null or journal_is_open or not journal_close.visible:
 		return
 
 	var mouse_position := get_viewport().get_mouse_position()
@@ -90,8 +107,8 @@ func _is_hovering_journal() -> bool:
 		return false
 
 	var mouse_position := get_viewport().get_mouse_position()
-	var over_close := journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
-	var over_open := journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
+	var over_close := journal_close.visible and journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
+	var over_open := journal_open.visible and journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
 	return over_close or over_open
 
 func _input(event: InputEvent) -> void:
@@ -103,8 +120,8 @@ func _input(event: InputEvent) -> void:
 		return
 
 	var mouse_position := get_viewport().get_mouse_position()
-	var over_close := journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
-	var over_open := journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
+	var over_close := journal_close.visible and journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
+	var over_open := journal_open.visible and journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
 	if over_close or over_open:
 		journal_is_open = not journal_is_open
 		journal_close.visible = not journal_is_open
