@@ -274,12 +274,8 @@ func _resize_navigation_buttons() -> void:
 		fade_rect.size = Vector2(_screen_width(), _screen_height())
 
 func _update_cursor(mouse_position: Vector2) -> void:
-	if _is_hovering_journal() or _is_hovering_room_interactable(mouse_position):
-		if current_direction != "journal":
-			current_direction = "journal"
-			Input.set_custom_mouse_cursor(magnify_cursor, Input.CURSOR_ARROW, _cursor_hotspot(magnify_cursor))
-		return
-
+	# Give room-navigation hotspots priority so room objects cannot hide the
+	# right-arrow cursor when the player is trying to enter Migs' room.
 	var direction := ""
 	var left_hotspot_size := Vector2(LEFT_NAV_WIDTH, LEFT_NAV_HEIGHT)
 	var right_hotspot_size := Vector2(RIGHT_NAV_WIDTH, RIGHT_NAV_HEIGHT)
@@ -307,20 +303,28 @@ func _update_cursor(mouse_position: Vector2) -> void:
 	if not _is_direction_available(direction):
 		direction = ""
 
-	if direction == current_direction:
+	if direction != "":
+		if direction == current_direction:
+			return
+		current_direction = direction
+		match direction:
+			"left":
+				Input.set_custom_mouse_cursor(left_cursor, Input.CURSOR_ARROW, _cursor_hotspot(left_cursor))
+			"right":
+				Input.set_custom_mouse_cursor(right_cursor, Input.CURSOR_ARROW, _cursor_hotspot(right_cursor))
+			"down":
+				Input.set_custom_mouse_cursor(down_cursor, Input.CURSOR_ARROW, _cursor_hotspot(down_cursor))
 		return
 
-	current_direction = direction
+	if _is_hovering_journal() or _is_hovering_room_interactable(mouse_position):
+		if current_direction != "journal":
+			current_direction = "journal"
+			Input.set_custom_mouse_cursor(magnify_cursor, Input.CURSOR_ARROW, _cursor_hotspot(magnify_cursor))
+		return
 
-	match direction:
-		"left":
-			Input.set_custom_mouse_cursor(left_cursor, Input.CURSOR_ARROW, _cursor_hotspot(left_cursor))
-		"right":
-			Input.set_custom_mouse_cursor(right_cursor, Input.CURSOR_ARROW, _cursor_hotspot(right_cursor))
-		"down":
-			Input.set_custom_mouse_cursor(down_cursor, Input.CURSOR_ARROW, _cursor_hotspot(down_cursor))
-		_:
-			Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+	if current_direction != "":
+		current_direction = ""
+		Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
 
 func _is_direction_available(direction: String) -> bool:
 	var current_scene := get_tree().current_scene
