@@ -176,7 +176,7 @@ func _open_journal_overlay() -> void:
 	if journal_open:
 		journal_open.visible = true
 
-	journal_overlay_instance.close_requested.connect(_close_journal_overlay)
+	journal_overlay_instance.connect("close_requested", Callable(self, "_close_journal_overlay"))
 	add_child(journal_overlay_instance)
 
 func _close_journal_overlay() -> void:
