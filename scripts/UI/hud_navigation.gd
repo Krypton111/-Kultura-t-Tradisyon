@@ -101,6 +101,12 @@ func reveal_camera() -> void:
 func has_collected_room_items() -> bool:
 	return camera_collected and journal_collected
 
+func has_collected_camera() -> bool:
+	return camera_collected
+
+func has_collected_journal() -> bool:
+	return journal_collected
+
 func _fade_hud_sprite_in(sprite: Sprite2D) -> void:
 	if sprite == null:
 		return
