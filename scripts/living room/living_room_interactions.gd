@@ -2,64 +2,70 @@ extends Control
 
 const HERITAGE_STORIES: Dictionary = {
 	"FamilyPicture": {
-		"title": "A Picture That Keeps Us Together",
-		"migs": "Lola, who are all the people in this old family picture?",
-		"lola": "That was taken during one of our family gatherings. Some faces are no longer with us, but this picture helps me remember their laughter and the way we celebrated together.",
-		"entry": "Family photographs preserve memories of loved ones, gatherings, and traditions. Recording the people and occasion in a photo helps future generations understand its story."
+		"title": "A Family Photograph",
+		"migs": "Lola, who is in this family picture?",
+		"lola": "That was one of our family gatherings. This picture keeps those happy moments close.",
+		"entry": "Family photographs preserve loved ones, gatherings, and shared memories."
 	},
 	"LolaNenaPortrait": {
-		"title": "The Face Behind the Stories",
-		"migs": "Lola, this portrait looks like it has been here for a long time. Who kept it safe?",
-		"lola": "Your great-grandmother treasured it. A portrait reminds us that every generation has people whose lives and choices helped shape our family.",
-		"entry": "Portraits help preserve the memory of people from earlier generations. Their names and stories give the image meaning beyond the frame."
+		"title": "A Face from the Past",
+		"migs": "Lola, who is in this old portrait?",
+		"lola": "Your great-grandmother. Her stories remind us of the people who came before us.",
+		"entry": "Portraits preserve memories of earlier generations and the lives they lived."
 	},
 	"Salakot": {
-		"title": "A Hat Made for Everyday Life",
-		"migs": "I've seen salakot before, but I never asked why people used them.",
-		"lola": "A salakot helped shield farmers and workers from the sun and rain. It tells a story about the resourcefulness of people and the work that sustained their communities.",
-		"entry": "The salakot is a traditional Filipino hat associated with practical everyday life, especially outdoor work. Learning how and why it was used preserves knowledge of local ways of living."
+		"title": "The Salakot",
+		"migs": "What was the salakot used for, Lola?",
+		"lola": "It helped protect farmers from the sun and rain. It was made for everyday work.",
+		"entry": "The salakot reflects Filipino ingenuity and traditional everyday life."
 	},
 	"Books": {
-		"title": "Pages Worth Passing On",
-		"migs": "Are these books still important even if some of them are old?",
-		"lola": "Of course, hijo. Books carry ideas, language, and memories from one reader to another. The notes and names inside can tell their own stories, too.",
-		"entry": "Books preserve knowledge, language, and ideas. Keeping them safe and noting who owned or read them can help future generations discover their history."
+		"title": "Books Full of Stories",
+		"migs": "Why do you keep these old books?",
+		"lola": "Books carry ideas, language, and memories from one generation to the next.",
+		"entry": "Books preserve knowledge, language, and ideas across generations."
 	},
 	"Urn": {
-		"title": "A Vessel with a Past",
-		"migs": "Lola, do you know where this urn came from?",
-		"lola": "It has been kept in our family for years. Before we decide what it means, we should ask the elders who remember it and record what they know instead of guessing.",
-		"entry": "An old vessel can be part of a family's material heritage. Its origin and purpose should be documented through reliable family memories rather than assumptions."
+		"title": "The Old Urn",
+		"migs": "Do you know where this urn came from?",
+		"lola": "It has been here for years. We should ask our elders before guessing its story.",
+		"entry": "Record an object's history carefully, using reliable memories instead of guesses."
 	},
 	"Plants": {
-		"title": "A Living Tradition",
-		"migs": "You take such good care of these plants, Lola. Did someone teach you?",
-		"lola": "My mother did. She taught me which plants liked the shade and how to care for them. I passed those little lessons on by doing them every day.",
-		"entry": "Gardening knowledge can be part of living heritage. Plant care, family routines, and knowledge passed from one generation to another are traditions worth recording."
+		"title": "Lessons in the Garden",
+		"migs": "Who taught you to care for plants, Lola?",
+		"lola": "My mother did. I learned by watching her and caring for them every day.",
+		"entry": "Plant care can preserve family routines and knowledge passed down over time."
 	},
 	"Plants3": {
-		"title": "Green Things, Old Lessons",
-		"migs": "Did our family always keep plants around the house?",
-		"lola": "As long as I can remember. Caring for them taught us patience and responsibility. Sometimes traditions survive through simple habits we repeat together.",
-		"entry": "Everyday routines, such as tending household plants, can carry family values and memories. Recording who taught the practice helps keep it alive."
+		"title": "A Living Tradition",
+		"migs": "Have we always kept plants at home?",
+		"lola": "As long as I can remember. Caring for them taught us patience.",
+		"entry": "Everyday habits can become traditions when families pass them on."
 	},
 	"Banig": {
-		"title": "Woven by Hand, Remembered by Heart",
-		"migs": "This banig looks simple, but it has such a distinct pattern.",
-		"lola": "A banig is woven with care, and patterns and techniques can differ from place to place. The skill behind it deserves to be remembered, not just the finished mat.",
-		"entry": "A banig is a woven mat and an example of Filipino craft heritage. Remembering the maker, materials, place, and weaving technique helps preserve the knowledge behind it."
+		"title": "The Woven Banig",
+		"migs": "Who makes a banig, Lola?",
+		"lola": "Skilled weavers make these mats by hand. Their patterns and techniques deserve to be remembered.",
+		"entry": "A banig preserves traditional weaving skills, patterns, and local craft knowledge."
 	},
 	"TableRadio": {
-		"title": "Voices from Another Time",
-		"migs": "Did you listen to this radio when you were younger?",
-		"lola": "We gathered around it for news, music, and stories. Families shared the same broadcasts, and those moments became memories of their own.",
-		"entry": "An old radio can remind a family how people received news, music, and entertainment. Recording what they listened to turns an object into a window to everyday life."
+		"title": "Voices on the Radio",
+		"migs": "Did you listen to this radio when you were young?",
+		"lola": "We listened to news and music together. Those broadcasts became family memories.",
+		"entry": "Old radios show how families once shared news, music, and entertainment."
 	},
 	"PictureFrameTopleft": {
-		"title": "Look Beyond the Frame",
-		"migs": "Why do we keep old pictures instead of replacing them?",
-		"lola": "Because the people and moments in them matter. A frame protects a picture, but the story we tell about it is what helps it live on.",
-		"entry": "Picture frames protect treasured images, but oral history gives those images context. Names, dates, places, and memories make photographs more meaningful."
+		"title": "More Than a Frame",
+		"migs": "Why keep old pictures instead of replacing them?",
+		"lola": "The people and moments matter, hijo. Their stories make each picture precious.",
+		"entry": "Names, dates, and memories give photographs meaning beyond their frames."
+	},
+	"Plants2Up": {
+		"title": "Care Passed Down",
+		"migs": "These plants look carefully tended, Lola.",
+		"lola": "They remind me of the small lessons my family taught me about caring for our home.",
+		"entry": "Caring for household plants can preserve family knowledge and daily traditions."
 	}
 }
 
@@ -74,6 +80,8 @@ const HERITAGE_STORIES: Dictionary = {
 var _heritage_dialogue_open := false
 var _story_images: Dictionary = {}
 var _recorded_story_ids: Array[String] = []
+var _visited_story_ids: Array[String] = []
+var _final_kitchen_dialogue_started := false
 
 func _ready() -> void:
 	add_to_group("living_room_scene")
@@ -161,137 +169,88 @@ func _is_opaque_pixel_clicked(sprite: Sprite2D, mouse_position: Vector2, image: 
 	return image.get_pixelv(pixel).a > 0.12
 
 func _open_heritage_story(object_name: String) -> void:
-	var hud := get_node_or_null("/root/HUD")
-	if hud == null:
+	if _heritage_dialogue_open or not HERITAGE_STORIES.has(object_name):
 		return
-	if hud.has_method("get") and bool(hud.get("navigation_locked")):
+	var hud := get_node_or_null("/root/HUD")
+	if hud == null or bool(hud.get("navigation_locked")):
 		return
 
 	var story: Dictionary = HERITAGE_STORIES[object_name]
+	var lines: Array[Dictionary] = [
+		{"speaker": "Migs", "text": str(story["migs"])},
+		{"speaker": "Lola Nena", "text": str(story["lola"])}
+	]
+	_start_living_room_dialogue(lines, Callable(self, "_on_object_dialogue_finished").bind(object_name))
+
+func _start_living_room_dialogue(lines: Array[Dictionary], finished_callback: Callable) -> void:
+	var hud := get_node_or_null("/root/HUD")
+	if hud == null:
+		return
+	var dialogue_scene := load("res://game_scenes/UI scenes/dialogue.tscn") as PackedScene
+	if dialogue_scene == null:
+		push_warning("Could not load the dialogue scene.")
+		return
 	_heritage_dialogue_open = true
 	hud.set("navigation_locked", true)
-	var overlay := Control.new()
-	overlay.name = "HeritageStoryOverlay"
-	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.z_index = 1050
-	hud.add_child(overlay)
+	var dialogue := dialogue_scene.instantiate()
+	hud.add_child(dialogue)
+	dialogue.sequence_finished.connect(finished_callback)
+	dialogue.call("start_custom_sequence", lines)
 
-	var shade := ColorRect.new()
-	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	shade.color = Color(0.035, 0.045, 0.055, 0.78)
-	shade.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.add_child(shade)
-
-	var panel := PanelContainer.new()
-	panel.name = "StoryCard"
-	panel.position = Vector2(180, 110)
-	panel.size = Vector2(792, 430)
-	panel.add_theme_stylebox_override("panel", _make_story_panel_style())
-	overlay.add_child(panel)
-
-	var layout := VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 12)
-	panel.add_child(layout)
-
-	var eyebrow := Label.new()
-	eyebrow.text = "LOLA NENA'S LIVING ROOM  •  HERITAGE JOURNAL"
-	eyebrow.add_theme_font_size_override("font_size", 13)
-	eyebrow.add_theme_color_override("font_color", Color(0.78, 0.65, 0.39))
-	layout.add_child(eyebrow)
-
-	var title := Label.new()
-	title.text = str(story["title"])
-	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	title.add_theme_font_size_override("font_size", 25)
-	title.add_theme_color_override("font_color", Color(0.96, 0.91, 0.79))
-	layout.add_child(title)
-
-	var migs_line := _make_story_line("MIGS", str(story["migs"]), Color(0.62, 0.78, 0.91))
-	layout.add_child(migs_line)
-	var lola_line := _make_story_line("LOLA NENA", str(story["lola"]), Color(0.86, 0.72, 0.48))
-	layout.add_child(lola_line)
-
-	var note := Label.new()
-	note.text = "JOURNAL NOTE  •  " + str(story["entry"])
-	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	note.add_theme_font_size_override("font_size", 14)
-	note.add_theme_color_override("font_color", Color(0.86, 0.85, 0.80))
-	layout.add_child(note)
-
-	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	layout.add_child(spacer)
-
-	var buttons := HBoxContainer.new()
-	buttons.alignment = BoxContainer.ALIGNMENT_END
-	buttons.add_theme_constant_override("separation", 10)
-	layout.add_child(buttons)
-
-	var close_button := Button.new()
-	close_button.text = "KEEP EXPLORING"
-	close_button.custom_minimum_size = Vector2(180, 42)
-	close_button.pressed.connect(func() -> void: _close_heritage_story(overlay, hud))
-	buttons.add_child(close_button)
-
-	var record_button := Button.new()
-	record_button.text = "✦  RECORD IN JOURNAL"
-	record_button.custom_minimum_size = Vector2(230, 42)
-	record_button.add_theme_color_override("font_color", Color(0.12, 0.13, 0.13))
-	record_button.add_theme_stylebox_override("normal", _make_record_button_style())
-	record_button.add_theme_stylebox_override("hover", _make_record_button_style(true))
-	record_button.pressed.connect(func() -> void:
-		if not _recorded_story_ids.has(object_name):
-			if hud.has_method("record_heritage_entry"):
-				hud.call("record_heritage_entry", str(story["title"]), str(story["entry"]))
-			_recorded_story_ids.append(object_name)
-		_close_heritage_story(overlay, hud)
-	)
-	buttons.add_child(record_button)
-
-func _make_story_line(speaker: String, words: String, speaker_color: Color) -> Control:
-	var container := VBoxContainer.new()
-	container.add_theme_constant_override("separation", 3)
-	var name_label := Label.new()
-	name_label.text = speaker
-	name_label.add_theme_font_size_override("font_size", 12)
-	name_label.add_theme_color_override("font_color", speaker_color)
-	container.add_child(name_label)
-	var line := Label.new()
-	line.text = words
-	line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	line.add_theme_font_size_override("font_size", 16)
-	line.add_theme_color_override("font_color", Color(0.94, 0.92, 0.86))
-	container.add_child(line)
-	return container
-
-func _make_story_panel_style() -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.10, 0.13, 0.15, 0.98)
-	style.border_color = Color(0.72, 0.57, 0.32)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(12)
-	style.content_margin_left = 26
-	style.content_margin_right = 26
-	style.content_margin_top = 22
-	style.content_margin_bottom = 22
-	return style
-
-func _make_record_button_style(hovered: bool = false) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.86, 0.72, 0.48) if hovered else Color(0.78, 0.64, 0.39)
-	style.set_corner_radius_all(7)
-	style.content_margin_left = 12
-	style.content_margin_right = 12
-	style.content_margin_top = 7
-	style.content_margin_bottom = 7
-	return style
-
-func _close_heritage_story(overlay: Control, hud: Node) -> void:
+func _on_object_dialogue_finished(object_name: String) -> void:
 	_heritage_dialogue_open = false
-	if is_instance_valid(overlay):
-		overlay.queue_free()
-	hud.set("navigation_locked", false)
+	var story: Dictionary = HERITAGE_STORIES[object_name]
+	var hud := get_node_or_null("/root/HUD")
+	if hud != null and not _recorded_story_ids.has(object_name):
+		_recorded_story_ids.append(object_name)
+		if hud.has_method("record_heritage_entry"):
+			hud.call("record_heritage_entry", str(story["title"]), str(story["entry"]))
+	if not _visited_story_ids.has(object_name):
+		_visited_story_ids.append(object_name)
+	if _visited_story_ids.size() >= HERITAGE_STORIES.size() and not _final_kitchen_dialogue_started:
+		_final_kitchen_dialogue_started = true
+		_start_kitchen_reminder_dialogue()
+	elif hud != null:
+		hud.set("navigation_locked", false)
+
+func _start_kitchen_reminder_dialogue() -> void:
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "We’ve remembered so many stories today, Migs."},
+		{"speaker": "Migs", "text": "I’m glad we wrote them down, Lola."},
+		{"speaker": "Lola Nena", "text": "It’s almost tanghali. I need to start cooking in the kitchen."},
+		{"speaker": "Migs", "text": "Sige, Lola. I’ll let you get started!"}
+	]
+	_start_living_room_dialogue(lines, Callable(self, "_on_kitchen_reminder_finished"))
+
+func _on_kitchen_reminder_finished() -> void:
+	_heritage_dialogue_open = false
+	var hud := get_node_or_null("/root/HUD")
+	if hud != null:
+		hud.set_meta("living_room_heritage_completed", true)
+		hud.set("navigation_locked", false)
+	# Lola has left the living room to begin preparing lunch.
+	lola_not_looking.visible = false
+	lola_looking.visible = false
+
+func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
+	if _heritage_dialogue_open:
+		return false
+	for object_name in HERITAGE_STORIES.keys():
+		var sprite := get_node_or_null(NodePath(str(object_name))) as Sprite2D
+		if sprite == null or not sprite.visible:
+			continue
+		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(object_name)):
+			return true
+	# Keep the magnifying cursor for the existing TV, window, and couch interactions too.
+	for node_name in ["Stand+closedTV", "Stand+openTv", "WindowOpen", "WindowClosed", "Couch+plant"]:
+		var sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
+		if sprite != null and sprite.visible and _is_opaque_pixel_clicked(sprite, mouse_position, sprite.texture.get_image()):
+			return true
+	return false
+
+func can_go_to_kitchen() -> bool:
+	var hud := get_node_or_null("/root/HUD")
+	return hud != null and bool(hud.get_meta("living_room_heritage_completed", false))
 
 func set_lola_dialogue_pose(is_looking_at_migs: bool) -> void:
 	if not lola_not_looking.visible and not lola_looking.visible:
