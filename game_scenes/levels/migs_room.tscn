@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c0visnntkasro"]
 
-[ext_resource type="Texture2D" uid="uid://kbrcm6oknhdx" path="res://GAME ASSETS/Migs Room/migsroom.png" id="1_0kr71"]
+[ext_resource type="Texture2D" path="res://GAME ASSETS/Migs Room/Mig's Room.png" id="1_0kr71"]
 [ext_resource type="Texture2D" uid="uid://dbd7my5fjgi65" path="res://GAME ASSETS/Migs Room/baskets.png" id="2_t46rn"]
 [ext_resource type="Texture2D" uid="uid://72iiqdyv026v" path="res://GAME ASSETS/Migs Room/table.png" id="3_bt2dd"]
 [ext_resource type="Texture2D" uid="uid://by3pa8s1wrj1l" path="res://GAME ASSETS/Migs Room/bed.png" id="4_peogm"]

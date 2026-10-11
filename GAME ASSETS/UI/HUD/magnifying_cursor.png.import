@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dirtjj10qeaea"
-path="res://.godot/imported/migsroom.png-997cd714af6d581be2db65d60f01bcc4.ctex"
+uid="uid://b4fwsl3xmww66"
+path="res://.godot/imported/magnifying_cursor.png-78ccc5c8ac35751c291c7492d104ed62.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://GAME ASSETS/Migs Room/migsroom.png"
-dest_files=["res://.godot/imported/migsroom.png-997cd714af6d581be2db65d60f01bcc4.ctex"]
+source_file="res://GAME ASSETS/UI/HUD/magnifying_cursor.png"
+dest_files=["res://.godot/imported/magnifying_cursor.png-78ccc5c8ac35751c291c7492d104ed62.ctex"]
 
 [params]
 
