@@ -1,11 +1,14 @@
-extends Node
+extends Control
 
-
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	pass # Replace with function body.
+	var lola := get_node_or_null("LolaNenaStanding") as Sprite2D
+	var hud := get_node_or_null("/root/HUD")
 
+	if lola == null:
+		return
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+	var items_collected := false
+	if hud and hud.has_method("has_collected_room_items"):
+		items_collected = hud.has_collected_room_items()
+
+	lola.visible = items_collected
