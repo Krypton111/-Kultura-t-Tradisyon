@@ -11,6 +11,7 @@
 [ext_resource type="Texture2D" uid="uid://y7ab2miiw2e7" path="res://GAME ASSETS/Kitchen/sinigang mix.png" id="9_fnneo"]
 [ext_resource type="Texture2D" uid="uid://ce63a85ejjdq2" path="res://GAME ASSETS/Kitchen/talong.png" id="10_l1isu"]
 [ext_resource type="Texture2D" uid="uid://dk38orvsk8bl8" path="res://GAME ASSETS/Kitchen/lola nena standing.png" id="11_1m8x2"]
+[ext_resource type="Script" path="res://scripts/kitchen.gd" id="12_kitchen_script"]
 
 [node name="Control" type="Control" unique_id=304763541]
 layout_mode = 3
@@ -19,6 +20,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("12_kitchen_script")
 
 [node name="Kitchen" type="Sprite2D" parent="." unique_id=1650102857]
 position = Vector2(576, 324)
