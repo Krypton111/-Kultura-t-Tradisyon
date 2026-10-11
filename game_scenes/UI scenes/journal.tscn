@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://du4f0ayctvfrj" path="res://GAME ASSETS/UI/HUD/journal_full.png" id="1_p28q0"]
 [ext_resource type="Texture2D" uid="uid://cpytrbjff71d6" path="res://GAME ASSETS/UI/HUD/journal_arrow_left.png" id="2_he3at"]
 [ext_resource type="Texture2D" uid="uid://bp72wk2t50a3l" path="res://GAME ASSETS/UI/HUD/journal_arrow_right.png" id="3_dypnn"]
+[ext_resource type="Texture2D" uid="uid://d16xy0us1mu11" path="res://GAME ASSETS/UI/HUD/leave_arrow.png" id="4_he3at"]
 
 [node name="Control" type="Control" unique_id=1514714484]
 layout_mode = 3
@@ -26,3 +27,8 @@ texture = ExtResource("2_he3at")
 position = Vector2(576, 324)
 scale = Vector2(0.3, 0.3)
 texture = ExtResource("3_dypnn")
+
+[node name="LeaveArrow" type="Sprite2D" parent="." unique_id=78194668]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("4_he3at")
