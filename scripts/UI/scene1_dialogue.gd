@@ -56,6 +56,8 @@ func _ready() -> void:
 	lola_name_box.visible = false
 
 func start_opening_sequence() -> void:
+	# All Migs–Lola conversations in the living room should use her looking pose.
+	_set_lola_dialogue_pose(true)
 	if dialogue_active:
 		return
 
@@ -125,6 +127,8 @@ func _on_typewriter_finished() -> void:
 		continue_hint.text = "CLICK OR PRESS ENTER TO CONTINUE  ›"
 
 func _finish_dialogue() -> void:
+	# Restore Lola's idle pose as soon as the conversation ends.
+	_set_lola_dialogue_pose(false)
 	dialogue_active = false
 	visible = false
 
@@ -133,3 +137,9 @@ func _finish_dialogue() -> void:
 		hud.set("navigation_locked", false)
 
 	queue_free()
+
+
+func _set_lola_dialogue_pose(is_looking_at_migs: bool) -> void:
+	var living_room := get_tree().get_first_node_in_group("living_room_scene")
+	if living_room != null and living_room.has_method("set_lola_dialogue_pose"):
+		living_room.call("set_lola_dialogue_pose", is_looking_at_migs)
