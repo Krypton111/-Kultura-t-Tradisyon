@@ -42,6 +42,7 @@ var journal_open: Sprite2D
 var camera_icon: Sprite2D
 var camera_collected := false
 var journal_collected := false
+var heritage_entries: Array[Dictionary] = []
 
 var room_scenes := {
 	LIVING_ROOM: preload("res://game_scenes/levels/living_room.tscn"),
@@ -94,6 +95,13 @@ func reveal_journal() -> void:
 	journal_close.visible = false
 	journal_open.visible = false
 	_fade_hud_sprite_in(journal_close)
+
+func record_heritage_entry(entry_title: String, entry_text: String) -> void:
+	for existing in heritage_entries:
+		if str(existing.get("title", "")) == entry_title:
+			return
+	heritage_entries.append({"title": entry_title, "text": entry_text})
+	set_meta("heritage_entries", heritage_entries.duplicate(true))
 
 func reveal_camera() -> void:
 	camera_collected = true
