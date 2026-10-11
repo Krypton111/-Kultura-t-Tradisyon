@@ -4,7 +4,8 @@
 [ext_resource type="Texture2D" uid="uid://dvhomds0hasc" path="res://GAME ASSETS/UI/dialogue/dialogue_design.png" id="2_nhraa"]
 [ext_resource type="Texture2D" uid="uid://cd7ei2fofvgj7" path="res://GAME ASSETS/UI/dialogue/dialogue_name_box.png" id="3_sfr7b"]
 [ext_resource type="Texture2D" uid="uid://sa30f2jt3oqf" path="res://GAME ASSETS/UI/dialogue/lola_nena_name_dialogue_box.png" id="4_tsr54"]
-[ext_resource type="Script" path="res://scripts/UI/scene1_dialogue.gd" id="5_dialogue"]
+[ext_resource type="Script" uid="uid://dh18r14y1wnt2" path="res://scripts/UI/scene1_dialogue.gd" id="5_dialogue"]
+[ext_resource type="Texture2D" uid="uid://cnav18jmpeg14" path="res://GAME ASSETS/UI/dialogue/migs_name_dialogue_box.png" id="6_2x82u"]
 
 [node name="Control" type="Control" unique_id=1517289160]
 layout_mode = 3
@@ -13,7 +14,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0
 script = ExtResource("5_dialogue")
 
 [node name="DialogueBox" type="Sprite2D" parent="." unique_id=1011845970]
@@ -36,41 +36,32 @@ position = Vector2(576, 326.00003)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("4_tsr54")
 
-[node name="SpeakerLabel" type="Label" parent="." unique_id=1861120101]
-offset_left = 302.0
-offset_top = 348.0
-offset_right = 630.0
-offset_bottom = 382.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.22, 0.14, 0.09, 1)
-theme_override_colors/font_shadow_color = Color(0.96, 0.88, 0.71, 0.8)
-theme_override_font_sizes/font_size = 22
-text = "Migs"
-vertical_alignment = 1
-
 [node name="DialogueText" type="RichTextLabel" parent="." unique_id=1861120102]
-offset_left = 276.0
-offset_top = 386.0
-offset_right = 876.0
-offset_bottom = 484.0
+layout_mode = 0
+offset_left = 249.0
+offset_top = 526.0
+offset_right = 904.0
+offset_bottom = 592.0
 mouse_filter = 2
 theme_override_colors/default_color = Color(0.18, 0.12, 0.08, 1)
 theme_override_font_sizes/normal_font_size = 19
-bbcode_enabled = false
 text = "Dialogue goes here."
-fit_content = false
 scroll_active = false
 autowrap_mode = 2
-vertical_alignment = 1
 
 [node name="ContinueHint" type="Label" parent="." unique_id=1861120103]
-offset_left = 604.0
-offset_top = 492.0
-offset_right = 874.0
-offset_bottom = 515.0
-mouse_filter = 2
+layout_mode = 0
+offset_left = 640.0
+offset_top = 590.0
+offset_right = 910.0
+offset_bottom = 613.0
 theme_override_colors/font_color = Color(0.31, 0.22, 0.14, 0.85)
 theme_override_font_sizes/font_size = 12
 text = "CLICK OR PRESS ENTER  ›"
 horizontal_alignment = 2
 vertical_alignment = 1
+
+[node name="MigsNameDialogueBox" type="Sprite2D" parent="." unique_id=1831730883]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("6_2x82u")
