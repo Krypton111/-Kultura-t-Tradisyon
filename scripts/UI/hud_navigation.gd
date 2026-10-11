@@ -32,6 +32,9 @@ var down_cursor: Texture2D
 var fade_rect: ColorRect
 var fade_tween: Tween
 var footsteps_player: AudioStreamPlayer
+var journal_is_open := false
+var journal_close: Sprite2D
+var journal_open: Sprite2D
 
 var room_scenes := {
 	LIVING_ROOM: preload("res://game_scenes/levels/living_room.tscn"),
@@ -52,12 +55,49 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	_create_fade_overlay()
 	_create_footsteps_player()
+	_setup_journal_toggle()
 
 func _process(_delta: float) -> void:
+	_update_journal_hover()
+
 	if navigation_locked:
 		return
 
 	_update_cursor(get_viewport().get_mouse_position())
+
+func _setup_journal_toggle() -> void:
+	journal_close = get_node_or_null("JournalClose") as Sprite2D
+	journal_open = get_node_or_null("JournalOpen") as Sprite2D
+	if journal_close and journal_open:
+		journal_is_open = false
+		journal_close.visible = true
+		journal_open.visible = false
+
+func _update_journal_hover() -> void:
+	if journal_close == null or journal_open == null or journal_is_open:
+		return
+
+	var mouse_position := get_viewport().get_mouse_position()
+	var hovering := journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
+	journal_close.visible = not hovering
+	journal_open.visible = hovering
+
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton):
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
+		return
+	if journal_close == null or journal_open == null:
+		return
+
+	var mouse_position := get_viewport().get_mouse_position()
+	var over_close := journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
+	var over_open := journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
+	if over_close or over_open:
+		journal_is_open = not journal_is_open
+		journal_close.visible = not journal_is_open
+		journal_open.visible = journal_is_open
+		get_viewport().set_input_as_handled()
 
 func _on_viewport_resized() -> void:
 	_resize_navigation_buttons()
