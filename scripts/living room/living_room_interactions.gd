@@ -35,25 +35,27 @@ func _ready() -> void:
 	if not lola_has_moved:
 		_create_interaction_button(lola_not_looking, Callable(self, "_on_lola_clicked"), "LolaNenaButton")
 
-	# On the first visit, fade the living room and HUD in together.
-	# Normal room-to-room transitions remain unchanged.
+	# On the first visit, fade the HUD in first, then start the living-room
+	# fade 0.5 seconds later. Normal room-to-room transitions remain unchanged.
 	if hud != null and bool(hud.get_meta("opening_intro_transition", false)):
 		modulate = Color(0, 0, 0, 1)
 		hud.visible = true
 
-		var transition_tween := create_tween()
-		transition_tween.set_parallel(true)
-		transition_tween.tween_property(self, "modulate", Color.WHITE, 1.2)
-
-		# CanvasLayer itself has no modulate property, so fade each visual
-		# HUD child in parallel with the room while preserving its RGB tint.
+		# Start the HUD fade immediately.
+		var hud_tween := create_tween()
+		hud_tween.set_parallel(true)
 		for hud_child in hud.get_children():
 			if hud_child is CanvasItem:
 				var target_alpha: float = hud_child.modulate.a
 				hud_child.modulate.a = 0.0
-				transition_tween.tween_property(hud_child, "modulate:a", target_alpha, 1.2)
+				hud_tween.tween_property(hud_child, "modulate:a", target_alpha, 1.2)
 
-		await transition_tween.finished
+		# Give the HUD a 0.5-second head start before fading in the room.
+		await get_tree().create_timer(0.5).timeout
+		var room_tween := create_tween()
+		room_tween.tween_property(self, "modulate", Color.WHITE, 1.2)
+		await room_tween.finished
+
 		hud.set_meta("opening_intro_transition", false)
 		hud.set("navigation_locked", false)
 
