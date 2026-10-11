@@ -3,6 +3,8 @@ extends Control
 signal close_requested
 
 @onready var leave_arrow: Sprite2D = $LeaveArrow
+@onready var left_arrow: Sprite2D = $JournalArrowLeft
+@onready var right_arrow: Sprite2D = $JournalArrowRight
 
 var _entry_index := 0
 var _entry_title: Label
@@ -15,6 +17,8 @@ func _ready() -> void:
 	z_index = 1100 # Render above the HUD transition fade and navigation layer.
 	_load_entries()
 	_create_leave_button()
+	_create_arrow_button(left_arrow, -1, "PreviousMemoryButton")
+	_create_arrow_button(right_arrow, 1, "NextMemoryButton")
 	_create_journal_text()
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -104,3 +108,39 @@ func _update_journal_text() -> void:
 	_entry_title.text = str(entry.get("title", "Untitled Memory"))
 	_entry_text.text = str(entry.get("text", ""))
 	_page_counter.text = "Memory %d of %d" % [_entry_index + 1, _entries.size()]
+
+func _create_arrow_button(sprite: Sprite2D, step: int, button_name: String) -> void:
+	if sprite.texture == null:
+		return
+	var image := sprite.texture.get_image()
+	if image == null:
+		return
+	var used_rect := image.get_used_rect()
+	if used_rect.size.x <= 0 or used_rect.size.y <= 0:
+		return
+
+	var button := Button.new()
+	button.name = button_name
+	button.text = ""
+	button.flat = true
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	var empty_style := StyleBoxEmpty.new()
+	button.add_theme_stylebox_override("normal", empty_style)
+	button.add_theme_stylebox_override("hover", empty_style)
+	button.add_theme_stylebox_override("pressed", empty_style)
+	button.add_theme_stylebox_override("focus", empty_style)
+
+	var scaled_size := Vector2(image.get_width(), image.get_height()) * sprite.scale
+	var scaled_used_position := Vector2(used_rect.position) * sprite.scale
+	var scaled_used_size := Vector2(used_rect.size) * sprite.scale
+	button.position = sprite.position - scaled_size / 2.0 + scaled_used_position
+	button.size = scaled_used_size
+	button.pressed.connect(func() -> void:
+		if _entries.size() > 1:
+			_entry_index = posmod(_entry_index + step, _entries.size())
+			_update_journal_text()
+	)
+	add_child(button)
+	button.z_index = 10
