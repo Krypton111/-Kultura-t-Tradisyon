@@ -73,7 +73,6 @@ const HERITAGE_STORIES: Dictionary = {
 @onready var open_tv: Sprite2D = get_node("Stand+openTv")
 @onready var window_open: Sprite2D = get_node("WindowOpen")
 @onready var window_closed: Sprite2D = get_node("WindowClosed")
-@onready var couch: Sprite2D = get_node("Couch+plant")
 @onready var lola_not_looking: Sprite2D = get_node("LolaNenaNotLooking")
 @onready var lola_looking: Sprite2D = get_node("LolaNenaLooking")
 
@@ -98,7 +97,6 @@ func _ready() -> void:
 
 	_create_tv_button()
 	_create_interaction_button(window_open, Callable(self, "_on_window_clicked"), "WindowButton")
-	_create_interaction_button(couch, Callable(self, "_on_couch_clicked"), "CouchButton")
 	if not lola_has_moved:
 		_create_interaction_button(lola_not_looking, Callable(self, "_on_lola_clicked"), "LolaNenaButton")
 
@@ -241,8 +239,8 @@ func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 			continue
 		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(object_name)):
 			return true
-	# Keep the magnifying cursor for the existing TV, window, and couch interactions too.
-	for node_name in ["Stand+closedTV", "Stand+openTv", "WindowOpen", "WindowClosed", "Couch+plant"]:
+	# Keep the magnifying cursor for the existing TV and window interactions too.
+	for node_name in ["Stand+closedTV", "Stand+openTv", "WindowOpen", "WindowClosed"]:
 		var sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
 		if sprite != null and sprite.visible and _is_opaque_pixel_clicked(sprite, mouse_position, sprite.texture.get_image()):
 			return true
@@ -313,8 +311,6 @@ func _on_window_clicked() -> void:
 	window_open.visible = not window_open.visible
 	window_closed.visible = not window_closed.visible
 
-func _on_couch_clicked() -> void:
-	pass
 
 func _on_lola_clicked() -> void:
 	lola_not_looking.visible = not lola_not_looking.visible
