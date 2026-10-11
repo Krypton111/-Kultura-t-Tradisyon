@@ -35,6 +35,16 @@ func _ready() -> void:
 	if not lola_has_moved:
 		_create_interaction_button(lola_not_looking, Callable(self, "_on_lola_clicked"), "LolaNenaButton")
 
+	# Only the first visit fades in: normal room-to-room transitions are unchanged.
+	if hud != null and bool(hud.get_meta("opening_intro_transition", false)):
+		modulate = Color(0, 0, 0, 1)
+		var room_fade := create_tween()
+		room_fade.tween_property(self, "modulate", Color.WHITE, 1.2)
+		await room_fade.finished
+		hud.set_meta("opening_intro_transition", false)
+		hud.visible = true
+		hud.set("navigation_locked", false)
+
 func _create_tv_button() -> void:
 	var button := Button.new()
 	button.name = "TVButton"
