@@ -90,8 +90,10 @@ func _ready() -> void:
 
 	var hud := get_node_or_null("/root/HUD")
 	var lola_has_moved := false
-	if hud != null and hud.has_method("has_collected_room_items"):
-		lola_has_moved = bool(hud.call("has_collected_room_items"))
+	if hud != null:
+		lola_has_moved = bool(hud.get_meta("living_room_heritage_completed", false))
+		if hud.has_method("has_collected_room_items"):
+			lola_has_moved = lola_has_moved or bool(hud.call("has_collected_room_items"))
 	if lola_has_moved:
 		lola_not_looking.visible = false
 		lola_looking.visible = false
@@ -138,7 +140,8 @@ func _ready() -> void:
 			hud.set("navigation_locked", false)
 
 func _input(event: InputEvent) -> void:
-	if _heritage_dialogue_open or not (event is InputEventMouseButton):
+	var hud := get_node_or_null("/root/HUD")
+	if _heritage_dialogue_open or (hud != null and bool(hud.get_meta("living_room_heritage_completed", false))) or not (event is InputEventMouseButton):
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
 		return
