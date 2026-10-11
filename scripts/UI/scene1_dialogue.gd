@@ -56,10 +56,11 @@ func _ready() -> void:
 	lola_name_box.visible = false
 
 func start_opening_sequence() -> void:
-	# All Migs–Lola conversations in the living room should use her looking pose.
-	_set_lola_dialogue_pose(true)
 	if dialogue_active:
 		return
+
+	# All Migs–Lola conversations in the living room should use her looking pose.
+	_set_lola_dialogue_pose(true)
 
 	dialogue_active = true
 	line_index = 0
