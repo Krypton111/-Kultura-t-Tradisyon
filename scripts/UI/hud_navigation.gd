@@ -103,6 +103,12 @@ func _update_journal_hover() -> void:
 	journal_close.visible = not hovering
 	journal_open.visible = hovering
 
+func _is_hovering_room_interactable(mouse_position: Vector2) -> bool:
+	var current_scene := get_tree().current_scene
+	if current_scene and current_scene.has_method("is_hovering_room_interactable"):
+		return current_scene.is_hovering_room_interactable(mouse_position)
+	return false
+
 func _is_hovering_journal() -> bool:
 	if journal_close == null or journal_open == null:
 		return false
@@ -205,7 +211,7 @@ func _resize_navigation_buttons() -> void:
 		fade_rect.size = Vector2(_screen_width(), _screen_height())
 
 func _update_cursor(mouse_position: Vector2) -> void:
-	if _is_hovering_journal():
+	if _is_hovering_journal() or _is_hovering_room_interactable(mouse_position):
 		if current_direction != "journal":
 			current_direction = "journal"
 			Input.set_custom_mouse_cursor(magnify_cursor, Input.CURSOR_ARROW, _cursor_hotspot(magnify_cursor))
