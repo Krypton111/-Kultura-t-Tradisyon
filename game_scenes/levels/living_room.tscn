@@ -2,13 +2,24 @@
 
 [ext_resource type="Texture2D" uid="uid://dsgt8qot2ipo2" path="res://GAME ASSETS/Living Room/base.png" id="1_c4qu1"]
 [ext_resource type="Texture2D" uid="uid://i0j50tsnw67s" path="res://GAME ASSETS/Living Room/stand+closed_tv.png" id="2_a8lmu"]
+[ext_resource type="Texture2D" uid="uid://c4duuunotelh8" path="res://GAME ASSETS/Living Room/banig.png" id="3_7y5kq"]
 [ext_resource type="Texture2D" uid="uid://de6rnknc54wmf" path="res://GAME ASSETS/Living Room/window_closed.png" id="3_x3ibj"]
 [ext_resource type="Texture2D" uid="uid://dw3xdm3ssrlm2" path="res://GAME ASSETS/Living Room/window_open.png" id="4_6fccx"]
+[ext_resource type="Texture2D" uid="uid://bddd1awij6rqv" path="res://GAME ASSETS/Living Room/plants2_up.png" id="4_j44g2"]
 [ext_resource type="Texture2D" uid="uid://rp4vhikh0kda" path="res://GAME ASSETS/Living Room/couch+plant.png" id="5_wwvaw"]
 [ext_resource type="Texture2D" uid="uid://cmwblp26jy2j" path="res://GAME ASSETS/Living Room/lola_nena_not_looking.png" id="6_7vsc2"]
 [ext_resource type="Texture2D" uid="uid://d3hd3dfl8sl31" path="res://GAME ASSETS/Living Room/lola_nena_looking.png" id="7_3pyx6"]
 [ext_resource type="Texture2D" uid="uid://ptubjp8wbhet" path="res://GAME ASSETS/Living Room/stand+open_tv.png" id="8_kpdbn"]
+[ext_resource type="Texture2D" uid="uid://bpr80ylam4ws2" path="res://GAME ASSETS/Living Room/table_radio.png" id="9_lxyis"]
 [ext_resource type="Script" uid="uid://3dsuf08mooh8" path="res://scripts/living room/living_room_interactions.gd" id="9_tvscript"]
+[ext_resource type="Texture2D" uid="uid://c2nbbbbmysk8k" path="res://GAME ASSETS/Living Room/plants.png" id="10_polf7"]
+[ext_resource type="Texture2D" uid="uid://cg7mwbraimhxb" path="res://GAME ASSETS/Living Room/books.png" id="14_q35q2"]
+[ext_resource type="Texture2D" uid="uid://dilb080weahs1" path="res://GAME ASSETS/Living Room/family_picture.png" id="15_crtbs"]
+[ext_resource type="Texture2D" uid="uid://brf8cqvpn2dw7" path="res://GAME ASSETS/Living Room/lola_nena_portrait.png" id="16_sv0ms"]
+[ext_resource type="Texture2D" uid="uid://4rpdnawwnkpq" path="res://GAME ASSETS/Living Room/picture_frame_topleft.png" id="17_q13wt"]
+[ext_resource type="Texture2D" uid="uid://bam52lix2nnw" path="res://GAME ASSETS/Living Room/plants3.png" id="18_5wrij"]
+[ext_resource type="Texture2D" uid="uid://c7d34ccx8moe4" path="res://GAME ASSETS/Living Room/salakot.png" id="19_jx0sp"]
+[ext_resource type="Texture2D" uid="uid://qejcak7qgp2h" path="res://GAME ASSETS/Living Room/urn.png" id="20_1n1mj"]
 
 [node name="Control" type="Control" unique_id=278341826]
 layout_mode = 3
@@ -29,6 +40,16 @@ grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("1_c4qu1")
 expand_mode = 1
+
+[node name="Banig" type="Sprite2D" parent="." unique_id=247745870]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("3_7y5kq")
+
+[node name="Plants2Up" type="Sprite2D" parent="." unique_id=411677344]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("4_j44g2")
 
 [node name="Stand+closedTV" type="Sprite2D" parent="." unique_id=1163900824]
 position = Vector2(576, 324)
@@ -52,6 +73,16 @@ position = Vector2(576, 323.99994)
 scale = Vector2(0.24000001, 0.24000001)
 texture = ExtResource("3_x3ibj")
 
+[node name="TableRadio" type="Sprite2D" parent="." unique_id=1542506746]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("9_lxyis")
+
+[node name="Plants" type="Sprite2D" parent="." unique_id=1466022883]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("10_polf7")
+
 [node name="Couch+plant" type="Sprite2D" parent="." unique_id=1593791168]
 position = Vector2(575.99994, 323.99997)
 scale = Vector2(0.24000002, 0.24000001)
@@ -67,3 +98,38 @@ visible = false
 position = Vector2(576, 324)
 scale = Vector2(0.24, 0.24)
 texture = ExtResource("7_3pyx6")
+
+[node name="Books" type="Sprite2D" parent="." unique_id=1516427993]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("14_q35q2")
+
+[node name="FamilyPicture" type="Sprite2D" parent="." unique_id=1131250436]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("15_crtbs")
+
+[node name="LolaNenaPortrait" type="Sprite2D" parent="." unique_id=1897178990]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("16_sv0ms")
+
+[node name="PictureFrameTopleft" type="Sprite2D" parent="." unique_id=1649572638]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("17_q13wt")
+
+[node name="Plants3" type="Sprite2D" parent="." unique_id=2045992365]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("18_5wrij")
+
+[node name="Salakot" type="Sprite2D" parent="." unique_id=877860280]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("19_jx0sp")
+
+[node name="Urn" type="Sprite2D" parent="." unique_id=1153752889]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("20_1n1mj")
