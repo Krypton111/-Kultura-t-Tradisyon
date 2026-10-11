@@ -40,6 +40,8 @@ const OPENING_LINES: Array[Dictionary] = [
 @onready var speaker_label: Label = $SpeakerLabel
 @onready var dialogue_text: RichTextLabel = $DialogueText
 @onready var continue_hint: Label = $ContinueHint
+@onready var migs_name_box: Sprite2D = $DialogueNameBox
+@onready var lola_name_box: Sprite2D = $LolaNenaNameDialogueBox
 
 var line_index: int = 0
 var dialogue_active: bool = false
@@ -56,6 +58,8 @@ func start_opening_sequence() -> void:
 	dialogue_active = true
 	line_index = 0
 	visible = true
+	focus_mode = Control.FOCUS_ALL
+	grab_focus()
 
 	var hud := get_node_or_null("/root/HUD")
 	if hud != null:
@@ -95,6 +99,9 @@ func _gui_input(event: InputEvent) -> void:
 func _show_current_line() -> void:
 	var line: Dictionary = OPENING_LINES[line_index]
 	speaker_label.text = str(line["speaker"])
+	var is_lola_speaking := str(line["speaker"]) == "Lola Nena"
+	migs_name_box.visible = not is_lola_speaking
+	lola_name_box.visible = is_lola_speaking
 	dialogue_text.text = str(line["text"])
 	dialogue_text.visible_characters = 0
 	continue_hint.text = "CLICK OR PRESS ENTER  ›"
