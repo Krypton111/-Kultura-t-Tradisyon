@@ -17,6 +17,7 @@ const DOWN_CURSOR_MAX_SIZE := 160.0
 const LEFT_CURSOR := preload("res://GAME ASSETS/UI/HUD/left room.png")
 const RIGHT_CURSOR := preload("res://GAME ASSETS/UI/HUD/right room.png")
 const DOWN_CURSOR := preload("res://GAME ASSETS/UI/HUD/bottom room.png")
+const MAGNIFY_CURSOR := preload("res://GAME ASSETS/UI/HUD/magnifying_cursor.png")
 const FOOTSTEPS_SFX := preload("res://GAME ASSETS/SFX/footsteps.mp3")
 
 const LIVING_ROOM := "res://game_scenes/levels/living_room.tscn"
@@ -29,6 +30,7 @@ var navigation_locked := false
 var left_cursor: Texture2D
 var right_cursor: Texture2D
 var down_cursor: Texture2D
+var magnify_cursor: Texture2D
 var fade_rect: ColorRect
 var fade_tween: Tween
 var footsteps_player: AudioStreamPlayer
@@ -47,6 +49,7 @@ func _ready() -> void:
 	left_cursor = _prepare_cursor(LEFT_CURSOR)
 	right_cursor = _prepare_cursor(RIGHT_CURSOR)
 	down_cursor = _prepare_cursor(DOWN_CURSOR, DOWN_CURSOR_MAX_SIZE)
+	magnify_cursor = _prepare_cursor(MAGNIFY_CURSOR)
 
 	_create_navigation_button("LeftNavigation", LEFT_NAV_POSITION, Callable(self, "_go_left"))
 	_create_navigation_button("RightNavigation", RIGHT_NAV_POSITION, Callable(self, "_go_right"))
@@ -81,6 +84,15 @@ func _update_journal_hover() -> void:
 	var hovering := journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
 	journal_close.visible = not hovering
 	journal_open.visible = hovering
+
+func _is_hovering_journal() -> bool:
+	if journal_close == null or journal_open == null:
+		return false
+
+	var mouse_position := get_viewport().get_mouse_position()
+	if journal_is_open:
+		return journal_open.visible and journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
+	return journal_close.visible and journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
 
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton):
@@ -175,6 +187,12 @@ func _resize_navigation_buttons() -> void:
 		fade_rect.size = Vector2(_screen_width(), _screen_height())
 
 func _update_cursor(mouse_position: Vector2) -> void:
+	if _is_hovering_journal():
+		if current_direction != "journal":
+			current_direction = "journal"
+			Input.set_custom_mouse_cursor(magnify_cursor, Input.CURSOR_ARROW, _cursor_hotspot(magnify_cursor))
+		return
+
 	var direction := ""
 	var left_hotspot_size := Vector2(LEFT_NAV_WIDTH, LEFT_NAV_HEIGHT)
 	var right_hotspot_size := Vector2(RIGHT_NAV_WIDTH, RIGHT_NAV_HEIGHT)
