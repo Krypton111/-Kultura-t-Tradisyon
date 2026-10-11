@@ -51,17 +51,6 @@ position = Vector2(576, 324)
 scale = Vector2(0.3, 0.3)
 texture = ExtResource("4_j44g2")
 
-[node name="Stand+closedTV" type="Sprite2D" parent="." unique_id=1163900824]
-position = Vector2(576, 324)
-scale = Vector2(0.24, 0.24)
-texture = ExtResource("2_a8lmu")
-
-[node name="Stand+openTv" type="Sprite2D" parent="." unique_id=1888162062]
-visible = false
-position = Vector2(576, 324)
-scale = Vector2(0.24, 0.24)
-texture = ExtResource("8_kpdbn")
-
 [node name="WindowOpen" type="Sprite2D" parent="." unique_id=1275995419]
 position = Vector2(576, 324)
 scale = Vector2(0.24, 0.24)
@@ -87,6 +76,17 @@ texture = ExtResource("10_polf7")
 position = Vector2(575.99994, 323.99997)
 scale = Vector2(0.24000002, 0.24000001)
 texture = ExtResource("5_wwvaw")
+
+[node name="Stand+closedTV" type="Sprite2D" parent="." unique_id=1163900824]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("2_a8lmu")
+
+[node name="Stand+openTv" type="Sprite2D" parent="." unique_id=1888162062]
+visible = false
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("8_kpdbn")
 
 [node name="LolaNenaNotLooking" type="Sprite2D" parent="." unique_id=1649439207]
 position = Vector2(576, 324)
