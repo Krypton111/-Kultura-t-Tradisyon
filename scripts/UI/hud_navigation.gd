@@ -38,6 +38,8 @@ var journal_is_open := false
 var journal_close: Sprite2D
 var journal_open: Sprite2D
 var camera_icon: Sprite2D
+var camera_collected := false
+var journal_collected := false
 
 var room_scenes := {
 	LIVING_ROOM: preload("res://game_scenes/levels/living_room.tscn"),
@@ -83,6 +85,7 @@ func _setup_journal_toggle() -> void:
 		camera_icon.visible = false
 
 func reveal_journal() -> void:
+	journal_collected = true
 	if journal_close == null or journal_open == null:
 		return
 	journal_is_open = false
@@ -91,8 +94,12 @@ func reveal_journal() -> void:
 	_fade_hud_sprite_in(journal_close)
 
 func reveal_camera() -> void:
+	camera_collected = true
 	if camera_icon:
 		_fade_hud_sprite_in(camera_icon)
+
+func has_collected_room_items() -> bool:
+	return camera_collected and journal_collected
 
 func _fade_hud_sprite_in(sprite: Sprite2D) -> void:
 	if sprite == null:
