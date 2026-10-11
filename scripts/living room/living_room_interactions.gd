@@ -12,6 +12,13 @@ func _ready() -> void:
 	closed_tv.visible = true
 	open_tv.visible = false
 
+	# Once both items have been collected, Lola has moved to the kitchen.
+	var hud := get_node_or_null("/root/HUD")
+	var lola_has_moved := hud != null and hud.has_method("has_collected_room_items") and hud.has_collected_room_items()
+	if lola_has_moved:
+		lola_not_looking.visible = false
+		lola_looking.visible = false
+
 	# The artwork stays exactly where it was placed in Canva.
 	# The TV uses a fixed point-and-click area.
 	_create_tv_button()
@@ -23,7 +30,8 @@ func _ready() -> void:
 	# to their normal states.
 	_create_interaction_button(window_open, Callable(self, "_on_window_clicked"), "WindowButton")
 	_create_interaction_button(couch, Callable(self, "_on_couch_clicked"), "CouchButton")
-	_create_interaction_button(lola_not_looking, Callable(self, "_on_lola_clicked"), "LolaNenaButton")
+	if not lola_has_moved:
+		_create_interaction_button(lola_not_looking, Callable(self, "_on_lola_clicked"), "LolaNenaButton")
 
 func _create_tv_button() -> void:
 	var button := Button.new()
