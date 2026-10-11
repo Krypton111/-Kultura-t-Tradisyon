@@ -14,21 +14,29 @@ func _input(event: InputEvent) -> void:
 
 	# Check the camera first so its opaque pixels win if the artwork overlaps.
 	if _is_opaque_pixel_at(camera_sprite, mouse_position):
-		var hud := get_node_or_null("/root/HUD")
-		if hud and hud.has_method("reveal_camera"):
-			hud.reveal_camera()
-		if camera_sprite:
-			camera_sprite.queue_free()
 		get_viewport().set_input_as_handled()
+		await _fade_out_and_remove(camera_sprite, "reveal_camera")
 		return
 
 	if _is_opaque_pixel_at(journal_sprite, mouse_position):
-		var hud := get_node_or_null("/root/HUD")
-		if hud and hud.has_method("reveal_journal"):
-			hud.reveal_journal()
-		if journal_sprite:
-			journal_sprite.queue_free()
 		get_viewport().set_input_as_handled()
+		await _fade_out_and_remove(journal_sprite, "reveal_journal")
+
+func _fade_out_and_remove(sprite: Sprite2D, hud_method: String) -> void:
+	if sprite == null or sprite.get_meta("being_collected", false):
+		return
+
+	sprite.set_meta("being_collected", true)
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.35)
+	await tween.finished
+
+	var hud := get_node_or_null("/root/HUD")
+	if hud and hud.has_method(hud_method):
+		hud.call(hud_method)
+
+	if is_instance_valid(sprite):
+		sprite.queue_free()
 
 func is_hovering_room_interactable(global_position: Vector2) -> bool:
 	return _is_opaque_pixel_at(get_node_or_null("Journal") as Sprite2D, global_position) \
@@ -36,6 +44,9 @@ func is_hovering_room_interactable(global_position: Vector2) -> bool:
 
 func _is_opaque_pixel_at(sprite: Sprite2D, global_position: Vector2) -> bool:
 	if sprite == null or not sprite.visible or sprite.texture == null:
+		return false
+	if sprite.get_meta("being_collected", false):
+		return false
 		return false
 
 	var local_position := sprite.to_local(global_position)
