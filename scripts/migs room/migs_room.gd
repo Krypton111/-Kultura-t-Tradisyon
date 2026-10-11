@@ -47,7 +47,6 @@ func _is_opaque_pixel_at(sprite: Sprite2D, global_position: Vector2) -> bool:
 		return false
 	if sprite.get_meta("being_collected", false):
 		return false
-		return false
 
 	var local_position := sprite.to_local(global_position)
 	var rect := sprite.get_rect()
