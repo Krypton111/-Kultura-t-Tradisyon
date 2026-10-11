@@ -2,6 +2,20 @@ extends Control
 
 const HIT_ALPHA_THRESHOLD := 0.1
 
+func _ready() -> void:
+	# The HUD is an autoload, so these flags survive room changes.
+	# Hide items that were already collected before this room was loaded.
+	var hud := get_node_or_null("/root/HUD")
+	if hud != null:
+		if hud.has_method("has_collected_camera") and bool(hud.call("has_collected_camera")):
+			var camera_sprite := get_node_or_null("Camera") as Sprite2D
+			if camera_sprite:
+				camera_sprite.visible = false
+		if hud.has_method("has_collected_journal") and bool(hud.call("has_collected_journal")):
+			var journal_sprite := get_node_or_null("Journal") as Sprite2D
+			if journal_sprite:
+				journal_sprite.visible = false
+
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton):
 		return
