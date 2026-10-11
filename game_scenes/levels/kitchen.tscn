@@ -1,6 +1,16 @@
 [gd_scene format=3 uid="uid://ck4t3ivbsfwjx"]
 
-[ext_resource type="PackedScene" uid="uid://bym537eb10qr6" path="res://game_scenes/UI scenes/HUD.tscn" id="1_hud"]
+[ext_resource type="Texture2D" uid="uid://bess2li8mf7ly" path="res://GAME ASSETS/Kitchen/kitchen.png" id="1_uuqee"]
+[ext_resource type="Texture2D" uid="uid://bmnja1vbihy2l" path="res://GAME ASSETS/Kitchen/bangus.png" id="2_n8w8o"]
+[ext_resource type="Texture2D" uid="uid://0bh263tihmu0" path="res://GAME ASSETS/Kitchen/condiments.png" id="3_agqji"]
+[ext_resource type="Texture2D" uid="uid://ug0wynhse57m" path="res://GAME ASSETS/Kitchen/kamatis.png" id="4_d1quw"]
+[ext_resource type="Texture2D" uid="uid://by6tcnjw1p0wh" path="res://GAME ASSETS/Kitchen/kangkong.png" id="5_dubk8"]
+[ext_resource type="Texture2D" uid="uid://cvg5ec3k0y6ry" path="res://GAME ASSETS/Kitchen/measuring cup.png" id="6_1dak5"]
+[ext_resource type="Texture2D" uid="uid://dcf3p00xq50ax" path="res://GAME ASSETS/Kitchen/peppers.png" id="7_y1sc6"]
+[ext_resource type="Texture2D" uid="uid://bnob41icl58yo" path="res://GAME ASSETS/Kitchen/radish.png" id="8_cnknx"]
+[ext_resource type="Texture2D" uid="uid://y7ab2miiw2e7" path="res://GAME ASSETS/Kitchen/sinigang mix.png" id="9_fnneo"]
+[ext_resource type="Texture2D" uid="uid://ce63a85ejjdq2" path="res://GAME ASSETS/Kitchen/talong.png" id="10_l1isu"]
+[ext_resource type="Texture2D" uid="uid://dk38orvsk8bl8" path="res://GAME ASSETS/Kitchen/lola nena standing.png" id="11_1m8x2"]
 
 [node name="Control" type="Control" unique_id=304763541]
 layout_mode = 3
@@ -10,3 +20,57 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="Kitchen" type="Sprite2D" parent="." unique_id=1650102857]
+position = Vector2(576, 324)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("1_uuqee")
+
+[node name="Bangus" type="Sprite2D" parent="." unique_id=1357325680]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("2_n8w8o")
+
+[node name="Condiments" type="Sprite2D" parent="." unique_id=1576604879]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("3_agqji")
+
+[node name="Kamatis" type="Sprite2D" parent="." unique_id=883347447]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("4_d1quw")
+
+[node name="Kangkong" type="Sprite2D" parent="." unique_id=1890168475]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("5_dubk8")
+
+[node name="MeasuringCup" type="Sprite2D" parent="." unique_id=2059821896]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("6_1dak5")
+
+[node name="Peppers" type="Sprite2D" parent="." unique_id=1729342216]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("7_y1sc6")
+
+[node name="Radish" type="Sprite2D" parent="." unique_id=2117411693]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("8_cnknx")
+
+[node name="SinigangMix" type="Sprite2D" parent="." unique_id=2115682413]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("9_fnneo")
+
+[node name="Talong" type="Sprite2D" parent="." unique_id=471460719]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("10_l1isu")
+
+[node name="LolaNenaStanding" type="Sprite2D" parent="." unique_id=134082557]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("11_1m8x2")
