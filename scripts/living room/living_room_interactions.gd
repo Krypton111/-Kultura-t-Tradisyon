@@ -57,7 +57,22 @@ func _ready() -> void:
 		await room_tween.finished
 
 		hud.set_meta("opening_intro_transition", false)
-		hud.set("navigation_locked", false)
+
+		# Start Scene 1's opening conversation after the room has fully faded in.
+		# The dialogue scene is added to the HUD CanvasLayer so it renders above
+		# the room and HUD artwork, using the existing dialogue box design.
+		var dialogue_scene := load("res://game_scenes/UI scenes/dialogue.tscn") as PackedScene
+		if dialogue_scene != null:
+			var dialogue_instance := dialogue_scene.instantiate()
+			hud.add_child(dialogue_instance)
+			if dialogue_instance.has_method("start_opening_sequence"):
+				dialogue_instance.call("start_opening_sequence")
+			else:
+				dialogue_instance.queue_free()
+				hud.set("navigation_locked", false)
+		else:
+			push_warning("Could not load the opening dialogue scene.")
+			hud.set("navigation_locked", false)
 
 func _create_tv_button() -> void:
 	var button := Button.new()
