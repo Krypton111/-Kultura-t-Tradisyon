@@ -135,9 +135,21 @@ func _ready() -> void:
 			push_warning("Could not load the opening dialogue scene.")
 			hud.set("navigation_locked", false)
 
+func _process(_delta: float) -> void:
+	# Keep button-based interactions locked until both required room items are collected.
+	var unlocked := _room_interactables_unlocked()
+	for button_name in ["TVButton", "WindowButton", "LolaNenaButton"]:
+		var button := get_node_or_null(NodePath(button_name)) as Button
+		if button != null:
+			button.disabled = not unlocked
+
+func _room_interactables_unlocked() -> bool:
+	var hud := get_node_or_null("/root/HUD")
+	return hud != null and hud.has_method("has_collected_room_items") and bool(hud.call("has_collected_room_items"))
+
 func _input(event: InputEvent) -> void:
 	var hud := get_node_or_null("/root/HUD")
-	if _heritage_dialogue_open or (hud != null and bool(hud.get_meta("living_room_heritage_completed", false))) or not (event is InputEventMouseButton):
+	if not _room_interactables_unlocked() or _heritage_dialogue_open or (hud != null and bool(hud.get_meta("living_room_heritage_completed", false))) or not (event is InputEventMouseButton):
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
 		return
@@ -231,7 +243,7 @@ func _on_kitchen_reminder_finished() -> void:
 	lola_looking.visible = false
 
 func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
-	if _heritage_dialogue_open:
+	if not _room_interactables_unlocked() or _heritage_dialogue_open:
 		return false
 	for object_name in HERITAGE_STORIES.keys():
 		var sprite := get_node_or_null(NodePath(str(object_name))) as Sprite2D
