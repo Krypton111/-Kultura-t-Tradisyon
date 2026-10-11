@@ -1,5 +1,7 @@
 extends Control
 
+signal sequence_finished
+
 const TYPEWRITER_SECONDS_PER_CHARACTER := 0.018
 
 const OPENING_LINES: Array[Dictionary] = [
@@ -46,6 +48,7 @@ const OPENING_LINES: Array[Dictionary] = [
 var line_index: int = 0
 var dialogue_active: bool = false
 var typewriter_tween: Tween
+var _active_lines: Array[Dictionary] = []
 
 func _ready() -> void:
 	visible = false
@@ -56,22 +59,24 @@ func _ready() -> void:
 	lola_name_box.visible = false
 
 func start_opening_sequence() -> void:
+	_start_sequence(OPENING_LINES)
+
+func start_custom_sequence(lines: Array[Dictionary]) -> void:
+	_start_sequence(lines)
+
+func _start_sequence(lines: Array[Dictionary]) -> void:
 	if dialogue_active:
 		return
-
-	# All Migs–Lola conversations in the living room should use her looking pose.
+	_active_lines = lines
 	_set_lola_dialogue_pose(true)
-
 	dialogue_active = true
 	line_index = 0
 	visible = true
 	focus_mode = Control.FOCUS_ALL
 	grab_focus()
-
 	var hud := get_node_or_null("/root/HUD")
 	if hud != null:
 		hud.set("navigation_locked", true)
-
 	_show_current_line()
 
 func _gui_input(event: InputEvent) -> void:
@@ -97,14 +102,14 @@ func _gui_input(event: InputEvent) -> void:
 		return
 
 	line_index += 1
-	if line_index >= OPENING_LINES.size():
+	if line_index >= _active_lines.size():
 		_finish_dialogue()
 		return
 
 	_show_current_line()
 
 func _show_current_line() -> void:
-	var line: Dictionary = OPENING_LINES[line_index]
+	var line: Dictionary = _active_lines[line_index]
 	var is_lola_speaking := str(line["speaker"]) == "Lola Nena"
 	migs_name_box.visible = not is_lola_speaking
 	lola_name_box.visible = is_lola_speaking
@@ -128,15 +133,13 @@ func _on_typewriter_finished() -> void:
 		continue_hint.text = "CLICK OR PRESS ENTER TO CONTINUE  ›"
 
 func _finish_dialogue() -> void:
-	# Restore Lola's idle pose as soon as the conversation ends.
 	_set_lola_dialogue_pose(false)
 	dialogue_active = false
 	visible = false
-
+	sequence_finished.emit()
 	var hud := get_node_or_null("/root/HUD")
 	if hud != null:
 		hud.set("navigation_locked", false)
-
 	queue_free()
 
 
