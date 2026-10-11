@@ -94,11 +94,12 @@ func reveal_camera() -> void:
 		camera_icon.visible = true
 
 func _update_journal_hover() -> void:
-	if journal_close == null or journal_open == null or journal_is_open or not journal_close.visible:
+	if journal_close == null or journal_open == null or journal_is_open:
+		return
+	if not journal_close.visible and not journal_open.visible:
 		return
 
-	var mouse_position := get_viewport().get_mouse_position()
-	var hovering := journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
+	var hovering := _is_hovering_journal()
 	journal_close.visible = not hovering
 	journal_open.visible = hovering
 
