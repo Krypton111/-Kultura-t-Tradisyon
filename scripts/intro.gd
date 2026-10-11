@@ -13,8 +13,7 @@ func _ready() -> void:
 	if hud != null:
 		hud.visible = false
 		hud.set_meta("opening_intro_transition", true)
-		if "navigation_locked" in hud:
-			hud.set("navigation_locked", true)
+		hud.set("navigation_locked", true)
 
 	# Start with an empty quote and reveal it character by character.
 	quote.visible_characters = 0
