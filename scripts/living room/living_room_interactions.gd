@@ -269,12 +269,37 @@ func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 			continue
 		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(object_name)):
 			return true
-	# Keep the magnifying cursor for the existing TV and window interactions too.
-	for node_name in ["Stand+closedTV", "Stand+openTv", "WindowOpen", "WindowClosed"]:
-		var sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
-		if sprite != null and sprite.visible and _is_opaque_pixel_clicked(sprite, mouse_position, sprite.texture.get_image()):
+	# The TV and window are interactable, but the TV stand itself is not.
+	# The TV screen occupies the upper portion of the combined TV/stand artwork.
+	for node_name in ["Stand+closedTV", "Stand+openTv"]:
+		var tv_sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
+		if tv_sprite != null and tv_sprite.visible and _is_tv_screen_hovered(tv_sprite, mouse_position):
+			return true
+	for node_name in ["WindowOpen", "WindowClosed"]:
+		var window_sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
+		if window_sprite != null and window_sprite.visible and _is_opaque_pixel_clicked(window_sprite, mouse_position, window_sprite.texture.get_image()):
 			return true
 	return false
+
+
+func _is_tv_screen_hovered(sprite: Sprite2D, mouse_position: Vector2) -> bool:
+	if sprite.texture == null or not sprite.visible:
+		return false
+	var image := sprite.texture.get_image()
+	if image == null or image.is_empty():
+		return false
+	var local_point := sprite.to_local(mouse_position)
+	var pixel := Vector2i(
+		floori(local_point.x + image.get_width() * 0.5),
+		floori(local_point.y + image.get_height() * 0.5)
+	)
+	if pixel.x < 0 or pixel.y < 0 or pixel.x >= image.get_width() or pixel.y >= image.get_height():
+		return false
+	# Restrict the cursor to the TV portion at the top of the combined artwork,
+	# excluding the stand in the lower section.
+	if pixel.y >= int(image.get_height() * 0.58):
+		return false
+	return image.get_pixelv(pixel).a > 0.12
 
 func can_go_to_kitchen() -> bool:
 	var hud := get_node_or_null("/root/HUD")
