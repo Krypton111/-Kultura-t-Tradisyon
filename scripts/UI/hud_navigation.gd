@@ -207,7 +207,7 @@ func _refresh_inventory_ui() -> void:
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		label.add_theme_font_override("font", INVENTORY_ITEM_NAME_FONT)
-		label.add_theme_font_size_override("font_size", 10)
+		label.add_theme_font_size_override("font_size", 14)
 		label.add_theme_color_override("font_color", Color(0.96, 0.94, 0.88))
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(label)
