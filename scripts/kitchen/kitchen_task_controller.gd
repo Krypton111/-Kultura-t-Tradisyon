@@ -234,31 +234,6 @@ func _fade_collected_ingredient(sprite: Sprite2D, ingredient_id: String) -> void
 	)
 
 
-func _show_object_feedback(sprite: Sprite2D, ingredient_id: String) -> void:
-	# Briefly highlight the clicked item; task state remains in the model.
-	var original := sprite.modulate
-	sprite.modulate = Color(1.0, 0.88, 0.48, 1.0)
-	var tween := create_tween()
-	tween.tween_property(sprite, "modulate", original, 0.35)
-	if task_model.is_task_completed(_hud):
-		_task_message.text = "All ingredients are ready! Click Lola Nena to review your completed checklist."
-
-
-func _show_completion_dialogue() -> void:
-	var packed := load(DIALOGUE_SCENE_PATH) as PackedScene
-	if packed == null:
-		return
-	var view := packed.instantiate() as Control
-	if view == null:
-		return
-	_hud.add_child(view)
-	var completion_lines: Array[Dictionary] = [
-		{"speaker": "Lola Nena", "text": "Maraming salamat, Migs! You prepared everything we need for our sinigang."},
-		{"speaker": "Migs", "text": "You're welcome, Lola! The ingredients are ready."}
-	]
-	view.call("start_custom_sequence", completion_lines)
-
-
 func _sprite_pixel_hit(sprite: Sprite2D, viewport_position: Vector2) -> bool:
 	if sprite.texture == null or not sprite.visible:
 		return false
