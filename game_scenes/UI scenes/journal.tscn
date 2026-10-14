@@ -4,16 +4,16 @@
 [ext_resource type="Texture2D" uid="uid://cpytrbjff71d6" path="res://GAME ASSETS/UI/HUD/journal_arrow_left.png" id="2_he3at"]
 [ext_resource type="Texture2D" uid="uid://bp72wk2t50a3l" path="res://GAME ASSETS/UI/HUD/journal_arrow_right.png" id="3_dypnn"]
 [ext_resource type="Texture2D" uid="uid://d16xy0us1mu11" path="res://GAME ASSETS/UI/HUD/leave_arrow.png" id="4_he3at"]
-[ext_resource type="Script" path="res://scripts/UI/journal_overlay.gd" id="5_overlay"]
+[ext_resource type="Script" uid="uid://b2crpwvwa5y7c" path="res://scripts/UI/journal_overlay.gd" id="5_overlay"]
 
 [node name="Control" type="Control" unique_id=1514714484]
-script = ExtResource("5_overlay")
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("5_overlay")
 
 [node name="JournalFull" type="Sprite2D" parent="." unique_id=1220911187]
 position = Vector2(576, 324)
@@ -34,3 +34,17 @@ texture = ExtResource("3_dypnn")
 position = Vector2(576, 324)
 scale = Vector2(0.3, 0.3)
 texture = ExtResource("4_he3at")
+
+[node name="Container" type="Container" parent="." unique_id=1155535239]
+layout_mode = 0
+offset_left = 214.0
+offset_top = 75.0
+offset_right = 562.0
+offset_bottom = 572.0
+
+[node name="Container2" type="Container" parent="." unique_id=1323078992]
+layout_mode = 0
+offset_left = 582.0
+offset_top = 81.0
+offset_right = 930.0
+offset_bottom = 578.0
