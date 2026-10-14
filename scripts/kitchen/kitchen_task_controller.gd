@@ -232,8 +232,37 @@ func _on_inventory_item_dropped(item_id: String) -> void:
 		var progress: Dictionary = task_model.get_progress(_hud)
 		progress[item_id] = true
 		_hud.set_meta(task_model.KITCHEN_PROGRESS_META, progress)
-		if _pot_filled_items.size() >= task_model.get_ingredients().size():
+		if _pot_filled_items.size() >= task_model.get_ingredients().size() and not task_model.is_task_completed(_hud):
 			_hud.set_meta(task_model.KITCHEN_TASK_COMPLETED_META, true)
+			_finish_pot_task()
+
+
+func _finish_pot_task() -> void:
+	# Fade away the empty-pot screen once every available ingredient has been added.
+	if is_instance_valid(_pot_overlay):
+		var fade := create_tween()
+		fade.tween_property(_pot_overlay, "modulate:a", 0.0, 0.8)
+		await fade.finished
+	_close_pot_overlay()
+	_show_cooking_thanks_dialogue()
+
+
+func _show_cooking_thanks_dialogue() -> void:
+	if not is_instance_valid(_hud):
+		return
+	var packed := load(DIALOGUE_SCENE_PATH) as PackedScene
+	if packed == null:
+		push_warning("Kitchen task: could not load the completion dialogue.")
+		return
+	var view := packed.instantiate() as Control
+	if view == null:
+		return
+	_hud.add_child(view)
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "Thank you for helping me prepare the ingredients, Migs. I’ll take it from here and finish cooking the sinigang."},
+		{"speaker": "Migs", "text": "You’re welcome, Lola! I’m glad I could help."}
+	]
+	view.call("start_custom_sequence", lines)
 
 
 func _ingredient_display_name(ingredient_id: String) -> String:
