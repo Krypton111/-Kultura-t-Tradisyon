@@ -118,100 +118,107 @@ func _on_introduction_finished() -> void:
 	_refresh_task_list()
 
 
-func _toggle_task_panel() -> void:
-	if task_model.is_task_completed(_hud):
-		_show_completion_dialogue()
+func _start_pot_dialogue() -> void:
+	if _pot_dialogue_open or is_instance_valid(_pot_overlay):
 		return
-	if not is_instance_valid(_task_panel):
-		_build_task_panel()
-	_task_panel.visible = not _task_panel.visible
-	if _task_panel.visible:
-		_refresh_task_list()
-
-
-func _build_task_panel() -> void:
-	if is_instance_valid(_task_panel) or _hud == null:
+	_pot_dialogue_open = true
+	var packed := load(DIALOGUE_SCENE_PATH) as PackedScene
+	if packed == null:
+		_pot_dialogue_open = false
 		return
-	_task_panel = PanelContainer.new()
-	_task_panel.name = "KitchenIngredientChecklist"
-	_task_panel.position = Vector2(270, 75)
-	_task_panel.size = Vector2(610, 500)
-	_task_panel.custom_minimum_size = Vector2(610, 500)
-	_task_panel.z_index = 120
-	_task_panel.add_theme_stylebox_override("panel", _panel_style(PANEL_BG, ACCENT, 3))
-	_hud.add_child(_task_panel)
-
-	var outer := VBoxContainer.new()
-	outer.add_theme_constant_override("separation", 10)
-	_task_panel.add_child(outer)
-
-	var heading := Label.new()
-	heading.text = "LOLA NENA'S SINIGANG CHECKLIST"
-	heading.add_theme_font_size_override("font_size", 22)
-	heading.add_theme_color_override("font_color", ACCENT)
-	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	outer.add_child(heading)
-
-	var hint := Label.new()
-	hint.text = "Click the ingredient objects in the kitchen to prepare them. Click Lola Nena to check this list again."
-	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	hint.add_theme_color_override("font_color", TEXT_COLOR)
-	outer.add_child(hint)
-
-	_progress_label = Label.new()
-	_progress_label.add_theme_color_override("font_color", ACCENT)
-	outer.add_child(_progress_label)
-
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	outer.add_child(scroll)
-	_task_list = VBoxContainer.new()
-	_task_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(_task_list)
-
-	_task_message = Label.new()
-	_task_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_task_message.add_theme_color_override("font_color", TEXT_COLOR)
-	outer.add_child(_task_message)
-
-	var buttons := HBoxContainer.new()
-	outer.add_child(buttons)
-	var recipe_button := Button.new()
-	recipe_button.text = "View Lola's Recipe"
-	recipe_button.pressed.connect(_open_recipe)
-	buttons.add_child(recipe_button)
-
-	var leave_button := Button.new()
-	leave_button.text = "← Leave Checklist"
-	leave_button.pressed.connect(func(): _task_panel.visible = false)
-	buttons.add_child(leave_button)
-	_refresh_task_list()
-
-
-func _refresh_task_list() -> void:
-	if not is_instance_valid(_task_list) or _hud == null:
+	var view := packed.instantiate() as Control
+	if view == null:
+		_pot_dialogue_open = false
 		return
-	for child in _task_list.get_children():
-		child.queue_free()
-	for ingredient in task_model.get_ingredients():
-		var ingredient_id := str(ingredient["id"])
-		var row := HBoxContainer.new()
-		_task_list.add_child(row)
-		var state := Label.new()
-		state.text = "✓" if task_model.is_ingredient_prepared(_hud, ingredient_id) else "○"
-		state.custom_minimum_size.x = 28
-		state.add_theme_color_override("font_color", ACCENT)
-		row.add_child(state)
-		var name_label := Label.new()
-		name_label.text = str(ingredient["name"])
-		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		name_label.add_theme_color_override("font_color", TEXT_COLOR)
-		row.add_child(name_label)
+	_hud.add_child(view)
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "Migs, please put all the ingredients you gathered into this pot. Drag each item from your inventory and drop it into the pot."}
+	]
+	view.call("start_custom_sequence", lines)
+	view.sequence_finished.connect(func():
+		_pot_dialogue_open = false
+		_show_empty_pot()
+	)
 
-	var ingredients: Array[Dictionary] = task_model.get_ingredients()
-	_progress_label.text = "Prepared: %d / %d" % [task_model.get_prepared_count(_hud), ingredients.size()]
-	_task_message.text = "All ingredients are ready!" if task_model.is_task_completed(_hud) else "Find and click each matching object in the kitchen."
 
+func _show_empty_pot() -> void:
+	if is_instance_valid(_pot_overlay):
+		return
+	var pot_texture := load(POT_TEXTURE_PATH) as Texture2D
+	if pot_texture == null:
+		push_warning("Kitchen task: empty pot image not found: " + POT_TEXTURE_PATH)
+		return
+	_pot_overlay = Control.new()
+	_pot_overlay.name = "SinigangPotOverlay"
+	_pot_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pot_overlay.z_index = 1100
+	_pot_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	_hud.add_child(_pot_overlay)
+
+	var dimmer := ColorRect.new()
+	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0, 0, 0, 0.62)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pot_overlay.add_child(dimmer)
+
+	var pot := TextureRect.new()
+	pot.name = "SinigangPotDropArea"
+	pot.texture = pot_texture
+	pot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pot.size = Vector2(560, 430)
+	pot.position = (get_viewport().get_visible_rect().size - pot.size) * 0.5
+	pot.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pot_overlay.add_child(pot)
+	_pot_drop_area = pot
+
+	var leave_sprite := Sprite2D.new()
+	leave_sprite.texture = LEAVE_ARROW_TEXTURE
+	leave_sprite.position = Vector2(576, 324)
+	leave_sprite.scale = Vector2(0.3, 0.3)
+	_pot_overlay.add_child(leave_sprite)
+	var leave_button := _make_leave_arrow_button(leave_sprite)
+	leave_button.pressed.connect(func():
+		_pot_overlay.queue_free()
+		_pot_overlay = null
+		_pot_drop_area = null
+		_hud.call("set_inventory_drop_rect", Rect2())
+	)
+	_hud.call("set_inventory_drop_rect", pot.get_global_rect())
+
+
+func _make_leave_arrow_button(sprite: Sprite2D) -> Button:
+	var button := Button.new()
+	button.name = "LeavePotButton"
+	button.text = ""
+	button.flat = true
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	for style_name in ["normal", "hover", "pressed", "focus"]:
+		button.add_theme_stylebox_override(style_name, StyleBoxEmpty.new())
+	var image := LEAVE_ARROW_TEXTURE.get_image()
+	var used_rect := image.get_used_rect()
+	var scaled_size := Vector2(image.get_width(), image.get_height()) * sprite.scale
+	var scaled_used_position := Vector2(used_rect.position) * sprite.scale
+	var scaled_used_size := Vector2(used_rect.size) * sprite.scale
+	button.position = sprite.position - scaled_size / 2.0 + scaled_used_position
+	button.size = scaled_used_size
+	button.z_index = 10
+	_pot_overlay.add_child(button)
+	return button
+
+
+func _on_inventory_item_dropped(item_id: String) -> void:
+	if not is_instance_valid(_pot_overlay):
+		return
+	if _hud.call("remove_inventory_item", item_id):
+		if not _pot_filled_items.has(item_id):
+			_pot_filled_items.append(item_id)
+		var progress: Dictionary = task_model.get_progress(_hud)
+		progress[item_id] = true
+		_hud.set_meta(task_model.KITCHEN_PROGRESS_META, progress)
+		if _pot_filled_items.size() >= task_model.get_ingredients().size():
+			_hud.set_meta(task_model.KITCHEN_TASK_COMPLETED_META, true)
 
 
 func _ingredient_display_name(ingredient_id: String) -> String:
