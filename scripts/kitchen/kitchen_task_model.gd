@@ -9,7 +9,10 @@ const KITCHEN_TASK_COMPLETED_META := "kitchen_ingredient_task_completed"
 const KITCHEN_PROGRESS_META := "kitchen_ingredient_progress"
 
 func _state() -> Node:
-	return get_node_or_null("/root/GameState")
+	var scene_tree := Engine.get_main_loop() as SceneTree
+	if scene_tree == null:
+		return null
+	return scene_tree.root.get_node_or_null("GameState")
 const RECIPE_TEXTURE_PATH := "res://GAME ASSETS/Kitchen/lola's recipe.png"
 
 const INTRO_DIALOGUE: Array[Dictionary] = [
