@@ -274,8 +274,14 @@ func _resize_navigation_buttons() -> void:
 		fade_rect.size = Vector2(_screen_width(), _screen_height())
 
 func _update_cursor(mouse_position: Vector2) -> void:
-	# Give room-navigation hotspots priority so room objects cannot hide the
-	# right-arrow cursor when the player is trying to enter Migs' room.
+	# Interactable objects and the journal always take cursor priority over
+	# directional navigation hotspots, regardless of which scene is active.
+	if _is_hovering_journal() or _is_hovering_room_interactable(mouse_position):
+		if current_direction != "journal":
+			current_direction = "journal"
+			Input.set_custom_mouse_cursor(magnify_cursor, Input.CURSOR_ARROW, _cursor_hotspot(magnify_cursor))
+		return
+
 	var direction := ""
 	var left_hotspot_size := Vector2(LEFT_NAV_WIDTH, LEFT_NAV_HEIGHT)
 	var right_hotspot_size := Vector2(RIGHT_NAV_WIDTH, RIGHT_NAV_HEIGHT)
@@ -314,12 +320,6 @@ func _update_cursor(mouse_position: Vector2) -> void:
 				Input.set_custom_mouse_cursor(right_cursor, Input.CURSOR_ARROW, _cursor_hotspot(right_cursor))
 			"down":
 				Input.set_custom_mouse_cursor(down_cursor, Input.CURSOR_ARROW, _cursor_hotspot(down_cursor))
-		return
-
-	if _is_hovering_journal() or _is_hovering_room_interactable(mouse_position):
-		if current_direction != "journal":
-			current_direction = "journal"
-			Input.set_custom_mouse_cursor(magnify_cursor, Input.CURSOR_ARROW, _cursor_hotspot(magnify_cursor))
 		return
 
 	if current_direction != "":
