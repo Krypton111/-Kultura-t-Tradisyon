@@ -7,8 +7,8 @@ signal close_requested
 @onready var right_arrow: Sprite2D = $JournalArrowRight
 
 var _entry_index := 0
-var _entry_title: Label
-var _entry_text: Label
+var _entry_titles: Array[Label] = []
+var _entry_texts: Array[Label] = []
 var _page_counter: Label
 var _entries: Array = []
 
@@ -17,8 +17,8 @@ func _ready() -> void:
 	z_index = 1100 # Render above the HUD transition fade and navigation layer.
 	_load_entries()
 	_create_leave_button()
-	_create_arrow_button(left_arrow, -1, "PreviousMemoryButton")
-	_create_arrow_button(right_arrow, 1, "NextMemoryButton")
+	_create_arrow_button(left_arrow, -4, "PreviousMemoryButton")
+	_create_arrow_button(right_arrow, 4, "NextMemoryButton")
 	_create_journal_text()
 
 func _unhandled_key_input(event: InputEvent) -> void:
@@ -69,26 +69,42 @@ func _load_entries() -> void:
 			_entries = stored.duplicate(true)
 
 func _create_journal_text() -> void:
-	# Small, warm-toned type sits on the open pages without replacing the art.
-	_entry_title = Label.new()
-	_entry_title.position = Vector2(405, 267)
-	_entry_title.size = Vector2(330, 28)
-	_entry_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_entry_title.add_theme_font_size_override("font_size", 15)
-	_entry_title.add_theme_color_override("font_color", Color(0.25, 0.20, 0.14))
-	add_child(_entry_title)
+	# Lay out two findings on each page, like handwritten notes in an open book.
+	# The full spread therefore displays up to four findings at once.
+	var page_positions := [
+		Vector2(105, 142), # left page, upper finding
+		Vector2(105, 335), # left page, lower finding
+		Vector2(610, 142), # right page, upper finding
+		Vector2(610, 335)  # right page, lower finding
+	]
+	var text_width := 350.0
+	for i in range(4):
+		var title := Label.new()
+		title.name = "FindingTitle%d" % (i + 1)
+		title.position = page_positions[i]
+		title.size = Vector2(text_width, 30)
+		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+		title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		title.add_theme_font_size_override("font_size", 15)
+		title.add_theme_color_override("font_color", Color(0.25, 0.20, 0.14))
+		add_child(title)
+		_entry_titles.append(title)
 
-	_entry_text = Label.new()
-	_entry_text.position = Vector2(405, 298)
-	_entry_text.size = Vector2(330, 78)
-	_entry_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_entry_text.add_theme_font_size_override("font_size", 11)
-	_entry_text.add_theme_color_override("font_color", Color(0.25, 0.20, 0.14))
-	add_child(_entry_text)
+		var body := Label.new()
+		body.name = "FindingText%d" % (i + 1)
+		body.position = page_positions[i] + Vector2(0, 34)
+		body.size = Vector2(text_width, 105)
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		body.add_theme_font_size_override("font_size", 12)
+		body.add_theme_color_override("font_color", Color(0.25, 0.20, 0.14))
+		add_child(body)
+		_entry_texts.append(body)
 
 	_page_counter = Label.new()
-	_page_counter.position = Vector2(500, 378)
-	_page_counter.size = Vector2(150, 18)
+	_page_counter.position = Vector2(460, 535)
+	_page_counter.size = Vector2(230, 20)
 	_page_counter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_page_counter.add_theme_font_size_override("font_size", 10)
 	_page_counter.add_theme_color_override("font_color", Color(0.38, 0.30, 0.20))
@@ -96,18 +112,30 @@ func _create_journal_text() -> void:
 	_update_journal_text()
 
 func _update_journal_text() -> void:
-	if _entry_title == null:
+	if _entry_titles.is_empty():
 		return
 	if _entries.is_empty():
-		_entry_title.text = "HERITAGE JOURNAL"
-		_entry_text.text = "Your first story is waiting. Explore the living room and ask Lola Nena about the things her family has kept."
+		_entry_titles[0].text = "HERITAGE JOURNAL"
+		_entry_texts[0].text = "Your first story is waiting. Explore the living room and ask Lola Nena about the things her family has kept."
+		for i in range(1, 4):
+			_entry_titles[i].text = ""
+			_entry_texts[i].text = ""
 		_page_counter.text = "No entries yet"
 		return
-	_entry_index = clampi(_entry_index, 0, _entries.size() - 1)
-	var entry: Dictionary = _entries[_entry_index]
-	_entry_title.text = str(entry.get("title", "Untitled Memory"))
-	_entry_text.text = str(entry.get("text", ""))
-	_page_counter.text = "Memory %d of %d" % [_entry_index + 1, _entries.size()]
+
+	var spread_start := clampi(floori(float(_entry_index) / 4.0) * 4, 0, maxi(0, _entries.size() - 1))
+	_entry_index = spread_start
+	for i in range(4):
+		var entry_index := spread_start + i
+		if entry_index < _entries.size():
+			var entry: Dictionary = _entries[entry_index]
+			_entry_titles[i].text = str(entry.get("title", "Untitled Memory"))
+			_entry_texts[i].text = str(entry.get("text", ""))
+		else:
+			_entry_titles[i].text = ""
+			_entry_texts[i].text = ""
+	var last_index := mini(spread_start + 4, _entries.size())
+	_page_counter.text = "Memories %d–%d of %d" % [spread_start + 1, last_index, _entries.size()]
 
 func _create_arrow_button(sprite: Sprite2D, step: int, button_name: String) -> void:
 	if sprite.texture == null:
@@ -138,8 +166,11 @@ func _create_arrow_button(sprite: Sprite2D, step: int, button_name: String) -> v
 	button.position = sprite.position - scaled_size / 2.0 + scaled_used_position
 	button.size = scaled_used_size
 	button.pressed.connect(func() -> void:
-		if _entries.size() > 1:
-			_entry_index = posmod(_entry_index + step, _entries.size())
+		if _entries.size() > 4:
+			var spread_count := ceili(float(_entries.size()) / 4.0)
+			var current_spread := floori(float(_entry_index) / 4.0)
+			var next_spread := posmod(current_spread + int(step / 4), spread_count)
+			_entry_index = next_spread * 4
 			_update_journal_text()
 	)
 	add_child(button)
