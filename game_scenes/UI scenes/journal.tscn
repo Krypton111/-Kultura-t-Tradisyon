@@ -35,14 +35,14 @@ position = Vector2(576, 324)
 scale = Vector2(0.3, 0.3)
 texture = ExtResource("4_he3at")
 
-[node name="Container" type="Container" parent="." unique_id=1155535239]
+[node name="pg1" type="Container" parent="." unique_id=1155535239]
 layout_mode = 0
 offset_left = 214.0
 offset_top = 75.0
 offset_right = 562.0
 offset_bottom = 572.0
 
-[node name="Container2" type="Container" parent="." unique_id=1323078992]
+[node name="pg2" type="Container" parent="." unique_id=1323078992]
 layout_mode = 0
 offset_left = 582.0
 offset_top = 81.0
