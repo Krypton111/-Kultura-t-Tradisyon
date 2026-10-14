@@ -4,6 +4,8 @@ extends Node
 
 const KitchenTaskModelScript = preload("res://scripts/kitchen/kitchen_task_model.gd")
 const DIALOGUE_SCENE_PATH := "res://game_scenes/UI scenes/dialogue.tscn"
+const POT_TEXTURE_PATH := "res://GAME ASSETS/Kitchen/sinigang pot empty.png"
+const LEAVE_ARROW_TEXTURE = preload("res://GAME ASSETS/UI/HUD/leave_arrow.png")
 
 const PANEL_BG := Color(0.10, 0.12, 0.15, 0.97)
 const ACCENT := Color(0.88, 0.72, 0.42, 1.0)
@@ -23,11 +25,11 @@ const OBJECT_TO_INGREDIENT := {
 var task_model = KitchenTaskModelScript.new()
 var _dialogue_view: Control
 var _hud: Node
-var _task_panel: PanelContainer
-var _task_list: VBoxContainer
-var _progress_label: Label
-var _task_message: Label
 var _recipe_overlay: Control
+var _pot_overlay: Control
+var _pot_drop_area: Control
+var _pot_dialogue_open := false
+var _pot_filled_items: Array[String] = []
 
 
 func _ready() -> void:
@@ -38,11 +40,11 @@ func _ready() -> void:
 
 	if task_model.can_start(_hud, lola):
 		_start_task_introduction()
-	elif _hud != null and bool(_hud.get_meta(task_model.KITCHEN_INTRO_COMPLETED_META, false)) and not task_model.is_task_completed(_hud):
-		_build_task_panel()
-		_task_panel.visible = false
-
 	_setup_recipe_hotspot()
+	if _hud != null and _hud.has_signal("inventory_item_dropped"):
+		var drop_callable := Callable(self, "_on_inventory_item_dropped")
+		if not _hud.is_connected("inventory_item_dropped", drop_callable):
+			_hud.connect("inventory_item_dropped", drop_callable)
 
 
 func _input(event: InputEvent) -> void:
@@ -52,7 +54,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if _hud == null or not bool(_hud.get_meta(task_model.KITCHEN_INTRO_COMPLETED_META, false)):
 		return
-	if is_instance_valid(_recipe_overlay):
+	if is_instance_valid(_recipe_overlay) or is_instance_valid(_pot_overlay):
 		return
 
 	var kitchen := get_parent()
@@ -66,10 +68,10 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	# Lola Nena is the checklist toggle, like opening the journal.
+	# Lola Nena explains the pot step; the old checklist is removed.
 	var lola := kitchen.get_node_or_null("LolaNenaStanding") as Sprite2D
 	if lola != null and lola.visible and _sprite_pixel_hit(lola, mouse_position):
-		_toggle_task_panel()
+		_start_pot_dialogue()
 		get_viewport().set_input_as_handled()
 		return
 
@@ -89,8 +91,6 @@ func _input(event: InputEvent) -> void:
 				if hud_layer != null and hud_layer.has_method("add_inventory_item"):
 					hud_layer.call("add_inventory_item", ingredient_id, item_name, sprite.texture)
 				_fade_collected_ingredient(sprite, ingredient_id)
-				if is_instance_valid(_task_panel) and _task_panel.visible:
-					_refresh_task_list()
 			get_viewport().set_input_as_handled()
 			return
 
@@ -112,10 +112,6 @@ func _start_task_introduction() -> void:
 func _on_introduction_finished() -> void:
 	task_model.mark_intro_completed(_hud)
 	_dialogue_view = null
-	_build_task_panel()
-	# Show the checklist immediately after the introduction dialogue finishes.
-	_task_panel.visible = true
-	_refresh_task_list()
 
 
 func _start_pot_dialogue() -> void:
