@@ -5,7 +5,7 @@ extends Node
 const KitchenTaskModelScript = preload("res://scripts/kitchen/kitchen_task_model.gd")
 const DIALOGUE_SCENE_PATH := "res://game_scenes/UI scenes/dialogue.tscn"
 
-var task_model: RefCounted = KitchenTaskModelScript.new()
+var task_model = KitchenTaskModelScript.new()
 var _dialogue_view: Control
 
 
@@ -35,7 +35,7 @@ func _try_start_task_introduction() -> void:
 
 	_dialogue_view.sequence_finished.connect(_on_introduction_finished)
 	hud.add_child(_dialogue_view)
-	_dialogue_view.call("start_custom_sequence", task_model.INTRO_DIALOGUE)
+	_dialogue_view.call("start_custom_sequence", task_model.get_intro_dialogue())
 
 
 func _on_introduction_finished() -> void:
