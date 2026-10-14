@@ -67,8 +67,8 @@ var room_scenes := {
 func _ready() -> void:
 	var game_state := get_node_or_null("/root/GameState")
 	if game_state != null:
-		inventory_items = game_state.get_state("inventory_items", [])
-		heritage_entries = game_state.get_state("heritage_entries", [])
+		inventory_items.assign(game_state.get_state("inventory_items", []))
+		heritage_entries.assign(game_state.get_state("heritage_entries", []))
 		camera_collected = bool(game_state.get_state("camera_collected", false))
 		journal_collected = bool(game_state.get_state("journal_collected", false))
 	left_cursor = _prepare_cursor(LEFT_CURSOR)
@@ -229,9 +229,9 @@ func _refresh_inventory_ui() -> void:
 		if inventory_fade_in_ids.has(item_id):
 			icon_rect.modulate.a = 0.0
 			label.modulate.a = 0.0
-			var fade_tween := create_tween().set_parallel(true)
-			fade_tween.tween_property(icon_rect, "modulate:a", 1.0, INVENTORY_ITEM_FADE_DURATION)
-			fade_tween.tween_property(label, "modulate:a", 1.0, INVENTORY_ITEM_FADE_DURATION)
+			var item_fade_tween := create_tween().set_parallel(true)
+			item_fade_tween.tween_property(icon_rect, "modulate:a", 1.0, INVENTORY_ITEM_FADE_DURATION)
+			item_fade_tween.tween_property(label, "modulate:a", 1.0, INVENTORY_ITEM_FADE_DURATION)
 			inventory_fade_in_ids.erase(item_id)
 	_update_inventory_page_buttons()
 
