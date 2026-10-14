@@ -296,6 +296,10 @@ func _setup_journal_toggle() -> void:
 		journal_open.visible = false
 	if camera_icon:
 		camera_icon.visible = false
+	if journal_collected and journal_close != null:
+		journal_close.visible = true
+	if camera_collected and camera_icon != null:
+		camera_icon.visible = true
 
 func reveal_journal() -> void:
 	journal_collected = true
