@@ -333,10 +333,11 @@ func _is_screen_overlay_open() -> bool:
 	if hud != null:
 		if hud.find_child("LolaRecipeOverlay", true, false) != null:
 			return true
-		if hud.find_child("Dialogue", true, false) != null:
-			return true
-		if hud.find_child("DialogueView", true, false) != null:
-			return true
+		# Dialogue instances use the generic root name "Control", so detect
+		# them by their sequence API instead of relying on a node name.
+		for child in hud.find_children("*", "Control", true, false):
+			if child.has_method("start_custom_sequence"):
+				return true
 
 	var current_scene := get_tree().current_scene
 	if current_scene != null and current_scene.find_child("SinigangPotOverlay", true, false) != null:
