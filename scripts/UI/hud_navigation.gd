@@ -19,6 +19,8 @@ const RIGHT_CURSOR := preload("res://GAME ASSETS/UI/HUD/right room.png")
 const DOWN_CURSOR := preload("res://GAME ASSETS/UI/HUD/bottom room.png")
 const MAGNIFY_CURSOR := preload("res://GAME ASSETS/UI/HUD/magnifying_cursor.png")
 const FOOTSTEPS_SFX := preload("res://GAME ASSETS/SFX/footsteps.mp3")
+const INVENTORY_ITEM_NAME_FONT: FontFile = preload("res://GAME ASSETS/UI/borgers_script/BorgersScript_PERSONAL_USE_ONLY.otf")
+const INVENTORY_ITEM_FADE_DURATION := 0.45
 
 const LIVING_ROOM := "res://game_scenes/levels/living_room.tscn"
 const KITCHEN := "res://game_scenes/levels/kitchen.tscn"
@@ -45,6 +47,7 @@ var journal_collected := false
 var heritage_entries: Array[Dictionary] = []
 
 var inventory_items: Array[Dictionary] = []
+var inventory_fade_in_ids: Array[String] = []
 var inventory_slot_nodes: Array[Control] = []
 var inventory_page := 0
 var inventory_up_button: Button
@@ -133,6 +136,7 @@ func add_inventory_item(item_id: String, item_name: String, item_texture: Textur
 		if str(existing.get("id", "")) == item_id:
 			return false
 	inventory_items.append({"id": item_id, "name": item_name, "texture": item_texture})
+	inventory_fade_in_ids.append(item_id)
 	_refresh_inventory_ui()
 	return true
 
@@ -167,7 +171,7 @@ func _update_inventory_page_buttons() -> void:
 	if inventory_up_button != null:
 		inventory_up_button.visible = inventory_items.size() > inventory_slot_nodes.size() and inventory_page > 0
 	if inventory_down_button != null:
-		inventory_down_button.visible = inventory_items.size() > 4 and inventory_page < page_count - 1
+		inventory_down_button.visible = inventory_items.size() > inventory_slot_nodes.size() and inventory_page < page_count - 1
 
 
 func _refresh_inventory_ui() -> void:
@@ -202,10 +206,21 @@ func _refresh_inventory_ui() -> void:
 		label.offset_bottom = 0
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_override("font", INVENTORY_ITEM_NAME_FONT)
 		label.add_theme_font_size_override("font_size", 10)
 		label.add_theme_color_override("font_color", Color(0.96, 0.94, 0.88))
 		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(label)
+
+		# Newly collected ingredients fade in together with their inventory names.
+		var item_id := str(item.get("id", ""))
+		if inventory_fade_in_ids.has(item_id):
+			icon_rect.modulate.a = 0.0
+			label.modulate.a = 0.0
+			var fade_tween := create_tween().set_parallel(true)
+			fade_tween.tween_property(icon_rect, "modulate:a", 1.0, INVENTORY_ITEM_FADE_DURATION)
+			fade_tween.tween_property(label, "modulate:a", 1.0, INVENTORY_ITEM_FADE_DURATION)
+			inventory_fade_in_ids.erase(item_id)
 	_update_inventory_page_buttons()
 
 
