@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cm5clgo7c6jg5"
-path="res://.godot/imported/46.png-71f710017f2fffb91ed46ca735043382.ctex"
+path="res://.godot/imported/Lola's Recipe.png-b5e69d975b1aa56d6e9f70fcbc4293d8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://GAME ASSETS/Kitchen/46.png"
-dest_files=["res://.godot/imported/46.png-71f710017f2fffb91ed46ca735043382.ctex"]
+source_file="res://GAME ASSETS/Kitchen/Lola's Recipe.png"
+dest_files=["res://.godot/imported/Lola's Recipe.png-b5e69d975b1aa56d6e9f70fcbc4293d8.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://nr7e3fm5md6n"
-path="res://.godot/imported/47.png-dca741e029dd0338386d0df9d90cd826.ctex"
+uid="uid://cgb0qfnugbb1b"
+path="res://.godot/imported/back button.png-68a6a6edc4950a5f1604c42bd87d25cd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://GAME ASSETS/Kitchen/47.png"
-dest_files=["res://.godot/imported/47.png-dca741e029dd0338386d0df9d90cd826.ctex"]
+source_file="res://GAME ASSETS/Kitchen/back button.png"
+dest_files=["res://.godot/imported/back button.png-68a6a6edc4950a5f1604c42bd87d25cd.ctex"]
 
 [params]
 

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c0r5jv36cfstr"
-path="res://.godot/imported/48.png-565b4d928fa72859704246489fc7e804.ctex"
+uid="uid://nr7e3fm5md6n"
+path="res://.godot/imported/sinigang pot full.png-ea1185603502ad1186e24f6fe26ac2ae.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://GAME ASSETS/Kitchen/48.png"
-dest_files=["res://.godot/imported/48.png-565b4d928fa72859704246489fc7e804.ctex"]
+source_file="res://GAME ASSETS/Kitchen/sinigang pot full.png"
+dest_files=["res://.godot/imported/sinigang pot full.png-ea1185603502ad1186e24f6fe26ac2ae.ctex"]
 
 [params]
 
