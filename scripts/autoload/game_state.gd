@@ -14,6 +14,7 @@ const DEFAULTS := {
 	"kitchen_ingredient_task_completed": false,
 	"kitchen_ingredient_progress": {},
 	"kitchen_collected_ingredient_ids": [],
+	"kitchen_pot_ingredient_ids": [],
 	"camera_collected": false,
 	"journal_collected": false,
 	"inventory_items": []
