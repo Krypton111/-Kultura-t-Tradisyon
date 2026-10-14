@@ -80,12 +80,22 @@ func _ready() -> void:
 
 func _setup_inventory_ui() -> void:
 	inventory_slot_nodes.clear()
-	for slot_name in ["item1", "item2", "item3", "item4"]:
-		var slot := get_node_or_null(slot_name) as Control
-		if slot != null:
-			inventory_slot_nodes.append(slot)
-			slot.mouse_filter = Control.MOUSE_FILTER_STOP
-			slot.gui_input.connect(_on_inventory_slot_gui_input.bind(slot))
+	# Discover item1, item2, item3... from HUD.tscn automatically.
+	var slot_candidates: Array[Control] = []
+	for child in get_children():
+		if child is Control and str(child.name).begins_with("item"):
+			var suffix := str(child.name).trim_prefix("item")
+			if suffix.is_valid_int():
+				slot_candidates.append(child as Control)
+	slot_candidates.sort_custom(func(a: Control, b: Control) -> bool:
+		return int(str(a.name).trim_prefix("item")) < int(str(b.name).trim_prefix("item"))
+	)
+	for slot in slot_candidates:
+		inventory_slot_nodes.append(slot)
+		slot.mouse_filter = Control.MOUSE_FILTER_STOP
+		var slot_callable := Callable(self, "_on_inventory_slot_gui_input").bind(slot)
+		if not slot.gui_input.is_connected(slot_callable):
+			slot.gui_input.connect(slot_callable)
 	_setup_inventory_page_buttons()
 	_refresh_inventory_ui()
 
@@ -149,13 +159,13 @@ func set_inventory_drop_rect(drop_rect: Rect2) -> void:
 
 
 func _inventory_page_count() -> int:
-	return maxi(1, ceili(float(inventory_items.size()) / 4.0))
+	return maxi(1, ceili(float(inventory_items.size()) / float(maxi(1, inventory_slot_nodes.size()))))
 
 
 func _update_inventory_page_buttons() -> void:
 	var page_count := _inventory_page_count()
 	if inventory_up_button != null:
-		inventory_up_button.visible = inventory_items.size() > 4 and inventory_page > 0
+		inventory_up_button.visible = inventory_items.size() > inventory_slot_nodes.size() and inventory_page > 0
 	if inventory_down_button != null:
 		inventory_down_button.visible = inventory_items.size() > 4 and inventory_page < page_count - 1
 
@@ -164,10 +174,10 @@ func _refresh_inventory_ui() -> void:
 	for slot in inventory_slot_nodes:
 		for child in slot.get_children():
 			child.queue_free()
-	for i in range(4):
+	for i in range(inventory_slot_nodes.size()):
 		if i >= inventory_slot_nodes.size():
 			break
-		var item_index := inventory_page * 4 + i
+		var item_index := inventory_page * inventory_slot_nodes.size() + i
 		var slot := inventory_slot_nodes[i]
 		slot.visible = true
 		if item_index >= inventory_items.size():
