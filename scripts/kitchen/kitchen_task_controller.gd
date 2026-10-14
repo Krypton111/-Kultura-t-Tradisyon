@@ -89,7 +89,6 @@ func _input(event: InputEvent) -> void:
 				if hud_layer != null and hud_layer.has_method("add_inventory_item"):
 					hud_layer.call("add_inventory_item", ingredient_id, item_name, sprite.texture)
 				_fade_collected_ingredient(sprite, ingredient_id)
-				_show_object_feedback(sprite, ingredient_id)
 				if is_instance_valid(_task_panel) and _task_panel.visible:
 					_refresh_task_list()
 			get_viewport().set_input_as_handled()
