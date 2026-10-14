@@ -301,8 +301,9 @@ func _mark_ingredient_collected(ingredient_id: String, sprite: Sprite2D) -> void
 			collected.append(ingredient_id)
 			_hud.set_meta(COLLECTED_INGREDIENTS_META, collected)
 	if is_instance_valid(sprite):
-		sprite.set_meta("ingredient_collected", true)
-		sprite.visible = false
+		# Mark it as collected immediately so it cannot be interacted with again,
+		# but let the existing fade animation finish before hiding the sprite.
+		_fade_collected_ingredient(sprite, ingredient_id)
 
 func _fade_collected_ingredient(sprite: Sprite2D, ingredient_id: String) -> void:
 	sprite.set_meta("ingredient_collected", true)
