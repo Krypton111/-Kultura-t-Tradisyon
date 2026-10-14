@@ -37,6 +37,7 @@ func _ready() -> void:
 	_hud = get_node_or_null("/root/HUD")
 	var kitchen := get_parent()
 	var lola := kitchen.get_node_or_null("LolaNenaStanding") as Sprite2D if kitchen != null else null
+	_restore_collected_ingredients(kitchen)
 
 	if task_model.can_start(_hud, lola):
 		_start_task_introduction()
@@ -88,11 +89,13 @@ func _input(event: InputEvent) -> void:
 		if _sprite_pixel_hit(sprite, mouse_position):
 			var ingredient_id := str(OBJECT_TO_INGREDIENT[object_name])
 			if task_model.prepare_ingredient(_hud, ingredient_id):
+				# Persist collection on the HUD so changing rooms cannot make the
+				# ingredient reappear. Hide it immediately before updating the inventory.
+				_mark_ingredient_collected(ingredient_id, sprite)
 				var item_name := _ingredient_display_name(ingredient_id)
 				var hud_layer := get_node_or_null("/root/HUD")
 				if hud_layer != null and hud_layer.has_method("add_inventory_item"):
 					hud_layer.call("add_inventory_item", ingredient_id, item_name, sprite.texture)
-				_fade_collected_ingredient(sprite, ingredient_id)
 			get_viewport().set_input_as_handled()
 			return
 
@@ -273,6 +276,33 @@ func _ingredient_display_name(ingredient_id: String) -> String:
 			return str(ingredient.get("name", ingredient_id))
 	return ingredient_id.capitalize()
 
+
+const COLLECTED_INGREDIENTS_META := "kitchen_collected_ingredient_ids"
+
+
+func _restore_collected_ingredients(kitchen: Node) -> void:
+	if kitchen == null or not is_instance_valid(_hud):
+		return
+	var collected: Array = _hud.get_meta(COLLECTED_INGREDIENTS_META, [])
+	for object_name in OBJECT_TO_INGREDIENT:
+		var sprite := kitchen.get_node_or_null(object_name) as Sprite2D
+		if sprite == null:
+			continue
+		var ingredient_id := str(OBJECT_TO_INGREDIENT[object_name])
+		if collected.has(ingredient_id):
+			sprite.set_meta("ingredient_collected", true)
+			sprite.visible = false
+
+
+func _mark_ingredient_collected(ingredient_id: String, sprite: Sprite2D) -> void:
+	if is_instance_valid(_hud):
+		var collected: Array = _hud.get_meta(COLLECTED_INGREDIENTS_META, [])
+		if not collected.has(ingredient_id):
+			collected.append(ingredient_id)
+			_hud.set_meta(COLLECTED_INGREDIENTS_META, collected)
+	if is_instance_valid(sprite):
+		sprite.set_meta("ingredient_collected", true)
+		sprite.visible = false
 
 func _fade_collected_ingredient(sprite: Sprite2D, ingredient_id: String) -> void:
 	sprite.set_meta("ingredient_collected", true)
