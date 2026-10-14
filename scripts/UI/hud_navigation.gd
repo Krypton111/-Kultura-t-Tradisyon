@@ -45,9 +45,14 @@ var journal_collected := false
 var heritage_entries: Array[Dictionary] = []
 
 var inventory_items: Array[Dictionary] = []
-var inventory_bar: PanelContainer
-var inventory_slots: HBoxContainer
-var inventory_notice: Label
+var inventory_slot_nodes: Array[Control] = []
+var inventory_page := 0
+var inventory_up_button: Button
+var inventory_down_button: Button
+var inventory_drag_id := ""
+var inventory_drag_icon: TextureRect
+var inventory_drop_rect := Rect2()
+signal inventory_item_dropped(item_id: String)
 
 var room_scenes := {
 	LIVING_ROOM: preload("res://game_scenes/levels/living_room.tscn"),
@@ -74,39 +79,43 @@ func _ready() -> void:
 
 
 func _setup_inventory_ui() -> void:
-	inventory_bar = PanelContainer.new()
-	inventory_bar.name = "InventoryBar"
-	inventory_bar.position = Vector2(320, 12)
-	inventory_bar.custom_minimum_size = Vector2(640, 76)
-	inventory_bar.z_index = 80
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.08, 0.10, 0.13, 0.88)
-	panel_style.border_color = Color(0.78, 0.65, 0.42, 0.95)
-	panel_style.set_border_width_all(2)
-	panel_style.set_corner_radius_all(8)
-	panel_style.set_content_margin_all(6)
-	inventory_bar.add_theme_stylebox_override("panel", panel_style)
-	add_child(inventory_bar)
-	var layout := VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 2)
-	inventory_bar.add_child(layout)
-	var heading := Label.new()
-	heading.text = "INVENTORY"
-	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 12)
-	heading.add_theme_color_override("font_color", Color(0.92, 0.79, 0.55))
-	layout.add_child(heading)
-	inventory_slots = HBoxContainer.new()
-	inventory_slots.alignment = BoxContainer.ALIGNMENT_CENTER
-	inventory_slots.add_theme_constant_override("separation", 5)
-	layout.add_child(inventory_slots)
-	inventory_notice = Label.new()
-	inventory_notice.position = Vector2(330, 92)
-	inventory_notice.z_index = 81
-	inventory_notice.add_theme_color_override("font_color", Color(0.96, 0.91, 0.76))
-	inventory_notice.add_theme_font_size_override("font_size", 14)
-	inventory_notice.visible = false
-	add_child(inventory_notice)
+	inventory_slot_nodes.clear()
+	for slot_name in ["item1", "item2", "item3", "item4"]:
+		var slot := get_node_or_null(slot_name) as Control
+		if slot != null:
+			inventory_slot_nodes.append(slot)
+			slot.mouse_filter = Control.MOUSE_FILTER_STOP
+			slot.gui_input.connect(_on_inventory_slot_gui_input.bind(slot))
+	_setup_inventory_page_buttons()
+	_refresh_inventory_ui()
+
+
+func _setup_inventory_page_buttons() -> void:
+	var up_area := get_node_or_null("up") as Control
+	var down_area := get_node_or_null("down") as Control
+	if up_area != null:
+		inventory_up_button = _make_inventory_arrow_button("InventoryUpButton", up_area, -1)
+	if down_area != null:
+		inventory_down_button = _make_inventory_arrow_button("InventoryDownButton", down_area, 1)
+	_update_inventory_page_buttons()
+
+
+func _make_inventory_arrow_button(button_name: String, area: Control, page_step: int) -> Button:
+	var button := Button.new()
+	button.name = button_name
+	button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	button.text = ""
+	button.flat = true
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	for style_name in ["normal", "hover", "pressed", "focus"]:
+		button.add_theme_stylebox_override(style_name, StyleBoxEmpty.new())
+	button.pressed.connect(func():
+		inventory_page = clampi(inventory_page + page_step, 0, _inventory_page_count() - 1)
+		_refresh_inventory_ui()
+	)
+	area.add_child(button)
+	return button
 
 
 func add_inventory_item(item_id: String, item_name: String, item_texture: Texture2D) -> bool:
@@ -115,7 +124,6 @@ func add_inventory_item(item_id: String, item_name: String, item_texture: Textur
 			return false
 	inventory_items.append({"id": item_id, "name": item_name, "texture": item_texture})
 	_refresh_inventory_ui()
-	_show_inventory_notice("Added to inventory: " + item_name)
 	return true
 
 
@@ -126,55 +134,113 @@ func has_inventory_item(item_id: String) -> bool:
 	return false
 
 
+func remove_inventory_item(item_id: String) -> bool:
+	for i in range(inventory_items.size()):
+		if str(inventory_items[i].get("id", "")) == item_id:
+			inventory_items.remove_at(i)
+			inventory_page = clampi(inventory_page, 0, _inventory_page_count() - 1)
+			_refresh_inventory_ui()
+			return true
+	return false
+
+
+func set_inventory_drop_rect(drop_rect: Rect2) -> void:
+	inventory_drop_rect = drop_rect
+
+
+func _inventory_page_count() -> int:
+	return maxi(1, ceili(float(inventory_items.size()) / 4.0))
+
+
+func _update_inventory_page_buttons() -> void:
+	var page_count := _inventory_page_count()
+	if inventory_up_button != null:
+		inventory_up_button.visible = inventory_items.size() > 4 and inventory_page > 0
+	if inventory_down_button != null:
+		inventory_down_button.visible = inventory_items.size() > 4 and inventory_page < page_count - 1
+
+
 func _refresh_inventory_ui() -> void:
-	if not is_instance_valid(inventory_slots):
-		return
-	for child in inventory_slots.get_children():
-		child.queue_free()
-	for item in inventory_items:
-		var slot := PanelContainer.new()
-		slot.custom_minimum_size = Vector2(54, 38)
-		var slot_style := StyleBoxFlat.new()
-		slot_style.bg_color = Color(0.16, 0.18, 0.20, 1.0)
-		slot_style.border_color = Color(0.55, 0.48, 0.34, 1.0)
-		slot_style.set_border_width_all(1)
-		slot.add_theme_stylebox_override("panel", slot_style)
-		inventory_slots.add_child(slot)
-		var holder := VBoxContainer.new()
-		holder.add_theme_constant_override("separation", 0)
-		slot.add_child(holder)
+	for slot in inventory_slot_nodes:
+		for child in slot.get_children():
+			child.queue_free()
+	for i in range(4):
+		if i >= inventory_slot_nodes.size():
+			break
+		var item_index := inventory_page * 4 + i
+		var slot := inventory_slot_nodes[i]
+		slot.visible = true
+		if item_index >= inventory_items.size():
+			continue
+		var item: Dictionary = inventory_items[item_index]
 		var icon_rect := TextureRect.new()
+		icon_rect.name = "InventoryItemIcon"
 		icon_rect.texture = item.get("texture") as Texture2D
-		icon_rect.custom_minimum_size = Vector2(28, 24)
+		icon_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		icon_rect.offset_left = 8
+		icon_rect.offset_top = 5
+		icon_rect.offset_right = -8
+		icon_rect.offset_bottom = -20
 		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		holder.add_child(icon_rect)
-		var item_label := Label.new()
-		item_label.text = str(item.get("name", "Item"))
-		item_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		item_label.add_theme_font_size_override("font_size", 8)
-		item_label.add_theme_color_override("font_color", Color(0.96, 0.94, 0.88))
-		holder.add_child(item_label)
+		icon_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(icon_rect)
+		var label := Label.new()
+		label.text = str(item.get("name", ""))
+		label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		label.offset_top = 56
+		label.offset_bottom = 0
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		label.add_theme_font_size_override("font_size", 10)
+		label.add_theme_color_override("font_color", Color(0.96, 0.94, 0.88))
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		slot.add_child(label)
+	_update_inventory_page_buttons()
 
 
-func _show_inventory_notice(message: String) -> void:
-	if not is_instance_valid(inventory_notice):
+func _on_inventory_slot_gui_input(event: InputEvent, slot: Control) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		var slot_index := inventory_slot_nodes.find(slot)
+		var item_index := inventory_page * 4 + slot_index
+		if slot_index >= 0 and item_index < inventory_items.size():
+			_begin_inventory_drag(inventory_items[item_index])
+
+
+func _begin_inventory_drag(item: Dictionary) -> void:
+	inventory_drag_id = str(item.get("id", ""))
+	if is_instance_valid(inventory_drag_icon):
+		inventory_drag_icon.queue_free()
+	inventory_drag_icon = TextureRect.new()
+	inventory_drag_icon.name = "InventoryDragIcon"
+	inventory_drag_icon.texture = item.get("texture") as Texture2D
+	inventory_drag_icon.size = Vector2(72, 72)
+	inventory_drag_icon.position = get_viewport().get_mouse_position() - Vector2(36, 36)
+	inventory_drag_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	inventory_drag_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	inventory_drag_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inventory_drag_icon.z_index = 1200
+	add_child(inventory_drag_icon)
+
+
+func _finish_inventory_drag() -> void:
+	if inventory_drag_id == "":
 		return
-	inventory_notice.text = message
-	inventory_notice.visible = true
-	inventory_notice.modulate.a = 1.0
-	var tween := create_tween()
-	tween.tween_interval(1.8)
-	tween.tween_property(inventory_notice, "modulate:a", 0.0, 0.35)
-	tween.finished.connect(func():
-		if is_instance_valid(inventory_notice):
-			inventory_notice.visible = false
-			inventory_notice.modulate.a = 1.0
-	)
+	var item_id := inventory_drag_id
+	inventory_drag_id = ""
+	if is_instance_valid(inventory_drag_icon):
+		inventory_drag_icon.queue_free()
+	inventory_drag_icon = null
+	if inventory_drop_rect.has_point(get_viewport().get_mouse_position()):
+		inventory_item_dropped.emit(item_id)
+
+
 
 
 func _process(_delta: float) -> void:
 	_update_journal_hover()
+	if is_instance_valid(inventory_drag_icon):
+		inventory_drag_icon.position = get_viewport().get_mouse_position() - Vector2(36, 36)
 
 	if navigation_locked:
 		return
@@ -259,6 +325,15 @@ func _is_hovering_journal() -> bool:
 	return over_close or over_open
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if event.pressed:
+			if journal_is_open:
+				return
+		else:
+			if inventory_drag_id != "":
+				_finish_inventory_drag()
+				get_viewport().set_input_as_handled()
+				return
 	# While the journal overlay is open, let it handle its own controls.
 	if journal_is_open:
 		return
