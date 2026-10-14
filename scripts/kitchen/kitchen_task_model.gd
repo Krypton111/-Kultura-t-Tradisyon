@@ -35,3 +35,6 @@ func can_start(hud: Node, lola: Sprite2D) -> bool:
 func mark_completed(hud: Node) -> void:
 	if hud != null:
 		hud.set_meta(KITCHEN_INTRO_COMPLETED_META, true)
+
+func get_intro_dialogue() -> Array[Dictionary]:
+	return INTRO_DIALOGUE.duplicate(true)
