@@ -12,3 +12,4 @@ func _ready() -> void:
 		items_collected = hud.has_collected_room_items()
 
 	lola.visible = items_collected
+git
