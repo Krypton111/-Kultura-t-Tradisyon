@@ -36,3 +36,39 @@ texture = ExtResource("4_ogk7k")
 position = Vector2(1073.6, 587.4)
 scale = Vector2(0.095, 0.095)
 texture = ExtResource("5_i4v7e")
+
+[node name="item1" type="Container" parent="." unique_id=2117265517]
+offset_left = 16.0
+offset_top = 71.0
+offset_right = 100.0
+offset_bottom = 151.0
+
+[node name="item2" type="Container" parent="." unique_id=1175718573]
+offset_left = 17.0
+offset_top = 175.0
+offset_right = 101.0
+offset_bottom = 255.0
+
+[node name="item3" type="Container" parent="." unique_id=1395932647]
+offset_left = 18.0
+offset_top = 384.0
+offset_right = 102.0
+offset_bottom = 464.0
+
+[node name="item4" type="Container" parent="." unique_id=784334552]
+offset_left = 17.0
+offset_top = 488.0
+offset_right = 101.0
+offset_bottom = 568.0
+
+[node name="down" type="Container" parent="." unique_id=623883051]
+offset_left = 21.0
+offset_top = 588.0
+offset_right = 95.0
+offset_bottom = 625.0
+
+[node name="up" type="Container" parent="." unique_id=1564554016]
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 94.0
+offset_bottom = 55.0
