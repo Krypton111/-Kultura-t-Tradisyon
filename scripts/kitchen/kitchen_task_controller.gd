@@ -68,10 +68,12 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	# Lola Nena explains the pot step; the old checklist is removed.
+	# Once Migs has added every ingredient, do not replay Lola's pot instructions.
+	# The completion dialogue already thanks him and explains that she will finish cooking.
 	var lola := kitchen.get_node_or_null("LolaNenaStanding") as Sprite2D
 	if lola != null and lola.visible and _sprite_pixel_hit(lola, mouse_position):
-		_start_pot_dialogue()
+		if not task_model.is_task_completed(_hud):
+			_start_pot_dialogue()
 		get_viewport().set_input_as_handled()
 		return
 
