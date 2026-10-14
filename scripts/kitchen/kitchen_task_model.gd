@@ -76,8 +76,6 @@ func prepare_ingredient(hud: Node, ingredient_id: String) -> bool:
 		return false
 	progress[ingredient_id] = true
 	hud.set_meta(KITCHEN_PROGRESS_META, progress)
-	if get_prepared_count(hud) >= INGREDIENTS.size():
-		hud.set_meta(KITCHEN_TASK_COMPLETED_META, true)
 	return true
 
 
