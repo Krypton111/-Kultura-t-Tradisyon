@@ -7,8 +7,11 @@ func _ready() -> void:
 	if lola == null:
 		return
 
-	var items_collected := false
-	if hud and hud.has_method("has_collected_room_items"):
-		items_collected = hud.has_collected_room_items()
+	# Lola Nena should only appear in the Kitchen after the player has
+	# examined ALL heritage interactables in the Living Room.
+	# Collecting the Journal and Camera in Migs' Room is not enough.
+	var living_room_heritage_completed := false
+	if hud != null:
+		living_room_heritage_completed = bool(hud.get_meta("living_room_heritage_completed", false))
 
-	lola.visible = items_collected
+	lola.visible = living_room_heritage_completed
