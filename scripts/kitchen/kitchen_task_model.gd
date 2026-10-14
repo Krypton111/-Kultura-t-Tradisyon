@@ -12,7 +12,7 @@ const RECIPE_TEXTURE_PATH := "res://GAME ASSETS/Kitchen/lola's recipe.png"
 const INTRO_DIALOGUE: Array[Dictionary] = [
 	{"speaker": "Lola Nena", "text": "Migs, just in time! I need to start preparing lunch."},
 	{"speaker": "Migs", "text": "What are you going to cook, Lola?"},
-	{"speaker": "Lola Nena", "text": "I’m making sinigang today, but there’s a lot to prepare. Will you help me get the ingredients ready?"},
+	{"speaker": "Lola Nena", "text": "I’m making sinigang na bangus today, but there’s a lot to prepare. Will you help me get the ingredients ready?"},
 	{"speaker": "Migs", "text": "Of course, Lola! Just tell me what to do first."}
 ]
 
