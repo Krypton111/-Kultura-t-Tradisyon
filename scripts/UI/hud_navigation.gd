@@ -44,6 +44,11 @@ var camera_collected := false
 var journal_collected := false
 var heritage_entries: Array[Dictionary] = []
 
+var inventory_items: Array[Dictionary] = []
+var inventory_bar: PanelContainer
+var inventory_slots: HBoxContainer
+var inventory_notice: Label
+
 var room_scenes := {
 	LIVING_ROOM: preload("res://game_scenes/levels/living_room.tscn"),
 	KITCHEN: preload("res://game_scenes/levels/kitchen.tscn"),
@@ -65,6 +70,108 @@ func _ready() -> void:
 	_create_fade_overlay()
 	_create_footsteps_player()
 	_setup_journal_toggle()
+	_setup_inventory_ui()
+
+
+func _setup_inventory_ui() -> void:
+	inventory_bar = PanelContainer.new()
+	inventory_bar.name = "InventoryBar"
+	inventory_bar.position = Vector2(320, 12)
+	inventory_bar.custom_minimum_size = Vector2(640, 76)
+	inventory_bar.z_index = 80
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.08, 0.10, 0.13, 0.88)
+	panel_style.border_color = Color(0.78, 0.65, 0.42, 0.95)
+	panel_style.set_border_width_all(2)
+	panel_style.set_corner_radius_all(8)
+	panel_style.set_content_margin_all(6)
+	inventory_bar.add_theme_stylebox_override("panel", panel_style)
+	add_child(inventory_bar)
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 2)
+	inventory_bar.add_child(layout)
+	var heading := Label.new()
+	heading.text = "INVENTORY"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 12)
+	heading.add_theme_color_override("font_color", Color(0.92, 0.79, 0.55))
+	layout.add_child(heading)
+	inventory_slots = HBoxContainer.new()
+	inventory_slots.alignment = BoxContainer.ALIGNMENT_CENTER
+	inventory_slots.add_theme_constant_override("separation", 5)
+	layout.add_child(inventory_slots)
+	inventory_notice = Label.new()
+	inventory_notice.position = Vector2(330, 92)
+	inventory_notice.z_index = 81
+	inventory_notice.add_theme_color_override("font_color", Color(0.96, 0.91, 0.76))
+	inventory_notice.add_theme_font_size_override("font_size", 14)
+	inventory_notice.visible = false
+	add_child(inventory_notice)
+
+
+func add_inventory_item(item_id: String, item_name: String, item_texture: Texture2D) -> bool:
+	for existing in inventory_items:
+		if str(existing.get("id", "")) == item_id:
+			return false
+	inventory_items.append({"id": item_id, "name": item_name, "texture": item_texture})
+	_refresh_inventory_ui()
+	_show_inventory_notice("Added to inventory: " + item_name)
+	return true
+
+
+func has_inventory_item(item_id: String) -> bool:
+	for item in inventory_items:
+		if str(item.get("id", "")) == item_id:
+			return true
+	return false
+
+
+func _refresh_inventory_ui() -> void:
+	if not is_instance_valid(inventory_slots):
+		return
+	for child in inventory_slots.get_children():
+		child.queue_free()
+	for item in inventory_items:
+		var slot := PanelContainer.new()
+		slot.custom_minimum_size = Vector2(54, 38)
+		var slot_style := StyleBoxFlat.new()
+		slot_style.bg_color = Color(0.16, 0.18, 0.20, 1.0)
+		slot_style.border_color = Color(0.55, 0.48, 0.34, 1.0)
+		slot_style.set_border_width_all(1)
+		slot.add_theme_stylebox_override("panel", slot_style)
+		inventory_slots.add_child(slot)
+		var holder := VBoxContainer.new()
+		holder.add_theme_constant_override("separation", 0)
+		slot.add_child(holder)
+		var icon_rect := TextureRect.new()
+		icon_rect.texture = item.get("texture") as Texture2D
+		icon_rect.custom_minimum_size = Vector2(28, 24)
+		icon_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		holder.add_child(icon_rect)
+		var item_label := Label.new()
+		item_label.text = str(item.get("name", "Item"))
+		item_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		item_label.add_theme_font_size_override("font_size", 8)
+		item_label.add_theme_color_override("font_color", Color(0.96, 0.94, 0.88))
+		holder.add_child(item_label)
+
+
+func _show_inventory_notice(message: String) -> void:
+	if not is_instance_valid(inventory_notice):
+		return
+	inventory_notice.text = message
+	inventory_notice.visible = true
+	inventory_notice.modulate.a = 1.0
+	var tween := create_tween()
+	tween.tween_interval(1.8)
+	tween.tween_property(inventory_notice, "modulate:a", 0.0, 0.35)
+	tween.finished.connect(func():
+		if is_instance_valid(inventory_notice):
+			inventory_notice.visible = false
+			inventory_notice.modulate.a = 1.0
+	)
+
 
 func _process(_delta: float) -> void:
 	_update_journal_hover()
