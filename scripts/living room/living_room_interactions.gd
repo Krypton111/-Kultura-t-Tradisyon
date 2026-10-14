@@ -91,6 +91,13 @@ func _ready() -> void:
 	var lola_has_moved := false
 	if hud != null:
 		lola_has_moved = bool(hud.get_meta("living_room_heritage_completed", false))
+		# Keep heritage progress on the persistent HUD, not on this room instance.
+		# The living room scene may be freed and recreated when changing rooms.
+		var saved_visited: Array = hud.get_meta("living_room_visited_story_ids", [])
+		var saved_recorded: Array = hud.get_meta("living_room_recorded_story_ids", [])
+		_visited_story_ids.assign(saved_visited)
+		_recorded_story_ids.assign(saved_recorded)
+		_final_kitchen_dialogue_started = bool(hud.get_meta("living_room_final_dialogue_started", false))
 	if lola_has_moved:
 		lola_not_looking.visible = false
 		lola_looking.visible = false
@@ -164,6 +171,9 @@ func _input(event: InputEvent) -> void:
 		var sprite := children[i] as Sprite2D
 		if sprite == null or not HERITAGE_STORIES.has(sprite.name):
 			continue
+		# A completed story remains completed when the player returns to this room.
+		if _visited_story_ids.has(sprite.name):
+			continue
 		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(sprite.name)):
 			_open_heritage_story(sprite.name)
 			get_viewport().set_input_as_handled()
@@ -217,8 +227,14 @@ func _on_object_dialogue_finished(object_name: String) -> void:
 			hud.call("record_heritage_entry", str(story["title"]), str(story["entry"]))
 	if not _visited_story_ids.has(object_name):
 		_visited_story_ids.append(object_name)
+	# Persist progress immediately so leaving the room cannot reset completed stories.
+	if hud != null:
+		hud.set_meta("living_room_visited_story_ids", _visited_story_ids.duplicate())
+		hud.set_meta("living_room_recorded_story_ids", _recorded_story_ids.duplicate())
 	if _visited_story_ids.size() >= HERITAGE_STORIES.size() and not _final_kitchen_dialogue_started:
 		_final_kitchen_dialogue_started = true
+		if hud != null:
+			hud.set_meta("living_room_final_dialogue_started", true)
 		_start_kitchen_reminder_dialogue()
 	elif hud != null:
 		hud.set("navigation_locked", false)
@@ -246,6 +262,8 @@ func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 	if not _room_interactables_unlocked() or _heritage_dialogue_open:
 		return false
 	for object_name in HERITAGE_STORIES.keys():
+		if _visited_story_ids.has(str(object_name)):
+			continue
 		var sprite := get_node_or_null(NodePath(str(object_name))) as Sprite2D
 		if sprite == null or not sprite.visible:
 			continue
