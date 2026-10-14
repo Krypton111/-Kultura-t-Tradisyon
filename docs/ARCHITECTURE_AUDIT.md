@@ -51,3 +51,14 @@ The project is best described as a hybrid of MVC-inspired separation and scene/c
 - Ingredient collection, inventory fade-in, drag-to-pot, completion dialogue, and room re-entry persistence still work.
 - Journal displays four findings per spread and navigation handles incomplete final spreads.
 - HUD navigation, cursor behavior, dialogue locking, and room transitions remain unchanged.
+
+## GameState service migration
+
+Implemented the first migration step:
+
+- Added `scripts/autoload/game_state.gd` and registered it as the `GameState` autoload.
+- Moved living-room heritage visit/record/completion flags, journal findings, camera/journal collection flags, inventory data, and kitchen introduction/ingredient/pot progress into the service.
+- Updated living-room, kitchen, kitchen-task model/controller, and HUD scripts to read and write persistent gameplay progress through `GameState`.
+- Added persistent runtime pot-placement IDs so a room change does not lose which ingredients were already placed.
+
+Important limitation: this service currently persists in memory across scene/room changes, not across closing and reopening the game. Save-file persistence is a separate future step. Godot import/parse checks and a complete gameplay regression pass have not yet been run; verify the listed validation checklist before treating this migration as runtime-tested.
