@@ -325,6 +325,24 @@ func _is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 		return current_scene.is_hovering_room_interactable(mouse_position)
 	return false
 
+
+func _is_screen_overlay_open() -> bool:
+	# While a full-screen/modal screen is visible, don't show the magnifying
+	# cursor for interactables underneath it (for example the recipe or pot).
+	var hud := get_node_or_null("/root/HUD")
+	if hud != null:
+		if hud.find_child("LolaRecipeOverlay", true, false) != null:
+			return true
+		if hud.find_child("Dialogue", true, false) != null:
+			return true
+		if hud.find_child("DialogueView", true, false) != null:
+			return true
+
+	var current_scene := get_tree().current_scene
+	if current_scene != null and current_scene.find_child("SinigangPotOverlay", true, false) != null:
+		return true
+	return false
+
 func _is_hovering_journal() -> bool:
 	if journal_close == null or journal_open == null:
 		return false
@@ -466,6 +484,14 @@ func _resize_navigation_buttons() -> void:
 		fade_rect.size = Vector2(_screen_width(), _screen_height())
 
 func _update_cursor(mouse_position: Vector2) -> void:
+	# Modal overlays take priority over room interactables. Keep the normal
+	# cursor while the recipe, pot, or dialogue screen is visible.
+	if _is_screen_overlay_open():
+		if current_direction != "":
+			current_direction = ""
+			Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+		return
+
 	# Interactable objects and the journal always take cursor priority over
 	# directional navigation hotspots, regardless of which scene is active.
 	if _is_hovering_journal() or _is_hovering_room_interactable(mouse_position):
