@@ -37,6 +37,9 @@ func _ready() -> void:
 	_hud = get_node_or_null("/root/HUD")
 	var kitchen := get_parent()
 	var lola := kitchen.get_node_or_null("LolaNenaStanding") as Sprite2D if kitchen != null else null
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		_pot_filled_items.assign(game_state.get_state("kitchen_pot_ingredient_ids", []))
 	_restore_collected_ingredients(kitchen)
 
 	if task_model.can_start(_hud, lola):
@@ -233,9 +236,11 @@ func _on_inventory_item_dropped(item_id: String) -> void:
 	if not is_instance_valid(_pot_overlay):
 		return
 	if _hud.call("remove_inventory_item", item_id):
+		var game_state := get_node_or_null("/root/GameState")
 		if not _pot_filled_items.has(item_id):
 			_pot_filled_items.append(item_id)
-		var game_state := get_node_or_null("/root/GameState")
+			if game_state != null:
+				game_state.set_state("kitchen_pot_ingredient_ids", _pot_filled_items)
 		var progress: Dictionary = task_model.get_progress(_hud)
 		progress[item_id] = true
 		if game_state != null:
