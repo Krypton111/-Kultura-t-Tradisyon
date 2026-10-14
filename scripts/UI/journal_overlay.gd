@@ -69,38 +69,37 @@ func _load_entries() -> void:
 			_entries = stored.duplicate(true)
 
 func _create_journal_text() -> void:
-	# Lay out two findings on each page, like handwritten notes in an open book.
-	# The full spread therefore displays up to four findings at once.
-	var page_positions := [
-		Vector2(105, 142), # left page, upper finding
-		Vector2(105, 335), # left page, lower finding
-		Vector2(610, 142), # right page, upper finding
-		Vector2(610, 335)  # right page, lower finding
-	]
-	var text_width := 350.0
-	for i in range(4):
-		var title := Label.new()
-		title.name = "FindingTitle%d" % (i + 1)
-		title.position = page_positions[i]
-		title.size = Vector2(text_width, 30)
-		title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-		title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		title.add_theme_font_size_override("font_size", 15)
-		title.add_theme_color_override("font_color", Color(0.25, 0.20, 0.14))
-		add_child(title)
-		_entry_titles.append(title)
+	# Keep all findings inside the two page containers from journal.tscn.
+	# Each page holds exactly two findings: one above and one below.
+	var page_nodes: Array[Control] = [$pg1, $pg2]
+	var page_positions := [Vector2(24, 92), Vector2(24, 285)]
+	var text_width := 300.0
 
-		var body := Label.new()
-		body.name = "FindingText%d" % (i + 1)
-		body.position = page_positions[i] + Vector2(0, 34)
-		body.size = Vector2(text_width, 105)
-		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
-		body.add_theme_font_size_override("font_size", 12)
-		body.add_theme_color_override("font_color", Color(0.25, 0.20, 0.14))
-		add_child(body)
-		_entry_texts.append(body)
+	for page_index in range(2):
+		for slot_index in range(2):
+			var entry_slot := page_index * 2 + slot_index
+			var title := Label.new()
+			title.name = "FindingTitle%d" % (entry_slot + 1)
+			title.position = page_positions[slot_index]
+			title.size = Vector2(text_width, 28)
+			title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+			title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			title.add_theme_font_size_override("font_size", 15)
+			title.add_theme_color_override("font_color", Color(0.25, 0.20, 0.14))
+			page_nodes[page_index].add_child(title)
+			_entry_titles.append(title)
+
+			var body := Label.new()
+			body.name = "FindingText%d" % (entry_slot + 1)
+			body.position = page_positions[slot_index] + Vector2(0, 32)
+			body.size = Vector2(text_width, 105)
+			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+			body.add_theme_font_size_override("font_size", 12)
+			body.add_theme_color_override("font_color", Color(0.25, 0.20, 0.14))
+			page_nodes[page_index].add_child(body)
+			_entry_texts.append(body)
 
 	_page_counter = Label.new()
 	_page_counter.position = Vector2(460, 535)
