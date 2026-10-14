@@ -212,7 +212,7 @@ func _refresh_inventory_ui() -> void:
 func _on_inventory_slot_gui_input(event: InputEvent, slot: Control) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		var slot_index := inventory_slot_nodes.find(slot)
-		var item_index := inventory_page * 4 + slot_index
+		var item_index := inventory_page * inventory_slot_nodes.size() + slot_index
 		if slot_index >= 0 and item_index < inventory_items.size():
 			_begin_inventory_drag(inventory_items[item_index])
 
