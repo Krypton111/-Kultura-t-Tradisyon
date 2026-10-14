@@ -227,10 +227,11 @@ func _show_completion_dialogue() -> void:
 	if view == null:
 		return
 	_hud.add_child(view)
-	view.call("start_custom_sequence", [
+	var completion_lines: Array[Dictionary] = [
 		{"speaker": "Lola Nena", "text": "Maraming salamat, Migs! You prepared everything we need for our sinigang."},
 		{"speaker": "Migs", "text": "You're welcome, Lola! The ingredients are ready."}
-	])
+	]
+	view.call("start_custom_sequence", completion_lines)
 
 
 func _sprite_pixel_hit(sprite: Sprite2D, viewport_position: Vector2) -> bool:
