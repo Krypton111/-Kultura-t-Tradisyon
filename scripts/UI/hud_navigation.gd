@@ -65,6 +65,12 @@ var room_scenes := {
 }
 
 func _ready() -> void:
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		inventory_items = game_state.get_state("inventory_items", [])
+		heritage_entries = game_state.get_state("heritage_entries", [])
+		camera_collected = bool(game_state.get_state("camera_collected", false))
+		journal_collected = bool(game_state.get_state("journal_collected", false))
 	left_cursor = _prepare_cursor(LEFT_CURSOR)
 	right_cursor = _prepare_cursor(RIGHT_CURSOR)
 	down_cursor = _prepare_cursor(DOWN_CURSOR, DOWN_CURSOR_MAX_SIZE)
@@ -136,6 +142,9 @@ func add_inventory_item(item_id: String, item_name: String, item_texture: Textur
 		if str(existing.get("id", "")) == item_id:
 			return false
 	inventory_items.append({"id": item_id, "name": item_name, "texture": item_texture})
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("inventory_items", inventory_items)
 	inventory_fade_in_ids.append(item_id)
 	_refresh_inventory_ui()
 	return true
@@ -152,6 +161,9 @@ func remove_inventory_item(item_id: String) -> bool:
 	for i in range(inventory_items.size()):
 		if str(inventory_items[i].get("id", "")) == item_id:
 			inventory_items.remove_at(i)
+			var game_state := get_node_or_null("/root/GameState")
+			if game_state != null:
+				game_state.set_state("inventory_items", inventory_items)
 			inventory_page = clampi(inventory_page, 0, _inventory_page_count() - 1)
 			_refresh_inventory_ui()
 			return true
@@ -287,6 +299,9 @@ func _setup_journal_toggle() -> void:
 
 func reveal_journal() -> void:
 	journal_collected = true
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("journal_collected", true)
 	if journal_close == null or journal_open == null:
 		return
 	journal_is_open = false
@@ -299,10 +314,15 @@ func record_heritage_entry(entry_title: String, entry_text: String) -> void:
 		if str(existing.get("title", "")) == entry_title:
 			return
 	heritage_entries.append({"title": entry_title, "text": entry_text})
-	set_meta("heritage_entries", heritage_entries.duplicate(true))
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("heritage_entries", heritage_entries)
 
 func reveal_camera() -> void:
 	camera_collected = true
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("camera_collected", true)
 	if camera_icon:
 		_fade_hud_sprite_in(camera_icon)
 
