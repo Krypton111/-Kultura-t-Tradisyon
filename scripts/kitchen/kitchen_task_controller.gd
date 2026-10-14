@@ -45,7 +45,7 @@ func _ready() -> void:
 	_setup_recipe_hotspot()
 
 
-func _unhandled_input(event: InputEvent) -> void:
+func _input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton):
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
@@ -57,6 +57,14 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	var kitchen := get_parent()
 	var mouse_position := get_viewport().get_mouse_position()
+
+	# Handle Container2 directly because generic Container layout may prevent its
+	# child Button from receiving the click reliably.
+	var recipe_area := kitchen.get_node_or_null("Container2") as Control
+	if recipe_area != null and recipe_area.get_global_rect().has_point(mouse_position):
+		_open_recipe()
+		get_viewport().set_input_as_handled()
+		return
 
 	# Lola Nena is the checklist toggle, like opening the journal.
 	var lola := kitchen.get_node_or_null("LolaNenaStanding") as Sprite2D
@@ -101,8 +109,9 @@ func _on_introduction_finished() -> void:
 	task_model.mark_intro_completed(_hud)
 	_dialogue_view = null
 	_build_task_panel()
-	# The list is available when clicking Lola Nena, not permanently on screen.
-	_task_panel.visible = false
+	# Show the checklist immediately after the introduction dialogue finishes.
+	_task_panel.visible = true
+	_refresh_task_list()
 
 
 func _toggle_task_panel() -> void:
@@ -227,12 +236,15 @@ func _show_completion_dialogue() -> void:
 func _sprite_pixel_hit(sprite: Sprite2D, viewport_position: Vector2) -> bool:
 	if sprite.texture == null or not sprite.visible:
 		return false
-	var local := sprite.to_local(viewport_position)
+
+	# Convert viewport coordinates into canvas coordinates before transforming
+	# into the sprite's local texture coordinates.
+	var canvas_position := get_viewport().get_canvas_transform().affine_inverse() * viewport_position
+	var local := sprite.to_local(canvas_position)
 	var rect := sprite.get_rect()
 	if not rect.has_point(local):
 		return false
-	# Use the texture alpha so transparent areas of the layered kitchen sprites
-	# do not intercept clicks meant for another visible object.
+
 	var texture_image := sprite.texture.get_image()
 	if texture_image == null or texture_image.is_empty():
 		return true
@@ -240,7 +252,6 @@ func _sprite_pixel_hit(sprite: Sprite2D, viewport_position: Vector2) -> bool:
 	var px := clampi(int(uv.x * texture_image.get_width()), 0, texture_image.get_width() - 1)
 	var py := clampi(int(uv.y * texture_image.get_height()), 0, texture_image.get_height() - 1)
 	return texture_image.get_pixel(px, py).a > 0.15
-
 
 func _setup_recipe_hotspot() -> void:
 	var kitchen := get_parent()
