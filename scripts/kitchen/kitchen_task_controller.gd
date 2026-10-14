@@ -149,7 +149,14 @@ func _show_empty_pot() -> void:
 	_pot_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_pot_overlay.z_index = 1100
 	_pot_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	_hud.add_child(_pot_overlay)
+	# Put the dimmed pot screen on a lower CanvasLayer than the HUD,
+	# so inventory slots remain visible and draggable above it.
+	var pot_canvas := CanvasLayer.new()
+	pot_canvas.name = "SinigangPotCanvas"
+	pot_canvas.layer = 99
+	get_tree().current_scene.add_child(pot_canvas)
+	_pot_overlay.set_meta("pot_canvas", pot_canvas)
+	pot_canvas.add_child(_pot_overlay)
 
 	var dimmer := ColorRect.new()
 	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -175,7 +182,11 @@ func _show_empty_pot() -> void:
 	_pot_overlay.add_child(leave_sprite)
 	var leave_button := _make_leave_arrow_button(leave_sprite)
 	leave_button.pressed.connect(func():
-		_pot_overlay.queue_free()
+		var pot_canvas_node = _pot_overlay.get_meta("pot_canvas") if is_instance_valid(_pot_overlay) else null
+		if is_instance_valid(_pot_overlay):
+			_pot_overlay.queue_free()
+		if is_instance_valid(pot_canvas_node):
+			pot_canvas_node.queue_free()
 		_pot_overlay = null
 		_pot_drop_area = null
 		_hud.call("set_inventory_drop_rect", Rect2())
