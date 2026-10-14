@@ -84,6 +84,11 @@ func _input(event: InputEvent) -> void:
 		if _sprite_pixel_hit(sprite, mouse_position):
 			var ingredient_id := str(OBJECT_TO_INGREDIENT[object_name])
 			if task_model.prepare_ingredient(_hud, ingredient_id):
+				var item_name := _ingredient_display_name(ingredient_id)
+				var hud_layer := get_node_or_null("/root/HUD")
+				if hud_layer != null and hud_layer.has_method("add_inventory_item"):
+					hud_layer.call("add_inventory_item", ingredient_id, item_name, sprite.texture)
+				_fade_collected_ingredient(sprite, ingredient_id)
 				_show_object_feedback(sprite, ingredient_id)
 				if is_instance_valid(_task_panel) and _task_panel.visible:
 					_refresh_task_list()
@@ -207,6 +212,24 @@ func _refresh_task_list() -> void:
 	var ingredients: Array[Dictionary] = task_model.get_ingredients()
 	_progress_label.text = "Prepared: %d / %d" % [task_model.get_prepared_count(_hud), ingredients.size()]
 	_task_message.text = "All ingredients are ready!" if task_model.is_task_completed(_hud) else "Find and click each matching object in the kitchen."
+
+
+
+func _ingredient_display_name(ingredient_id: String) -> String:
+	for ingredient in task_model.get_ingredients():
+		if str(ingredient.get("id", "")) == ingredient_id:
+			return str(ingredient.get("name", ingredient_id))
+	return ingredient_id.capitalize()
+
+
+func _fade_collected_ingredient(sprite: Sprite2D, ingredient_id: String) -> void:
+	sprite.set_meta("ingredient_collected", true)
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.45)
+	tween.tween_callback(func():
+		if is_instance_valid(sprite):
+			sprite.visible = false
+	)
 
 
 func _show_object_feedback(sprite: Sprite2D, ingredient_id: String) -> void:
