@@ -350,8 +350,6 @@ func _go_left() -> void:
 
 	match current_scene.scene_file_path:
 		LIVING_ROOM:
-			if current_scene.has_method("can_go_to_kitchen") and not current_scene.call("can_go_to_kitchen"):
-				return
 			_change_scene(KITCHEN)
 		MIGS_ROOM:
 			_change_scene(LIVING_ROOM)
