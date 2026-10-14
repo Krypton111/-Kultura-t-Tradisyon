@@ -257,8 +257,8 @@ func _sprite_pixel_hit(sprite: Sprite2D, viewport_position: Vector2) -> bool:
 	if sprite.texture == null or not sprite.visible:
 		return false
 
-	# Convert viewport coordinates into canvas coordinates before transforming
-	# into the sprite's local texture coordinates.
+	#convert viewport coordinates into canvas coordinates before transforming
+	#into the sprite's local texture coordinates haha omai
 	var canvas_position := get_viewport().get_canvas_transform().affine_inverse() * viewport_position
 	var local := sprite.to_local(canvas_position)
 	var rect := sprite.get_rect()

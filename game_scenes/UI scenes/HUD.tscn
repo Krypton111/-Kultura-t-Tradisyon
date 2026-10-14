@@ -50,15 +50,21 @@ offset_right = 101.0
 offset_bottom = 255.0
 
 [node name="item3" type="Container" parent="." unique_id=1395932647]
+offset_left = 16.0
+offset_top = 281.0
+offset_right = 100.0
+offset_bottom = 361.0
+
+[node name="item4" type="Container" parent="." unique_id=784334552]
 offset_left = 18.0
 offset_top = 384.0
 offset_right = 102.0
 offset_bottom = 464.0
 
-[node name="item4" type="Container" parent="." unique_id=784334552]
-offset_left = 17.0
+[node name="item5" type="Container" parent="." unique_id=1055256930]
+offset_left = 16.0
 offset_top = 488.0
-offset_right = 101.0
+offset_right = 100.0
 offset_bottom = 568.0
 
 [node name="down" type="Container" parent="." unique_id=623883051]
