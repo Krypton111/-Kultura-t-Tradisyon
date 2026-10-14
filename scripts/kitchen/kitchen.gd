@@ -15,7 +15,7 @@ const INGREDIENT_NODES := [
 
 func _ready() -> void:
 	var lola := get_node_or_null("LolaNenaStanding") as Sprite2D
-	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
 
 	if lola == null:
 		return
@@ -24,8 +24,8 @@ func _ready() -> void:
 	# examined ALL heritage interactables in the Living Room.
 	# Collecting the Journal and Camera in Migs' Room is not enough.
 	var living_room_heritage_completed := false
-	if hud != null:
-		living_room_heritage_completed = bool(hud.get_meta("living_room_heritage_completed", false))
+	if game_state != null:
+		living_room_heritage_completed = bool(game_state.get_state("living_room_heritage_completed", false))
 
 	lola.visible = living_room_heritage_completed
 
