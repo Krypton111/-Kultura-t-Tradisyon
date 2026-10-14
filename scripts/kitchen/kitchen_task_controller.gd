@@ -53,7 +53,8 @@ func _input(event: InputEvent) -> void:
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
 		return
-	if _hud == null or not bool(_hud.get_meta(task_model.KITCHEN_INTRO_COMPLETED_META, false)):
+	var game_state := get_node_or_null("/root/GameState")
+	if _hud == null or game_state == null or not bool(game_state.get_state(task_model.KITCHEN_INTRO_COMPLETED_META, false)):
 		return
 	if is_instance_valid(_recipe_overlay) or is_instance_valid(_pot_overlay):
 		return
@@ -234,11 +235,14 @@ func _on_inventory_item_dropped(item_id: String) -> void:
 	if _hud.call("remove_inventory_item", item_id):
 		if not _pot_filled_items.has(item_id):
 			_pot_filled_items.append(item_id)
+		var game_state := get_node_or_null("/root/GameState")
 		var progress: Dictionary = task_model.get_progress(_hud)
 		progress[item_id] = true
-		_hud.set_meta(task_model.KITCHEN_PROGRESS_META, progress)
+		if game_state != null:
+			game_state.set_state(task_model.KITCHEN_PROGRESS_META, progress)
 		if _pot_filled_items.size() >= task_model.get_ingredients().size() and not task_model.is_task_completed(_hud):
-			_hud.set_meta(task_model.KITCHEN_TASK_COMPLETED_META, true)
+			if game_state != null:
+				game_state.set_state(task_model.KITCHEN_TASK_COMPLETED_META, true)
 			_finish_pot_task()
 
 
@@ -283,7 +287,8 @@ const COLLECTED_INGREDIENTS_META := "kitchen_collected_ingredient_ids"
 func _restore_collected_ingredients(kitchen: Node) -> void:
 	if kitchen == null or not is_instance_valid(_hud):
 		return
-	var collected: Array = _hud.get_meta(COLLECTED_INGREDIENTS_META, [])
+	var game_state := get_node_or_null("/root/GameState")
+	var collected: Array = game_state.get_state(COLLECTED_INGREDIENTS_META, []) if game_state != null else []
 	for object_name in OBJECT_TO_INGREDIENT:
 		var sprite := kitchen.get_node_or_null(object_name) as Sprite2D
 		if sprite == null:
@@ -296,10 +301,12 @@ func _restore_collected_ingredients(kitchen: Node) -> void:
 
 func _mark_ingredient_collected(ingredient_id: String, sprite: Sprite2D) -> void:
 	if is_instance_valid(_hud):
-		var collected: Array = _hud.get_meta(COLLECTED_INGREDIENTS_META, [])
+		var game_state := get_node_or_null("/root/GameState")
+		var collected: Array = game_state.get_state(COLLECTED_INGREDIENTS_META, []) if game_state != null else []
 		if not collected.has(ingredient_id):
 			collected.append(ingredient_id)
-			_hud.set_meta(COLLECTED_INGREDIENTS_META, collected)
+			if game_state != null:
+				game_state.set_state(COLLECTED_INGREDIENTS_META, collected)
 	if is_instance_valid(sprite):
 		# Mark it as collected immediately so it cannot be interacted with again,
 		# but let the existing fade animation finish before hiding the sprite.
