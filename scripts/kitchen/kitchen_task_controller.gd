@@ -181,16 +181,9 @@ func _show_empty_pot() -> void:
 	leave_sprite.scale = Vector2(0.3, 0.3)
 	_pot_overlay.add_child(leave_sprite)
 	var leave_button := _make_leave_arrow_button(leave_sprite)
-	leave_button.pressed.connect(func():
-		var pot_canvas_node = _pot_overlay.get_meta("pot_canvas") if is_instance_valid(_pot_overlay) else null
-		if is_instance_valid(_pot_overlay):
-			_pot_overlay.queue_free()
-		if is_instance_valid(pot_canvas_node):
-			pot_canvas_node.queue_free()
-		_pot_overlay = null
-		_pot_drop_area = null
-		_hud.call("set_inventory_drop_rect", Rect2())
-	)
+	# Keep the leave button on the HUD's higher CanvasLayer so it can receive
+	# clicks above the dimmer, while the inventory remains visible and draggable.
+	leave_button.pressed.connect(_close_pot_overlay)
 	_hud.call("set_inventory_drop_rect", pot.get_global_rect())
 
 
@@ -210,9 +203,24 @@ func _make_leave_arrow_button(sprite: Sprite2D) -> Button:
 	var scaled_used_size := Vector2(used_rect.size) * sprite.scale
 	button.position = sprite.position - scaled_size / 2.0 + scaled_used_position
 	button.size = scaled_used_size
-	button.z_index = 10
-	_pot_overlay.add_child(button)
+	button.z_index = 1201
+	_hud.add_child(button)
 	return button
+
+
+func _close_pot_overlay() -> void:
+	var pot_canvas_node = _pot_overlay.get_meta("pot_canvas") if is_instance_valid(_pot_overlay) else null
+	var leave_button := _hud.get_node_or_null("LeavePotButton") if is_instance_valid(_hud) else null
+	if is_instance_valid(leave_button):
+		leave_button.queue_free()
+	if is_instance_valid(_pot_overlay):
+		_pot_overlay.queue_free()
+	if is_instance_valid(pot_canvas_node):
+		pot_canvas_node.queue_free()
+	_pot_overlay = null
+	_pot_drop_area = null
+	if is_instance_valid(_hud):
+		_hud.call("set_inventory_drop_rect", Rect2())
 
 
 func _on_inventory_item_dropped(item_id: String) -> void:
