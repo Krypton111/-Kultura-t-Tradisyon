@@ -22,16 +22,15 @@ func _ready() -> void:
 	open_tv.visible = false
 
 	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
 	var lola_has_moved := false
-	if hud != null:
-		lola_has_moved = bool(hud.get_meta("living_room_heritage_completed", false))
-		# Keep heritage progress on the persistent HUD, not on this room instance.
-		# The living room scene may be freed and recreated when changing rooms.
-		var saved_visited: Array = hud.get_meta("living_room_visited_story_ids", [])
-		var saved_recorded: Array = hud.get_meta("living_room_recorded_story_ids", [])
+	if game_state != null:
+		lola_has_moved = bool(game_state.get_state("living_room_heritage_completed", false))
+		var saved_visited: Array = game_state.get_state("living_room_visited_story_ids", [])
+		var saved_recorded: Array = game_state.get_state("living_room_recorded_story_ids", [])
 		_visited_story_ids.assign(saved_visited)
 		_recorded_story_ids.assign(saved_recorded)
-		_final_kitchen_dialogue_started = bool(hud.get_meta("living_room_final_dialogue_started", false))
+		_final_kitchen_dialogue_started = bool(game_state.get_state("living_room_final_dialogue_started", false))
 	if lola_has_moved:
 		lola_not_looking.visible = false
 		lola_looking.visible = false
@@ -90,7 +89,7 @@ func _room_interactables_unlocked() -> bool:
 
 func _input(event: InputEvent) -> void:
 	var hud := get_node_or_null("/root/HUD")
-	if not _room_interactables_unlocked() or _heritage_dialogue_open or (hud != null and bool(hud.get_meta("living_room_heritage_completed", false))) or not (event is InputEventMouseButton):
+	if not _room_interactables_unlocked() or _heritage_dialogue_open or (hud != null and bool(get_node("/root/GameState").get_state("living_room_heritage_completed", false))) or not (event is InputEventMouseButton):
 		return
 	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
 		return
@@ -155,6 +154,7 @@ func _on_object_dialogue_finished(object_name: String) -> void:
 	_heritage_dialogue_open = false
 	var story: Dictionary = HERITAGE_STORIES[object_name]
 	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
 	if hud != null and not _recorded_story_ids.has(object_name):
 		_recorded_story_ids.append(object_name)
 		if hud.has_method("record_heritage_entry"):
@@ -162,13 +162,13 @@ func _on_object_dialogue_finished(object_name: String) -> void:
 	if not _visited_story_ids.has(object_name):
 		_visited_story_ids.append(object_name)
 	# Persist progress immediately so leaving the room cannot reset completed stories.
-	if hud != null:
-		hud.set_meta("living_room_visited_story_ids", _visited_story_ids.duplicate())
-		hud.set_meta("living_room_recorded_story_ids", _recorded_story_ids.duplicate())
+	if game_state != null:
+		game_state.set_state("living_room_visited_story_ids", _visited_story_ids)
+		game_state.set_state("living_room_recorded_story_ids", _recorded_story_ids)
 	if _visited_story_ids.size() >= HERITAGE_STORIES.size() and not _final_kitchen_dialogue_started:
 		_final_kitchen_dialogue_started = true
-		if hud != null:
-			hud.set_meta("living_room_final_dialogue_started", true)
+		if game_state != null:
+			game_state.set_state("living_room_final_dialogue_started", true)
 		_start_kitchen_reminder_dialogue()
 	elif hud != null:
 		hud.set("navigation_locked", false)
@@ -185,8 +185,10 @@ func _start_kitchen_reminder_dialogue() -> void:
 func _on_kitchen_reminder_finished() -> void:
 	_heritage_dialogue_open = false
 	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("living_room_heritage_completed", true)
 	if hud != null:
-		hud.set_meta("living_room_heritage_completed", true)
 		hud.set("navigation_locked", false)
 	# Lola has left the living room to begin preparing lunch.
 	lola_not_looking.visible = false
@@ -237,7 +239,8 @@ func _is_tv_screen_hovered(sprite: Sprite2D, mouse_position: Vector2) -> bool:
 
 func can_go_to_kitchen() -> bool:
 	var hud := get_node_or_null("/root/HUD")
-	return hud != null and bool(hud.get_meta("living_room_heritage_completed", false))
+	var game_state := get_node_or_null("/root/GameState")
+	return game_state != null and bool(game_state.get_state("living_room_heritage_completed", false))
 
 func set_lola_dialogue_pose(is_looking_at_migs: bool) -> void:
 	if not lola_not_looking.visible and not lola_looking.visible:
