@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://ck4t3ivbsfwjx"]
 
 [ext_resource type="Script" uid="uid://bo5jd700h6mg2" path="res://scripts/kitchen/kitchen.gd" id="1_n8w8o"]
-[ext_resource type="Script" path="res://scripts/kitchen/kitchen_task_controller.gd" id="2_task_controller"]
 [ext_resource type="Texture2D" uid="uid://bess2li8mf7ly" path="res://GAME ASSETS/Kitchen/kitchen.png" id="1_uuqee"]
 [ext_resource type="Texture2D" uid="uid://bmnja1vbihy2l" path="res://GAME ASSETS/Kitchen/bangus.png" id="2_n8w8o"]
+[ext_resource type="Script" uid="uid://c2fuifhxirjxa" path="res://scripts/kitchen/kitchen_task_controller.gd" id="2_task_controller"]
 [ext_resource type="Texture2D" uid="uid://0bh263tihmu0" path="res://GAME ASSETS/Kitchen/condiments.png" id="3_agqji"]
 [ext_resource type="Texture2D" uid="uid://ug0wynhse57m" path="res://GAME ASSETS/Kitchen/kamatis.png" id="4_d1quw"]
 [ext_resource type="Texture2D" uid="uid://by6tcnjw1p0wh" path="res://GAME ASSETS/Kitchen/kangkong.png" id="5_dubk8"]
@@ -78,5 +78,19 @@ position = Vector2(576, 324)
 scale = Vector2(0.3, 0.3)
 texture = ExtResource("11_1m8x2")
 
-[node name="KitchenTaskController" type="Node" parent="."]
+[node name="KitchenTaskController" type="Node" parent="." unique_id=959453040]
 script = ExtResource("2_task_controller")
+
+[node name="Container" type="Container" parent="." unique_id=139510906]
+layout_mode = 0
+offset_left = 1080.0
+offset_top = 219.0
+offset_right = 1125.0
+offset_bottom = 269.0
+
+[node name="Container2" type="Container" parent="." unique_id=81448218]
+layout_mode = 0
+offset_left = 1096.0
+offset_top = 110.0
+offset_right = 1141.0
+offset_bottom = 158.0
