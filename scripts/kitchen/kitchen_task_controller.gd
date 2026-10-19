@@ -274,7 +274,12 @@ func _show_cooking_thanks_dialogue() -> void:
 	_hud.add_child(view)
 	var lines: Array[Dictionary] = [
 		{"speaker": "Lola Nena", "text": "Thank you for helping me prepare the ingredients, Migs. I’ll take it from here and finish cooking the sinigang."},
-		{"speaker": "Migs", "text": "You’re welcome, Lola! I’m glad I could help."}
+		{"speaker": "Migs", "text": "You’re welcome, Lola! I’m glad I could help."},
+		{"speaker": "Lola Nena", "text": "Since you’re already helping me around the house, could you do a few more things for me, apo?"},
+		{"speaker": "Migs", "text": "Of course, Lola! What do you need me to do?"},
+		{"speaker": "Lola Nena", "text": "The chickens in the coop need to be fed. You’ll find the feeding seeds outside, along with some cups and baskets. Put the seeds into the cups, then place the filled cups in the feeder inside the chicken coop."},
+		{"speaker": "Lola Nena", "text": "And while you’re there, please collect the eggs the chickens have laid. We can use them later. Thank you again for helping me, Migs!"},
+		{"speaker": "Migs", "text": "Got it, Lola! I’ll feed the chickens and collect the eggs."}
 	]
 	view.call("start_custom_sequence", lines)
 
