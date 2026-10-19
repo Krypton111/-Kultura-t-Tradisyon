@@ -3,6 +3,7 @@ extends Control
 
 const DIALOGUE_SCENE_PATH := "res://game_scenes/UI scenes/dialogue.tscn"
 const LIVING_ROOM_SCENE_PATH := "res://game_scenes/levels/living_room.tscn"
+const CHICKEN_COOP_SCENE_PATH := "res://game_scenes/levels/chicken coop.tscn"
 const BASKET_TEXTURE: Texture2D = preload("res://GAME ASSETS/Backyard/outside scene/basket close up.png")
 const CUPS_TEXTURE: Texture2D = preload("res://GAME ASSETS/Backyard/outside scene/cups close up.png")
 const BASKET_WITH_SEEDS_TEXTURE: Texture2D = preload("res://GAME ASSETS/Backyard/outside scene/basket with seeds close up.png")
@@ -22,6 +23,8 @@ var _baskets_sprite: Sprite2D
 var _cups_sprite: Sprite2D
 var _yellow_seeds_sprite: Sprite2D
 var _green_seeds_sprite: Sprite2D
+var _chicken_coop_sprite: Sprite2D
+var _coop_transitioning := false
 var _tasks_enabled := false
 var _collection_in_progress: Dictionary = {}
 var _used_seed_targets: Dictionary = {}
@@ -34,6 +37,7 @@ func _ready() -> void:
 	_cups_sprite = get_node_or_null("Cups") as Sprite2D
 	_yellow_seeds_sprite = get_node_or_null("YellowSeeds") as Sprite2D
 	_green_seeds_sprite = get_node_or_null("GreenSeeds") as Sprite2D
+	_chicken_coop_sprite = get_node_or_null("ChickenCoop") as Sprite2D
 	if _hud == null or _game_state == null:
 		return
 
@@ -264,7 +268,7 @@ func _refresh_seed_drop_targets() -> void:
 func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 	if not _tasks_enabled or (_hud != null and bool(_hud.get("navigation_locked"))):
 		return false
-	for sprite in [_baskets_sprite, _cups_sprite]:
+	for sprite in [_chicken_coop_sprite, _baskets_sprite, _cups_sprite]:
 		if sprite == null or not sprite.visible:
 			continue
 		if _sprite_pixel_hit(sprite, mouse_position):
@@ -281,6 +285,12 @@ func _input(event: InputEvent) -> void:
 		return
 
 	var mouse_position := get_global_mouse_position()
+	if _chicken_coop_sprite != null and _sprite_pixel_hit(_chicken_coop_sprite, mouse_position):
+		if not _coop_transitioning:
+			_coop_transitioning = true
+			_hud.call("_change_scene", CHICKEN_COOP_SCENE_PATH)
+		get_viewport().set_input_as_handled()
+		return
 	for sprite in [_cups_sprite, _baskets_sprite]:
 		if sprite == null or not sprite.visible:
 			continue
