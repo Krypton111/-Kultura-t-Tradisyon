@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://8jv8ehueyqv8"
-path="res://.godot/imported/90.png-db616b047428cdd0552bce7c1e01356b.ctex"
+path="res://.godot/imported/seeds1.png-d986feb9a7f067616875ecdc786e39c1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://GAME ASSETS/Backyard/outside scene/90.png"
-dest_files=["res://.godot/imported/90.png-db616b047428cdd0552bce7c1e01356b.ctex"]
+source_file="res://GAME ASSETS/Backyard/outside scene/seeds1.png"
+dest_files=["res://.godot/imported/seeds1.png-d986feb9a7f067616875ecdc786e39c1.ctex"]
 
 [params]
 

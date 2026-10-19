@@ -1,6 +1,13 @@
 [gd_scene format=3 uid="uid://dtvxuxikk2th4"]
 
-[ext_resource type="PackedScene" uid="uid://bym537eb10qr6" path="res://game_scenes/UI scenes/HUD.tscn" id="1_hud"]
+[ext_resource type="Texture2D" uid="uid://bks1becpw227s" path="res://GAME ASSETS/Backyard/outside scene/backyard base.png" id="1_1eew2"]
+[ext_resource type="Texture2D" uid="uid://cjjde06l5wxvg" path="res://GAME ASSETS/Backyard/outside scene/chicken coop.png" id="2_n1b84"]
+[ext_resource type="Texture2D" uid="uid://8jv8ehueyqv8" path="res://GAME ASSETS/Backyard/outside scene/seeds1.png" id="3_xkd3p"]
+[ext_resource type="Texture2D" uid="uid://b1612ydyobftp" path="res://GAME ASSETS/Backyard/outside scene/baskets.png" id="4_e1q3v"]
+[ext_resource type="Texture2D" uid="uid://brk8dcvn6l6fs" path="res://GAME ASSETS/Backyard/outside scene/yellow seeds.png" id="5_a04vu"]
+[ext_resource type="Texture2D" uid="uid://ci0kgsnoplufr" path="res://GAME ASSETS/Backyard/outside scene/green seeds.png" id="6_4m7ih"]
+[ext_resource type="Texture2D" uid="uid://c1l2qelk4rxos" path="res://GAME ASSETS/Backyard/outside scene/eggs and seeds.png" id="7_ubp0l"]
+[ext_resource type="Texture2D" uid="uid://cishcs64jskqg" path="res://GAME ASSETS/Backyard/outside scene/cups.png" id="8_6gsyx"]
 
 [node name="Control" type="Control" unique_id=1576094934]
 layout_mode = 3
@@ -10,3 +17,42 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="BackyardBase" type="Sprite2D" parent="." unique_id=1981318263]
+position = Vector2(576, 324)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("1_1eew2")
+
+[node name="ChickenCoop" type="Sprite2D" parent="." unique_id=1006311547]
+position = Vector2(576, 324)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("2_n1b84")
+
+[node name="Seeds1" type="Sprite2D" parent="." unique_id=539927718]
+position = Vector2(571, 312)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("3_xkd3p")
+
+[node name="Baskets" type="Sprite2D" parent="." unique_id=614327815]
+position = Vector2(564, 319)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("4_e1q3v")
+
+[node name="YellowSeeds" type="Sprite2D" parent="." unique_id=586989974]
+position = Vector2(576, 321)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("5_a04vu")
+
+[node name="GreenSeeds" type="Sprite2D" parent="." unique_id=911432962]
+position = Vector2(575, 301)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("6_4m7ih")
+
+[node name="EggsAndSeeds" type="Sprite2D" parent="." unique_id=604026164]
+position = Vector2(574, 310)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("7_ubp0l")
+
+[node name="Cups" type="Sprite2D" parent="." unique_id=617908062]
+position = Vector2(532, 315)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("8_6gsyx")

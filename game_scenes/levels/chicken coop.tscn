@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://cc7ukim1aubq8"]
+
+[ext_resource type="Texture2D" uid="uid://dts41kvrs7kck" path="res://GAME ASSETS/Backyard/chicken coop/chicken coop base.png" id="1_obd5n"]
+[ext_resource type="Texture2D" uid="uid://dk1667qn52iwj" path="res://GAME ASSETS/Backyard/chicken coop/coop eggs.png" id="2_tqi7l"]
+
+[node name="Control" type="Control" unique_id=233261888]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackyardBase" type="Sprite2D" parent="." unique_id=803743475]
+position = Vector2(576, 324)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("1_obd5n")
+
+[node name="CoopEggs" type="Sprite2D" parent="." unique_id=1874366794]
+position = Vector2(576, 324)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("2_tqi7l")
+
+[node name="Container" type="Container" parent="." unique_id=552077494]
+layout_mode = 0
+offset_left = 781.0
+offset_top = 490.0
+offset_right = 942.0
+offset_bottom = 581.0
+
+[node name="Container2" type="Container" parent="." unique_id=166715600]
+layout_mode = 0
+offset_left = 872.99994
+offset_top = 465.00003
+offset_right = 953.7329
+offset_bottom = 646.96655
+rotation = -0.92676985
