@@ -282,6 +282,14 @@ func _show_cooking_thanks_dialogue() -> void:
 		{"speaker": "Migs", "text": "Got it, Lola! I’ll feed the chickens and collect the eggs."}
 	]
 	view.call("start_custom_sequence", lines)
+	if view.has_signal("sequence_finished"):
+		view.sequence_finished.connect(_on_chicken_chores_instructions_finished)
+
+
+func _on_chicken_chores_instructions_finished() -> void:
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("backyard_chore_instructions_given", true)
 
 
 func _ingredient_display_name(ingredient_id: String) -> String:
