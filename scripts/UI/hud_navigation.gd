@@ -284,8 +284,8 @@ func _begin_inventory_drag(item: Dictionary) -> void:
 	# Downsampling the source image made the cups and basket look pixelated.
 	inventory_drag_icon.texture = item.get("texture") as Texture2D
 	inventory_drag_icon.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	inventory_drag_icon.custom_minimum_size = Vector2(32, 32)
-	inventory_drag_icon.size = Vector2(32, 32)
+	inventory_drag_icon.custom_minimum_size = Vector2(18, 18)
+	inventory_drag_icon.size = Vector2(18, 18)
 	inventory_drag_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	inventory_drag_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	inventory_drag_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
