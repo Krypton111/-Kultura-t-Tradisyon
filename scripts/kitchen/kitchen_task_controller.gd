@@ -49,6 +49,11 @@ func _ready() -> void:
 		var drop_callable := Callable(self, "_on_inventory_item_dropped")
 		if not _hud.is_connected("inventory_item_dropped", drop_callable):
 			_hud.connect("inventory_item_dropped", drop_callable)
+	# If the player leaves the kitchen while the kawali overlay is open,
+	# clean up its separate CanvasLayer so the pot cannot remain over other rooms.
+	var exit_callable := Callable(self, "_cleanup_pot_overlay_on_scene_exit")
+	if not tree_exiting.is_connected(exit_callable):
+		tree_exiting.connect(exit_callable)
 
 
 func _input(event: InputEvent) -> void:
@@ -215,6 +220,21 @@ func _make_leave_arrow_button(sprite: Sprite2D) -> Button:
 	button.z_index = 1201
 	_hud.add_child(button)
 	return button
+
+
+func _cleanup_pot_overlay_on_scene_exit() -> void:
+	var pot_canvas_node = _pot_overlay.get_meta("pot_canvas") if is_instance_valid(_pot_overlay) else null
+	var leave_button := _hud.get_node_or_null("LeavePotButton") if is_instance_valid(_hud) else null
+	if is_instance_valid(leave_button):
+		leave_button.queue_free()
+	if is_instance_valid(_pot_overlay):
+		_pot_overlay.queue_free()
+	if is_instance_valid(pot_canvas_node):
+		pot_canvas_node.queue_free()
+	_pot_overlay = null
+	_pot_drop_area = null
+	if is_instance_valid(_hud):
+		_hud.call("set_inventory_drop_rect", Rect2())
 
 
 func _close_pot_overlay() -> void:
