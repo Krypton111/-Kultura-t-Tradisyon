@@ -280,19 +280,12 @@ func _begin_inventory_drag(item: Dictionary) -> void:
 	# across the full HUD when its parent uses a full-rect layout.
 	inventory_drag_icon = TextureRect.new()
 	inventory_drag_icon.name = "InventoryDragIcon"
-	# Use a genuinely small texture as well as a small control. This prevents
-	# large close-up source images from being rendered at their original size.
-	var source_texture := item.get("texture") as Texture2D
-	if source_texture != null:
-		var preview_image := source_texture.get_image()
-		if preview_image != null and not preview_image.is_empty():
-			preview_image.resize(24, 24, Image.INTERPOLATE_LANCZOS)
-			inventory_drag_icon.texture = ImageTexture.create_from_image(preview_image)
-		else:
-			inventory_drag_icon.texture = source_texture
+	# Keep the original high-resolution texture and scale only the preview control.
+	# Downsampling the source image made the cups and basket look pixelated.
+	inventory_drag_icon.texture = item.get("texture") as Texture2D
 	inventory_drag_icon.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	inventory_drag_icon.custom_minimum_size = Vector2(56, 56)
-	inventory_drag_icon.size = Vector2(56, 56)
+	inventory_drag_icon.custom_minimum_size = Vector2(32, 32)
+	inventory_drag_icon.size = Vector2(32, 32)
 	inventory_drag_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	inventory_drag_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	inventory_drag_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
