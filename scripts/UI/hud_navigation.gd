@@ -295,9 +295,9 @@ func _begin_inventory_drag(item: Dictionary) -> void:
 func _update_inventory_drag_position() -> void:
 	if not is_instance_valid(inventory_drag_icon):
 		return
-	var mouse_position := get_viewport().get_mouse_position()
-	var local_mouse_position := get_global_transform_with_canvas().affine_inverse() * mouse_position
-	inventory_drag_icon.position = local_mouse_position - inventory_drag_icon.size * 0.5
+	var mouse_position: Vector2 = get_viewport().get_mouse_position()
+	# HUD is a CanvasLayer, so use the viewport mouse coordinates directly.
+	inventory_drag_icon.position = mouse_position - inventory_drag_icon.size * 0.5
 
 
 func _finish_inventory_drag() -> void:
