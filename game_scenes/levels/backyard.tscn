@@ -8,9 +8,9 @@
 [ext_resource type="Texture2D" uid="uid://ci0kgsnoplufr" path="res://GAME ASSETS/Backyard/outside scene/green seeds.png" id="6_4m7ih"]
 [ext_resource type="Texture2D" uid="uid://c1l2qelk4rxos" path="res://GAME ASSETS/Backyard/outside scene/eggs and seeds.png" id="7_ubp0l"]
 [ext_resource type="Texture2D" uid="uid://cishcs64jskqg" path="res://GAME ASSETS/Backyard/outside scene/cups.png" id="8_6gsyx"]
-[ext_resource type="Script" path="res://scripts/backyard/backyard.gd" id="9_backyard_script"]
+[ext_resource type="Script" uid="uid://bmxgi31f556b6" path="res://scripts/backyard/backyard.gd" id="9_backyard_script"]
 
-[node name="Control" type="Control" unique_id=1576094934]
+[node name="Control2" type="Control" unique_id=1576094934]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0

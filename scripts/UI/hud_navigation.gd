@@ -288,7 +288,7 @@ func _begin_inventory_drag(item: Dictionary) -> void:
 	if source_texture != null:
 		var largest_dimension := float(maxi(source_texture.get_width(), source_texture.get_height()))
 		if largest_dimension > 0.0:
-			inventory_drag_icon.scale = Vector2.ONE * (24.0 / largest_dimension)
+			inventory_drag_icon.scale = Vector2.ONE * (82.0 / largest_dimension)
 	add_child(inventory_drag_icon)
 	_update_inventory_drag_position()
 
