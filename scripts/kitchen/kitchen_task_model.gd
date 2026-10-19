@@ -19,7 +19,8 @@ const INTRO_DIALOGUE: Array[Dictionary] = [
 	{"speaker": "Lola Nena", "text": "Migs, just in time! I need to start preparing lunch."},
 	{"speaker": "Migs", "text": "What are you going to cook, Lola?"},
 	{"speaker": "Lola Nena", "text": "I’m making sinigang na bangus today, but there’s a lot to prepare. Will you help me get the ingredients ready?"},
-	{"speaker": "Migs", "text": "Of course, Lola! Just tell me what to do first."}
+	{"speaker": "Lola Nena", "text": "I’ve put my sinigang na bangus recipe on the side of the refrigerator. You can check it to see which ingredients we need before you start gathering them."},
+	{"speaker": "Migs", "text": "Got it, Lola! I’ll check the recipe on the refrigerator first so I know what to look for."}
 ]
 
 const INGREDIENTS: Array[Dictionary] = [
