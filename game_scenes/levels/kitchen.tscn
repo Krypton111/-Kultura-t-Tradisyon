@@ -83,14 +83,14 @@ script = ExtResource("2_task_controller")
 
 [node name="Container" type="Container" parent="." unique_id=139510906]
 layout_mode = 0
-offset_left = 1080.0
-offset_top = 219.0
-offset_right = 1125.0
-offset_bottom = 269.0
+offset_left = 1097.0
+offset_top = 108.0
+offset_right = 1142.0
+offset_bottom = 158.0
 
 [node name="Container2" type="Container" parent="." unique_id=81448218]
 layout_mode = 0
-offset_left = 1096.0
-offset_top = 110.0
-offset_right = 1141.0
-offset_bottom = 158.0
+offset_left = 1080.0
+offset_top = 220.0
+offset_right = 1125.0
+offset_bottom = 268.0
