@@ -3,6 +3,8 @@
 [ext_resource type="Texture2D" uid="uid://dts41kvrs7kck" path="res://GAME ASSETS/Backyard/chicken coop/chicken coop base.png" id="1_obd5n"]
 [ext_resource type="Texture2D" uid="uid://dk1667qn52iwj" path="res://GAME ASSETS/Backyard/chicken coop/coop eggs.png" id="2_tqi7l"]
 [ext_resource type="Script" path="res://scripts/backyard/chicken_coop.gd" id="3_coop_script"]
+[ext_resource type="Texture2D" path="res://GAME ASSETS/Backyard/chicken coop/chickens position 1.png" id="4_chickens_1"]
+[ext_resource type="Texture2D" path="res://GAME ASSETS/Backyard/chicken coop/chickens position 2.png" id="5_chickens_2"]
 
 [node name="Control" type="Control" unique_id=233261888]
 layout_mode = 3
@@ -37,3 +39,14 @@ offset_top = 465.00003
 offset_right = 953.7329
 offset_bottom = 646.96655
 rotation = -0.92676985
+
+[node name="ChickensPosition1" type="Sprite2D" parent="." unique_id=1874366795]
+position = Vector2(576, 324)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("4_chickens_1")
+
+[node name="ChickensPosition2" type="Sprite2D" parent="." unique_id=1874366796]
+visible = false
+position = Vector2(576, 324)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("5_chickens_2")
