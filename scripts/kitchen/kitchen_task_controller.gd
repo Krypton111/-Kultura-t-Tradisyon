@@ -235,6 +235,13 @@ func _close_pot_overlay() -> void:
 func _on_inventory_item_dropped(item_id: String) -> void:
 	if not is_instance_valid(_pot_overlay):
 		return
+
+	# Only the nine recipe ingredients may be placed into the kawali.
+	# Other inventory items (such as the salakot) must remain in inventory and
+	# must not count toward cooking progress.
+	if not OBJECT_TO_INGREDIENT.values().has(item_id):
+		return
+
 	if _hud.call("remove_inventory_item", item_id):
 		var game_state := get_node_or_null("/root/GameState")
 		if not _pot_filled_items.has(item_id):
