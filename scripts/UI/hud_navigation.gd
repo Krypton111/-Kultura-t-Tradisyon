@@ -53,7 +53,7 @@ var inventory_page := 0
 var inventory_up_button: Button
 var inventory_down_button: Button
 var inventory_drag_id := ""
-var inventory_drag_icon: TextureRect
+var inventory_drag_icon: Sprite2D
 var inventory_drop_rect := Rect2()
 signal inventory_item_dropped(item_id: String)
 signal inventory_item_dropped_on_target(item_id: String, target_id: String)
@@ -275,21 +275,20 @@ func _begin_inventory_drag(item: Dictionary) -> void:
 	if is_instance_valid(inventory_drag_icon):
 		inventory_drag_icon.queue_free()
 
-	# Keep the drag preview close to the size of the icon shown in an inventory
-	# slot. Explicit top-left anchors prevent the TextureRect from stretching
-	# across the full HUD when its parent uses a full-rect layout.
-	inventory_drag_icon = TextureRect.new()
+	# Use a Sprite2D rather than a TextureRect so Control anchors/layout cannot
+	# stretch the dragged close-up across the screen. Scale the original texture
+	# proportionally to a small on-screen preview without downsampling it.
+	inventory_drag_icon = Sprite2D.new()
 	inventory_drag_icon.name = "InventoryDragIcon"
-	# Keep the original high-resolution texture and scale only the preview control.
-	# Downsampling the source image made the cups and basket look pixelated.
 	inventory_drag_icon.texture = item.get("texture") as Texture2D
-	inventory_drag_icon.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
-	inventory_drag_icon.custom_minimum_size = Vector2(18, 18)
-	inventory_drag_icon.size = Vector2(18, 18)
-	inventory_drag_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	inventory_drag_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	inventory_drag_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	inventory_drag_icon.centered = true
 	inventory_drag_icon.z_index = 1200
+	inventory_drag_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var source_texture := inventory_drag_icon.texture
+	if source_texture != null:
+		var largest_dimension := float(maxi(source_texture.get_width(), source_texture.get_height()))
+		if largest_dimension > 0.0:
+			inventory_drag_icon.scale = Vector2.ONE * (24.0 / largest_dimension)
 	add_child(inventory_drag_icon)
 	_update_inventory_drag_position()
 
@@ -298,9 +297,8 @@ func _update_inventory_drag_position() -> void:
 	if not is_instance_valid(inventory_drag_icon):
 		return
 	var mouse_position: Vector2 = get_viewport().get_mouse_position()
-	# HUD is a CanvasLayer, so use the viewport mouse coordinates directly.
-	inventory_drag_icon.position = mouse_position - inventory_drag_icon.size * 0.5
-
+	# HUD is a CanvasLayer, so use viewport mouse coordinates directly.
+	inventory_drag_icon.position = mouse_position
 
 func _finish_inventory_drag() -> void:
 	if inventory_drag_id == "":
