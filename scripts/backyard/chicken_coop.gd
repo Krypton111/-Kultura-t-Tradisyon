@@ -40,15 +40,12 @@ func _ready() -> void:
 	_refresh_feeder_drop_targets()
 
 
-func _process(_delta: float) -> void:
-	if _hud == null or bool(_hud.get("navigation_locked")):
-		return
-	if _eggs != null and _eggs.visible and _sprite_pixel_hit(_eggs, get_viewport().get_mouse_position()):
-		Input.set_custom_mouse_cursor(_hud.get("magnify_cursor"), Input.CURSOR_ARROW)
-	elif _container != null and _container.get_global_rect().has_point(get_viewport().get_mouse_position()):
-		Input.set_custom_mouse_cursor(_hud.get("magnify_cursor"), Input.CURSOR_ARROW)
-	elif _container_2 != null and _container_2.get_global_rect().has_point(get_viewport().get_mouse_position()):
-		Input.set_custom_mouse_cursor(_hud.get("magnify_cursor"), Input.CURSOR_ARROW)
+func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
+	if _hud != null and bool(_hud.get("navigation_locked")):
+		return false
+	if _eggs != null and _eggs.visible and _sprite_pixel_hit(_eggs, mouse_position):
+		return true
+	return (_container != null and _container.get_global_rect().has_point(mouse_position)) or (_container_2 != null and _container_2.get_global_rect().has_point(mouse_position))
 
 
 func _input(event: InputEvent) -> void:
