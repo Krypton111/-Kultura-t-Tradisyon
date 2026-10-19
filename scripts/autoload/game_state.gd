@@ -9,6 +9,8 @@ const DEFAULTS := {
 	"living_room_visited_story_ids": [],
 	"living_room_recorded_story_ids": [],
 	"living_room_final_dialogue_started": false,
+	"salakot_reward_received": false,
+	"backyard_salakot_used": false,
 	"heritage_entries": [],
 	"kitchen_task_intro_completed": false,
 	"kitchen_ingredient_task_completed": false,
