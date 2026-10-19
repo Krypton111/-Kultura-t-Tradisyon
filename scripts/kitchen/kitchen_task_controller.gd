@@ -183,7 +183,8 @@ func _show_empty_pot() -> void:
 	pot.texture = pot_texture
 	pot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	pot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	pot.size = Vector2(560, 430)
+	# Make the kawali a little larger so ingredient drops are easier to see.
+	pot.size = Vector2(680, 520)
 	pot.position = (get_viewport().get_visible_rect().size - pot.size) * 0.5
 	pot.mouse_filter = Control.MOUSE_FILTER_STOP
 	_pot_overlay.add_child(pot)
