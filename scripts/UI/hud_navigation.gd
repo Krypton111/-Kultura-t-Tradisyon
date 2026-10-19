@@ -26,6 +26,7 @@ const LIVING_ROOM := "res://game_scenes/levels/living_room.tscn"
 const KITCHEN := "res://game_scenes/levels/kitchen.tscn"
 const MIGS_ROOM := "res://game_scenes/levels/migs_room.tscn"
 const BACKYARD := "res://game_scenes/levels/backyard.tscn"
+const CHICKEN_COOP := "res://game_scenes/levels/chicken coop.tscn"
 const JOURNAL_SCENE: PackedScene = preload("res://game_scenes/UI scenes/journal.tscn")
 
 var current_direction := ""
@@ -63,7 +64,8 @@ var room_scenes := {
 	LIVING_ROOM: preload("res://game_scenes/levels/living_room.tscn"),
 	KITCHEN: preload("res://game_scenes/levels/kitchen.tscn"),
 	MIGS_ROOM: preload("res://game_scenes/levels/migs_room.tscn"),
-	BACKYARD: preload("res://game_scenes/levels/backyard.tscn")
+	BACKYARD: preload("res://game_scenes/levels/backyard.tscn"),
+	CHICKEN_COOP: preload("res://game_scenes/levels/chicken coop.tscn")
 }
 
 func _ready() -> void:
