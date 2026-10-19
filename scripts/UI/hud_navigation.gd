@@ -274,16 +274,30 @@ func _begin_inventory_drag(item: Dictionary) -> void:
 	inventory_drag_id = str(item.get("id", ""))
 	if is_instance_valid(inventory_drag_icon):
 		inventory_drag_icon.queue_free()
+
+	# Keep the drag preview close to the size of the icon shown in an inventory
+	# slot. Explicit top-left anchors prevent the TextureRect from stretching
+	# across the full HUD when its parent uses a full-rect layout.
 	inventory_drag_icon = TextureRect.new()
 	inventory_drag_icon.name = "InventoryDragIcon"
 	inventory_drag_icon.texture = item.get("texture") as Texture2D
-	inventory_drag_icon.size = Vector2(72, 72)
-	inventory_drag_icon.position = get_viewport().get_mouse_position() - Vector2(36, 36)
+	inventory_drag_icon.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	inventory_drag_icon.custom_minimum_size = Vector2(48, 48)
+	inventory_drag_icon.size = Vector2(48, 48)
 	inventory_drag_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	inventory_drag_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	inventory_drag_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	inventory_drag_icon.z_index = 1200
 	add_child(inventory_drag_icon)
+	_update_inventory_drag_position()
+
+
+func _update_inventory_drag_position() -> void:
+	if not is_instance_valid(inventory_drag_icon):
+		return
+	var mouse_position := get_viewport().get_mouse_position()
+	var local_mouse_position := get_global_transform_with_canvas().affine_inverse() * mouse_position
+	inventory_drag_icon.position = local_mouse_position - inventory_drag_icon.size * 0.5
 
 
 func _finish_inventory_drag() -> void:
@@ -309,7 +323,7 @@ func _finish_inventory_drag() -> void:
 func _process(_delta: float) -> void:
 	_update_journal_hover()
 	if is_instance_valid(inventory_drag_icon):
-		inventory_drag_icon.position = get_viewport().get_mouse_position() - Vector2(36, 36)
+		_update_inventory_drag_position()
 
 	if navigation_locked:
 		return
