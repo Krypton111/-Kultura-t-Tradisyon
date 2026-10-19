@@ -56,6 +56,8 @@ var inventory_drag_id := ""
 var inventory_drag_icon: TextureRect
 var inventory_drop_rect := Rect2()
 signal inventory_item_dropped(item_id: String)
+signal inventory_item_dropped_on_target(item_id: String, target_id: String)
+var inventory_drop_targets: Dictionary = {}
 
 var room_scenes := {
 	LIVING_ROOM: preload("res://game_scenes/levels/living_room.tscn"),
@@ -174,6 +176,30 @@ func set_inventory_drop_rect(drop_rect: Rect2) -> void:
 	inventory_drop_rect = drop_rect
 
 
+func set_inventory_drop_targets(targets: Dictionary) -> void:
+	inventory_drop_targets = targets.duplicate(true)
+
+
+func transform_inventory_item(old_item_id: String, new_item_id: String, item_name: String, item_texture: Texture2D) -> bool:
+	var old_index := -1
+	for i in range(inventory_items.size()):
+		if str(inventory_items[i].get("id", "")) == old_item_id:
+			old_index = i
+			break
+	if old_index < 0:
+		return false
+	for existing in inventory_items:
+		if str(existing.get("id", "")) == new_item_id:
+			return false
+	inventory_items[old_index] = {"id": new_item_id, "name": item_name, "texture": item_texture}
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("inventory_items", inventory_items)
+	inventory_fade_in_ids.append(new_item_id)
+	_refresh_inventory_ui()
+	return true
+
+
 func _inventory_page_count() -> int:
 	return maxi(1, ceili(float(inventory_items.size()) / float(maxi(1, inventory_slot_nodes.size()))))
 
@@ -268,7 +294,13 @@ func _finish_inventory_drag() -> void:
 	if is_instance_valid(inventory_drag_icon):
 		inventory_drag_icon.queue_free()
 	inventory_drag_icon = null
-	if inventory_drop_rect.has_point(get_viewport().get_mouse_position()):
+	var drop_position := get_viewport().get_mouse_position()
+	for target_id in inventory_drop_targets.keys():
+		var target_rect: Rect2 = inventory_drop_targets[target_id]
+		if target_rect.has_point(drop_position):
+			inventory_item_dropped_on_target.emit(item_id, str(target_id))
+			return
+	if inventory_drop_rect.has_point(drop_position):
 		inventory_item_dropped.emit(item_id)
 
 
