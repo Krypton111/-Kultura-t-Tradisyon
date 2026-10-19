@@ -11,6 +11,7 @@ const DEFAULTS := {
 	"living_room_final_dialogue_started": false,
 	"salakot_reward_received": false,
 	"backyard_salakot_used": false,
+	"backyard_chore_instructions_given": false,
 	"heritage_entries": [],
 	"kitchen_task_intro_completed": false,
 	"kitchen_ingredient_task_completed": false,
