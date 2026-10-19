@@ -23,6 +23,11 @@ func _ready() -> void:
 
 	var hud := get_node_or_null("/root/HUD")
 	var game_state := get_node_or_null("/root/GameState")
+	var salakot_reward_received := bool(game_state.get_state("salakot_reward_received", false)) if game_state != null else false
+	var salakot_sprite := get_node_or_null("Salakot") as Sprite2D
+	if salakot_reward_received and salakot_sprite != null:
+		salakot_sprite.visible = false
+		salakot_sprite.modulate.a = 1.0
 	var lola_has_moved := false
 	if game_state != null:
 		lola_has_moved = bool(game_state.get_state("living_room_heritage_completed", false))
@@ -169,15 +174,50 @@ func _on_object_dialogue_finished(object_name: String) -> void:
 		_final_kitchen_dialogue_started = true
 		if game_state != null:
 			game_state.set_state("living_room_final_dialogue_started", true)
-		_start_kitchen_reminder_dialogue()
+		_start_salakot_reward_dialogue()
 	elif hud != null:
 		hud.set("navigation_locked", false)
+
+func _start_salakot_reward_dialogue() -> void:
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "You’ve helped me remember the stories behind our family’s old belongings, Migs. As a thank-you, I’d like you to have this salakot."},
+		{"speaker": "Migs", "text": "Really, Lola? Thank you! I’ll take good care of it."}
+	]
+	_start_living_room_dialogue(lines, Callable(self, "_on_salakot_reward_dialogue_finished"))
+
+
+func _on_salakot_reward_dialogue_finished() -> void:
+	_heritage_dialogue_open = false
+	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	var salakot_sprite := get_node_or_null("Salakot") as Sprite2D
+	if hud != null:
+		hud.set("navigation_locked", true)
+	if salakot_sprite != null:
+		var fade_out := create_tween()
+		fade_out.tween_property(salakot_sprite, "modulate:a", 0.0, 0.6)
+		await fade_out.finished
+		salakot_sprite.visible = false
+		salakot_sprite.modulate.a = 1.0
+		if hud != null and hud.has_method("add_inventory_item"):
+			hud.call("add_inventory_item", "salakot", "Salakot", salakot_sprite.texture)
+	elif hud != null and hud.has_method("add_inventory_item"):
+		var salakot_texture := load("res://GAME ASSETS/Living Room/salakot.png") as Texture2D
+		if salakot_texture != null:
+			hud.call("add_inventory_item", "salakot", "Salakot", salakot_texture)
+	if game_state != null:
+		game_state.set_state("salakot_reward_received", true)
+	# The inventory item fades in after the room sprite fades out. Only after
+	# that animation completes do we let Lola begin the tanghali/cooking dialogue.
+	await get_tree().create_timer(0.55).timeout
+	_start_kitchen_reminder_dialogue()
+
 
 func _start_kitchen_reminder_dialogue() -> void:
 	var lines: Array[Dictionary] = [
 		{"speaker": "Lola Nena", "text": "We’ve remembered so many stories today, Migs."},
 		{"speaker": "Migs", "text": "I’m glad we wrote them down, Lola."},
-		{"speaker": "Lola Nena", "text": "It’s almost tanghali. I need to start cooking in the kitchen."},
+		{"speaker": "Lola Nena", "text": "It’s already tanghali. I need to start cooking in the kitchen."},
 		{"speaker": "Migs", "text": "Sige, Lola. I’ll let you get started!"}
 	]
 	_start_living_room_dialogue(lines, Callable(self, "_on_kitchen_reminder_finished"))
