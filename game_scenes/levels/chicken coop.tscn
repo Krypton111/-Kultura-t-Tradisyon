@@ -2,6 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://dts41kvrs7kck" path="res://GAME ASSETS/Backyard/chicken coop/chicken coop base.png" id="1_obd5n"]
 [ext_resource type="Texture2D" uid="uid://dk1667qn52iwj" path="res://GAME ASSETS/Backyard/chicken coop/coop eggs.png" id="2_tqi7l"]
+[ext_resource type="Script" path="res://scripts/backyard/chicken_coop.gd" id="3_coop_script"]
 
 [node name="Control" type="Control" unique_id=233261888]
 layout_mode = 3
@@ -10,6 +11,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("3_coop_script")
 
 [node name="BackyardBase" type="Sprite2D" parent="." unique_id=803743475]
 position = Vector2(576, 324)
