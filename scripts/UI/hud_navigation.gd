@@ -811,19 +811,19 @@ func _show_pause_settings() -> void:
 		{
 			"name": "BrightnessSlider", "min": 0.35, "max": 1.0,
 			"value": brightness_level, "callback": _set_brightness,
-			"left": 0.30, "width": 0.40, "height": 0.065, "y": 0.262,
+			"left": 0.30, "width": 0.40, "height": 0.065, "y": 0.290,
 			"knob_width": 0.055, "knob_height": 0.055
 		},
 		{
 			"name": "SoundVolumeSlider", "min": 0.0, "max": 1.0,
 			"value": sound_volume_level, "callback": _set_sound_volume,
-			"left": 0.30, "width": 0.40, "height": 0.065, "y": 0.447,
+			"left": 0.30, "width": 0.40, "height": 0.065, "y": 0.457,
 			"knob_width": 0.055, "knob_height": 0.055
 		},
 		{
 			"name": "MusicVolumeSlider", "min": 0.0, "max": 1.0,
 			"value": music_volume_level, "callback": _set_music_volume,
-			"left": 0.30, "width": 0.40, "height": 0.065, "y": 0.629,
+			"left": 0.30, "width": 0.40, "height": 0.065, "y": 0.619,
 			"knob_width": 0.055, "knob_height": 0.055
 		}
 	]
