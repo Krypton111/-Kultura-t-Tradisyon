@@ -430,7 +430,20 @@ func _show_ending_card(choice: String) -> void:
 	closing_tween.parallel().tween_property(ending_caption, "modulate:a", 0.0, 0.8)
 	closing_tween.tween_property(black, "color:a", 1.0, 1.0)
 	await closing_tween.finished
-	get_tree().quit()
+
+	# The game is launched inside UGAT's dashboard when running as an HTML5 export.
+	# Record the completed run while the user's PHP session cookie is still available,
+	# then return to the dashboard. Desktop builds should continue to quit normally.
+	var gameplay_timer := get_node_or_null("/root/GameplayTimer")
+	var elapsed_seconds := 0
+	if gameplay_timer != null:
+		elapsed_seconds = int(gameplay_timer.call("get_elapsed_seconds"))
+
+	if OS.has_feature("web"):
+		var javascript := "(async function(){try{await fetch('../../../record_game_run.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({elapsed_seconds:" + str(elapsed_seconds) + "})});}catch(e){console.error('Could not record game completion:',e);}window.location.href='../../../dashboard.php';})();"
+		JavaScriptBridge.eval(javascript)
+	else:
+		get_tree().quit()
 
 func _process(_delta: float) -> void:
 	# Keep button-based interactions locked until both required room items are collected.
