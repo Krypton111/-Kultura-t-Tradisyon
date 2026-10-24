@@ -128,8 +128,9 @@ func _on_ending_question_finished() -> void:
 	_show_ending_choice_panel()
 
 func _show_ending_choice_panel() -> void:
-	var hud := get_node_or_null("/root/HUD") as Control
+	var hud := get_node_or_null("/root/HUD")
 	if hud == null:
+		push_warning("HUD was not found; cannot show the ending choice popup.")
 		return
 	hud.set("navigation_locked", true)
 	var existing := hud.get_node_or_null("EndingChoiceOverlay")
@@ -258,10 +259,14 @@ func _on_ending_dialogue_finished(choice: String) -> void:
 	_show_ending_card(choice)
 
 func _show_ending_card(choice: String) -> void:
-	var hud := get_node_or_null("/root/HUD") as Control
+	# HUD is a persistent CanvasLayer in this project, not a Control. Keep the
+	# reference as Node so the final overlay is not silently skipped by a cast.
+	var hud := get_node_or_null("/root/HUD")
 	if hud == null:
+		push_warning("HUD was not found; cannot show the ending screen.")
 		return
 	hud.set("navigation_locked", true)
+
 	var existing := hud.get_node_or_null("EndingChoiceOverlay")
 	if existing != null:
 		existing.queue_free()
@@ -271,69 +276,98 @@ func _show_ending_card(choice: String) -> void:
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	hud.add_child(overlay)
 
-	var dim := ColorRect.new()
-	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	dim.color = Color(0.035, 0.025, 0.018, 0.86)
-	dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.add_child(dim)
+	# Fade to black first, then reveal the ending photograph-style composition.
+	var fade := ColorRect.new()
+	fade.name = "EndingFade"
+	fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fade.color = Color(0.0, 0.0, 0.0, 1.0)
+	fade.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(fade)
 
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(center)
+	var background := TextureRect.new()
+	background.name = "EndingPlaceholderPhoto"
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background.texture = load("res://GAME ASSETS/Living Room.jpg") as Texture2D
+	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	background.modulate.a = 0.0
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(background)
 
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = Vector2(760, 390)
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.99)
-	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
-	panel_style.set_border_width_all(3)
-	panel_style.set_corner_radius_all(14)
-	panel_style.content_margin_left = 36.0
-	panel_style.content_margin_right = 36.0
-	panel_style.content_margin_top = 34.0
-	panel_style.content_margin_bottom = 34.0
-	panel.add_theme_stylebox_override("panel", panel_style)
-	center.add_child(panel)
+	# Temporary portrait artwork from the existing asset folder. These are
+	# placeholders until dedicated ending illustrations are ready.
+	var portrait := TextureRect.new()
+	portrait.name = "EndingPlaceholderPortrait"
+	if choice == "stay":
+		portrait.texture = load("res://GAME ASSETS/Living Room/lola_nena_looking.png") as Texture2D
+	else:
+		portrait.texture = load("res://GAME ASSETS/Kitchen/lola nena standing.png") as Texture2D
+	portrait.anchor_left = 0.57
+	portrait.anchor_top = 0.12
+	portrait.anchor_right = 0.94
+	portrait.anchor_bottom = 0.78
+	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
+	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	portrait.modulate.a = 0.0
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(portrait)
 
-	var layout := VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 20)
-	panel.add_child(layout)
+	var caption_panel := PanelContainer.new()
+	caption_panel.anchor_left = 0.06
+	caption_panel.anchor_top = 0.70
+	caption_panel.anchor_right = 0.94
+	caption_panel.anchor_bottom = 0.94
+	var caption_style := StyleBoxFlat.new()
+	caption_style.bg_color = Color(0.10, 0.075, 0.05, 0.92)
+	caption_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	caption_style.set_border_width_all(2)
+	caption_style.set_corner_radius_all(12)
+	caption_style.content_margin_left = 28.0
+	caption_style.content_margin_right = 28.0
+	caption_style.content_margin_top = 14.0
+	caption_style.content_margin_bottom = 14.0
+	caption_panel.add_theme_stylebox_override("panel", caption_style)
+	caption_panel.modulate.a = 0.0
+	caption_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(caption_panel)
+
+	var caption_layout := VBoxContainer.new()
+	caption_layout.alignment = BoxContainer.ALIGNMENT_CENTER
+	caption_layout.add_theme_constant_override("separation", 8)
+	caption_panel.add_child(caption_layout)
 
 	var heading := Label.new()
 	heading.text = "THE END"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	heading.add_theme_font_size_override("font_size", 36)
 	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
-	layout.add_child(heading)
+	caption_layout.add_child(heading)
 
 	var ending_text := Label.new()
 	if choice == "stay":
-		ending_text.text = "Migs chooses to stay in the province, helping Lola Nena care for their home and pass their family's traditions and heritage to future generations. By learning, documenting, and practicing these traditions, he strengthens their place in the community."
+		ending_text.text = "Migs stays in the province to help Lola Nena care for their home, learn their traditions, and pass their family heritage on to future generations."
 	else:
-		ending_text.text = "Migs returns to the city carrying the stories and lessons he learned from Lola Nena. By sharing them with friends and his wider community, he helps keep their traditions alive beyond the province."
+		ending_text.text = "Migs returns to the city with the stories Lola Nena shared, ready to help others appreciate and preserve their own cultural heritage."
 	ending_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ending_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ending_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	ending_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	ending_text.add_theme_font_size_override("font_size", 20)
+	ending_text.add_theme_font_size_override("font_size", 19)
 	ending_text.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
-	layout.add_child(ending_text)
+	caption_layout.add_child(ending_text)
 
-	var subtitle := Label.new()
-	subtitle.text = "Cultural heritage lives on when we choose to care for it, share it, and pass it on."
-	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 17)
-	subtitle.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
-	layout.add_child(subtitle)
+	var thank_you := Label.new()
+	thank_you.text = "Thank you for playing Kultura at Tradisyon."
+	thank_you.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	thank_you.add_theme_font_size_override("font_size", 15)
+	thank_you.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	caption_layout.add_child(thank_you)
 
-	var finish_label := Label.new()
-	finish_label.text = "Thank you for playing Kultura at Tradisyon."
-	finish_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	finish_label.add_theme_font_size_override("font_size", 15)
-	finish_label.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
-	layout.add_child(finish_label)
+	var fade_tween := create_tween()
+	fade_tween.tween_property(background, "modulate:a", 1.0, 1.1)
+	fade_tween.parallel().tween_property(portrait, "modulate:a", 1.0, 1.1)
+	fade_tween.parallel().tween_property(caption_panel, "modulate:a", 1.0, 1.1)
+	fade_tween.tween_property(fade, "color:a", 0.0, 1.0)
+	fade.queue_free()
 
 func _process(_delta: float) -> void:
 	# Keep button-based interactions locked until both required room items are collected.
