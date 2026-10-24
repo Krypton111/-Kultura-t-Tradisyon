@@ -761,16 +761,14 @@ func _show_pause_settings() -> void:
 	for child in pause_menu_instance.get_children():
 		child.queue_free()
 
-	# Scale the high-resolution artwork to fit inside the current viewport,
-	# preserving its aspect ratio instead of drawing it at a fixed pixel size.
+	# The supplied artwork already contains the settings title, labels,
+	# slider tracks, and navigation artwork. Display only that artwork here;
+	# do not generate duplicate labels, sliders, or a Back button.
 	var viewport_size := get_viewport().get_visible_rect().size
 	var texture_size := Vector2(SETTINGS_MENU_TEXTURE.get_width(), SETTINGS_MENU_TEXTURE.get_height())
-	# Keep the high-resolution artwork compact and fully visible. The 62%
-	# viewport limit leaves space around the menu on smaller screens too.
-	var max_background_size := viewport_size * 0.62
 	var fit_scale := minf(
-		max_background_size.x / maxf(texture_size.x, 1.0),
-		max_background_size.y / maxf(texture_size.y, 1.0)
+		(viewport_size.x * 0.94) / maxf(texture_size.x, 1.0),
+		(viewport_size.y * 0.94) / maxf(texture_size.y, 1.0)
 	)
 	var background_size := texture_size * fit_scale
 
@@ -789,45 +787,6 @@ func _show_pause_settings() -> void:
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pause_menu_instance.add_child(background)
-
-	# Center the controls with explicit offsets as well, avoiding anchor/size
-	# ambiguity that can push controls outside the artwork.
-	var content_size := Vector2(background_size.x * 0.732, background_size.y * 0.79)
-	var content := Control.new()
-	content.name = "SettingsMenuContent"
-	content.anchor_left = 0.5
-	content.anchor_top = 0.5
-	content.anchor_right = 0.5
-	content.anchor_bottom = 0.5
-	content.offset_left = -content_size.x * 0.5
-	content.offset_top = -content_size.y * 0.5
-	content.offset_right = content_size.x * 0.5
-	content.offset_bottom = content_size.y * 0.5
-	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pause_menu_instance.add_child(content)
-
-	var layout := VBoxContainer.new()
-	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	layout.offset_left = 22
-	layout.offset_right = -22
-	layout.add_theme_constant_override("separation", 8)
-	layout.alignment = BoxContainer.ALIGNMENT_CENTER
-	content.add_child(layout)
-
-	var heading := Label.new()
-	heading.text = "SETTINGS"
-	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_override("font", PAUSE_MENU_FONT)
-	heading.add_theme_font_size_override("font_size", 30)
-	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
-	layout.add_child(heading)
-
-	_add_settings_slider(layout, "Brightness", 0.35, 1.0, brightness_level, _set_brightness)
-	_add_settings_slider(layout, "Sound Volume", 0.0, 1.0, sound_volume_level, _set_sound_volume)
-	_add_settings_slider(layout, "Music Volume", 0.0, 1.0, music_volume_level, _set_music_volume)
-
-	var back := _add_pause_button(layout, "Back", func(): _rebuild_pause_menu())
-	back.custom_minimum_size = Vector2(300, 42)
 
 
 func _add_settings_slider(parent: VBoxContainer, label_text: String, minimum: float, maximum: float, current_value: float, callback: Callable) -> void:
