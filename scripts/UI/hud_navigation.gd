@@ -1253,23 +1253,82 @@ func _show_pause_message(title_text: String, body_text: String) -> void:
 
 
 func _return_to_main_menu() -> void:
-	_close_pause_menu()
-	var game_state := get_node_or_null("/root/GameState")
-	if game_state != null:
-		game_state.reset_runtime_state()
-	inventory_items.clear()
-	heritage_entries.clear()
-	camera_collected = false
-	journal_collected = false
-	journal_is_open = false
-	if journal_close != null:
-		journal_close.visible = false
-	if journal_open != null:
-		journal_open.visible = false
-	if camera_icon != null:
-		camera_icon.visible = false
-	_refresh_inventory_ui()
-	get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
+	_show_quit_confirmation()
+
+
+func _show_quit_confirmation() -> void:
+	if not is_instance_valid(pause_menu_instance):
+		return
+
+	# Keep the pause menu behind the confirmation, but block all clicks beneath it.
+	var overlay := Control.new()
+	overlay.name = "QuitConfirmationOverlay"
+	overlay.process_mode = Node.PROCESS_MODE_ALWAYS
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.z_index = 10
+	pause_menu_instance.add_child(overlay)
+
+	var dimmer := ColorRect.new()
+	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0.0, 0.0, 0.0, 0.72)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(dimmer)
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.position = Vector2(-300, -180)
+	panel.size = Vector2(600, 360)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.16, 0.13, 0.10, 1.0)
+	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override("panel", panel_style)
+	overlay.add_child(panel)
+
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 18)
+	panel.add_child(layout)
+
+	var heading := Label.new()
+	heading.text = "QUIT GAME?"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_override("font", PAUSE_MENU_FONT)
+	heading.add_theme_font_size_override("font_size", 30)
+	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	layout.add_child(heading)
+
+	var message := Label.new()
+	message.text = "are you sure you want to quit? All unsaved progress will be lost"
+	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	message.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	message.add_theme_font_override("font", PAUSE_MENU_FONT)
+	message.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	layout.add_child(message)
+
+	var button_row := HBoxContainer.new()
+	button_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	button_row.add_theme_constant_override("separation", 18)
+	layout.add_child(button_row)
+
+	var yes_button := _add_pause_button(button_row, "Yes", _quit_to_dashboard)
+	yes_button.custom_minimum_size = Vector2(180, 48)
+	var no_button := _add_pause_button(button_row, "No", func(): overlay.queue_free())
+	no_button.custom_minimum_size = Vector2(180, 48)
+
+
+func _quit_to_dashboard() -> void:
+	# The game is launched from UGAT's dashboard as an HTML5 export.
+	# In a browser, navigate back to dashboard.php; in a desktop build, quit normally.
+	if OS.has_feature("web"):
+		JavaScriptBridge.eval("window.location.href = '../../../dashboard.php';")
+		return
+
+	get_tree().paused = false
+	get_tree().quit()
 
 
 func _on_viewport_resized() -> void:
