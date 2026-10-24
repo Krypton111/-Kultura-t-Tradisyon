@@ -761,24 +761,36 @@ func _show_pause_settings() -> void:
 	for child in pause_menu_instance.get_children():
 		child.queue_free()
 
-	# Use the supplied settings artwork as the menu background.
+	# Scale the high-resolution artwork to fit inside the current viewport,
+	# preserving its aspect ratio instead of drawing it at a fixed pixel size.
+	var viewport_size := get_viewport().get_visible_rect().size
+	var texture_size := Vector2(SETTINGS_MENU_TEXTURE.get_width(), SETTINGS_MENU_TEXTURE.get_height())
+	var max_background_size := viewport_size * 0.82
+	var fit_scale := minf(
+		max_background_size.x / maxf(texture_size.x, 1.0),
+		max_background_size.y / maxf(texture_size.y, 1.0)
+	)
+	var background_size := texture_size * fit_scale
+
 	var background := TextureRect.new()
 	background.name = "SettingsMenuBackground"
 	background.texture = SETTINGS_MENU_TEXTURE
 	background.set_anchors_preset(Control.PRESET_CENTER)
-	background.position = Vector2(-410, -310)
-	background.size = Vector2(820, 620)
+	background.position = -background_size * 0.5
+	background.size = background_size
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pause_menu_instance.add_child(background)
 
-	# Place all controls above the artwork while leaving its edges visible.
+	# Keep the controls proportional to the artwork so they remain aligned
+	# when the background is scaled for different screen resolutions.
+	var content_size := Vector2(background_size.x * 0.732, background_size.y * 0.79)
 	var content := Control.new()
 	content.name = "SettingsMenuContent"
 	content.set_anchors_preset(Control.PRESET_CENTER)
-	content.position = Vector2(-300, -245)
-	content.size = Vector2(600, 490)
+	content.position = -content_size * 0.5
+	content.size = content_size
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pause_menu_instance.add_child(content)
 
