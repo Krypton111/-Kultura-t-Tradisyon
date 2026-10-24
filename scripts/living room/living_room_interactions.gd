@@ -252,14 +252,28 @@ func get_heritage_photo_target(mouse_position: Vector2) -> Dictionary:
 			continue
 		if not _recorded_story_ids.has(sprite.name) or not sprite.visible or sprite.texture == null:
 			continue
+		var story: Dictionary = HERITAGE_STORIES[sprite.name]
+		# Once this entry already has a photo, it is no longer a camera target.
+		if _heritage_entry_has_photo(str(story.get("title", ""))):
+			continue
 		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(sprite.name)):
-			var story: Dictionary = HERITAGE_STORIES[sprite.name]
 			return {
 				"object_name": str(sprite.name),
 				"title": str(story.get("title", "")),
 				"texture_path": str(sprite.texture.resource_path)
 			}
 	return {}
+
+
+func _heritage_entry_has_photo(entry_title: String) -> bool:
+	var hud := get_node_or_null("/root/HUD")
+	if hud == null:
+		return false
+	var entries: Array = hud.get("heritage_entries")
+	for entry in entries:
+		if str(entry.get("title", "")) == entry_title:
+			return not str(entry.get("photo_path", "")).is_empty()
+	return false
 
 
 func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
