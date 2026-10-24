@@ -169,7 +169,7 @@ func _on_object_dialogue_finished(object_name: String) -> void:
 	if hud != null and not _recorded_story_ids.has(object_name):
 		_recorded_story_ids.append(object_name)
 		if hud.has_method("record_heritage_entry"):
-			hud.call("record_heritage_entry", str(story["title"]), str(story["entry"]))
+			hud.call("record_heritage_entry", str(story["title"]), str(story["entry"]), object_name)
 	if not _visited_story_ids.has(object_name):
 		_visited_story_ids.append(object_name)
 	# Persist progress immediately so leaving the room cannot reset completed stories.
@@ -239,6 +239,28 @@ func _on_kitchen_reminder_finished() -> void:
 	# Lola has left the living room to begin preparing lunch.
 	lola_not_looking.visible = false
 	lola_looking.visible = false
+
+func get_heritage_photo_target(mouse_position: Vector2) -> Dictionary:
+	if _heritage_dialogue_open:
+		return {}
+	# A photograph is only available after the matching story has been recorded.
+	# Test topmost heritage sprites first, matching the room's existing hit-testing.
+	var children := get_children()
+	for i in range(children.size() - 1, -1, -1):
+		var sprite := children[i] as Sprite2D
+		if sprite == null or not HERITAGE_STORIES.has(sprite.name):
+			continue
+		if not _recorded_story_ids.has(sprite.name) or not sprite.visible or sprite.texture == null:
+			continue
+		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(sprite.name)):
+			var story: Dictionary = HERITAGE_STORIES[sprite.name]
+			return {
+				"object_name": str(sprite.name),
+				"title": str(story.get("title", "")),
+				"texture_path": str(sprite.texture.resource_path)
+			}
+	return {}
+
 
 func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 	if not _room_interactables_unlocked() or _heritage_dialogue_open:
