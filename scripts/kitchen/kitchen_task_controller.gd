@@ -42,6 +42,9 @@ func _ready() -> void:
 	var game_state := get_node_or_null("/root/GameState")
 	if game_state != null:
 		_pot_filled_items.assign(game_state.get_state("kitchen_pot_ingredient_ids", []))
+		# Keep Lola out of the kitchen on later visits once lunch has happened.
+		if bool(game_state.get_state("lunch_completed", false)) and lola != null:
+			lola.visible = false
 	_restore_collected_ingredients(kitchen)
 
 	if task_model.can_start(_hud, lola):
