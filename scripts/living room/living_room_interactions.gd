@@ -96,7 +96,11 @@ func _resume_ending_if_needed() -> void:
 	if bool(game_state.get_state("ending_completed", false)):
 		_show_ending_card(str(game_state.get_state("ending_choice", "")))
 		return
-	_start_ending_question()
+	var saved_choice := str(game_state.get_state("ending_choice", ""))
+	if saved_choice in ["stay", "city"]:
+		_play_ending_dialogue(saved_choice)
+	else:
+		_start_ending_question()
 
 func _start_ending_question() -> void:
 	if _heritage_dialogue_open:
@@ -217,6 +221,9 @@ func _choose_ending(choice: String) -> void:
 	if overlay != null:
 		overlay.queue_free()
 	game_state.set_state("ending_choice", choice)
+	_play_ending_dialogue(choice)
+
+func _play_ending_dialogue(choice: String) -> void:
 	var lines: Array[Dictionary] = []
 	if choice == "stay":
 		lines = [
