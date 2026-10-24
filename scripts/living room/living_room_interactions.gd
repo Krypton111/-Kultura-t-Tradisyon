@@ -36,7 +36,13 @@ func _ready() -> void:
 		_visited_story_ids.assign(saved_visited)
 		_recorded_story_ids.assign(saved_recorded)
 		_final_kitchen_dialogue_started = bool(game_state.get_state("living_room_final_dialogue_started", false))
-	if lola_has_moved:
+	var lunch_completed := bool(game_state.get_state("lunch_completed", false)) if game_state != null else false
+	if lunch_completed:
+		# The meal sequence returns Migs and Lola to the living room together.
+		# Show Lola's seated, relaxed pose instead of the earlier empty-room state.
+		lola_not_looking.visible = true
+		lola_looking.visible = false
+	elif lola_has_moved:
 		lola_not_looking.visible = false
 		lola_looking.visible = false
 
