@@ -6,9 +6,9 @@ const BACKYARD_SCENE_PATH := "res://game_scenes/levels/backyard.tscn"
 const EGGS_TEXTURE: Texture2D = preload("res://GAME ASSETS/Backyard/chicken coop/coop eggs.png")
 const DOWN_CURSOR: Texture2D = preload("res://GAME ASSETS/UI/HUD/bottom room.png")
 const DOWN_CURSOR_MAX_SIZE := 160.0
-const DOWN_NAV_POSITION := Vector2(566.5, 607.0)
 const DOWN_NAV_WIDTH := 450.0
 const DOWN_NAV_HEIGHT := 100.0
+const DOWN_NAV_BOTTOM_MARGIN := 12.0
 const FILLED_CUPS_ID := "cups_with_seeds_close_up"
 const FILLED_BASKET_ID := "basket_with_seeds_close_up"
 const EGGS_ITEM_ID := "coop_eggs"
@@ -69,8 +69,16 @@ func _setup_return_navigation() -> void:
 	_return_navigation_button.add_theme_stylebox_override("hover", empty_style)
 	_return_navigation_button.add_theme_stylebox_override("pressed", empty_style)
 	_return_navigation_button.add_theme_stylebox_override("focus", empty_style)
-	_return_navigation_button.position = DOWN_NAV_POSITION - Vector2(DOWN_NAV_WIDTH, DOWN_NAV_HEIGHT) * 0.5
-	_return_navigation_button.size = Vector2(DOWN_NAV_WIDTH, DOWN_NAV_HEIGHT)
+	# Anchor the hit area to the bottom-center of the viewport instead of a
+	# fixed resolution-specific position. This keeps it clickable at every size.
+	_return_navigation_button.anchor_left = 0.5
+	_return_navigation_button.anchor_right = 0.5
+	_return_navigation_button.anchor_top = 1.0
+	_return_navigation_button.anchor_bottom = 1.0
+	_return_navigation_button.offset_left = -DOWN_NAV_WIDTH * 0.5
+	_return_navigation_button.offset_right = DOWN_NAV_WIDTH * 0.5
+	_return_navigation_button.offset_top = -DOWN_NAV_HEIGHT - DOWN_NAV_BOTTOM_MARGIN
+	_return_navigation_button.offset_bottom = -DOWN_NAV_BOTTOM_MARGIN
 	_return_navigation_button.pressed.connect(_return_to_backyard)
 	_return_navigation_layer.add_child(_return_navigation_button)
 
@@ -84,10 +92,7 @@ func _process(_delta: float) -> void:
 		return
 
 	var mouse_position := get_viewport().get_mouse_position()
-	var hotspot := Rect2(
-		DOWN_NAV_POSITION - Vector2(DOWN_NAV_WIDTH, DOWN_NAV_HEIGHT) * 0.5,
-		Vector2(DOWN_NAV_WIDTH, DOWN_NAV_HEIGHT)
-	)
+	var hotspot := _return_navigation_button.get_global_rect()
 	if hotspot.has_point(mouse_position):
 		Input.set_custom_mouse_cursor(_down_cursor, Input.CURSOR_ARROW, _cursor_hotspot(_down_cursor))
 	else:
@@ -114,6 +119,13 @@ func _input(event: InputEvent) -> void:
 		return
 
 	var mouse_position := get_viewport().get_mouse_position()
+	# Handle the bottom return zone directly as well as through the Button GUI
+	# event. This avoids missed clicks when another Control consumes GUI input.
+	if _return_navigation_button != null and _return_navigation_button.get_global_rect().has_point(mouse_position):
+		get_viewport().set_input_as_handled()
+		_return_to_backyard()
+		return
+
 	if _eggs != null and _eggs.visible and _sprite_pixel_hit(_eggs, mouse_position):
 		get_viewport().set_input_as_handled()
 		if not _both_feed_containers_filled():
