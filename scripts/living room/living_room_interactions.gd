@@ -122,6 +122,7 @@ func _show_ending_choice_panel() -> void:
 	var hud := get_node_or_null("/root/HUD") as Control
 	if hud == null:
 		return
+	hud.set("navigation_locked", true)
 	var existing := hud.get_node_or_null("EndingChoiceOverlay")
 	if existing != null:
 		existing.queue_free()
@@ -242,6 +243,7 @@ func _show_ending_card(choice: String) -> void:
 	var hud := get_node_or_null("/root/HUD") as Control
 	if hud == null:
 		return
+	hud.set("navigation_locked", true)
 	var existing := hud.get_node_or_null("EndingChoiceOverlay")
 	if existing != null:
 		existing.queue_free()
