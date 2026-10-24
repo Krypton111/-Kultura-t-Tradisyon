@@ -761,9 +761,7 @@ func _show_pause_settings() -> void:
 	for child in pause_menu_instance.get_children():
 		child.queue_free()
 
-	# The supplied artwork already contains the settings title, labels,
-	# slider tracks, and navigation artwork. Display only that artwork here;
-	# do not generate duplicate labels, sliders, or a Back button.
+	# Display the complete authored settings artwork, scaled to fit the viewport.
 	var viewport_size := get_viewport().get_visible_rect().size
 	var texture_size := Vector2(SETTINGS_MENU_TEXTURE.get_width(), SETTINGS_MENU_TEXTURE.get_height())
 	var fit_scale := minf(
@@ -787,6 +785,80 @@ func _show_pause_settings() -> void:
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pause_menu_instance.add_child(background)
+
+	# Invisible HSliders sit directly over the three tracks already drawn in
+	# the artwork. Only the custom knob is rendered; no extra UI is added.
+	var knob_texture: Texture2D = SLIDER_KNOB_TEXTURE
+	var knob_image := SLIDER_KNOB_TEXTURE.get_image()
+	if knob_image != null and not knob_image.is_empty():
+		var largest_dimension := maxi(knob_image.get_width(), knob_image.get_height())
+		var max_knob_size := maxi(16, roundi(minf(background_size.x, background_size.y) * 0.035))
+		if largest_dimension > max_knob_size:
+			var scale_factor := float(max_knob_size) / float(largest_dimension)
+			knob_image.resize(
+				maxi(1, roundi(float(knob_image.get_width()) * scale_factor)),
+				maxi(1, roundi(float(knob_image.get_height()) * scale_factor)),
+				Image.INTERPOLATE_BILINEAR
+			)
+			knob_texture = ImageTexture.create_from_image(knob_image)
+
+	var overlay := Control.new()
+	overlay.name = "SettingsInteractionOverlay"
+	overlay.anchor_left = 0.5
+	overlay.anchor_top = 0.5
+	overlay.anchor_right = 0.5
+	overlay.anchor_bottom = 0.5
+	overlay.offset_left = -background_size.x * 0.5
+	overlay.offset_top = -background_size.y * 0.5
+	overlay.offset_right = background_size.x * 0.5
+	overlay.offset_bottom = background_size.y * 0.5
+	overlay.mouse_filter = Control.MOUSE_FILTER_PASS
+	pause_menu_instance.add_child(overlay)
+
+	var track_left := background_size.x * 0.075
+	var track_width := background_size.x * 0.85
+	var track_height := background_size.y * 0.065
+	var slider_centers := [0.262, 0.447, 0.629]
+	var slider_values := [
+		{"name": "BrightnessSlider", "min": 0.35, "max": 1.0, "value": brightness_level, "callback": _set_brightness},
+		{"name": "SoundVolumeSlider", "min": 0.0, "max": 1.0, "value": sound_volume_level, "callback": _set_sound_volume},
+		{"name": "MusicVolumeSlider", "min": 0.0, "max": 1.0, "value": music_volume_level, "callback": _set_music_volume}
+	]
+	for i in range(slider_values.size()):
+		var item: Dictionary = slider_values[i]
+		var slider := HSlider.new()
+		slider.name = str(item["name"])
+		slider.min_value = float(item["min"])
+		slider.max_value = float(item["max"])
+		slider.step = 0.01
+		slider.value = clampf(float(item["value"]), slider.min_value, slider.max_value)
+		slider.position = Vector2(track_left, background_size.y * float(slider_centers[i]) - track_height * 0.5)
+		slider.size = Vector2(track_width, track_height)
+		slider.focus_mode = Control.FOCUS_NONE
+		slider.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		slider.add_theme_icon_override("grabber", knob_texture)
+		slider.add_theme_icon_override("grabber_highlight", knob_texture)
+		slider.add_theme_icon_override("grabber_pressed", knob_texture)
+		var empty_style := StyleBoxEmpty.new()
+		slider.add_theme_stylebox_override("slider", empty_style)
+		slider.add_theme_stylebox_override("grabber_area", empty_style)
+		slider.add_theme_stylebox_override("grabber_area_highlight", empty_style)
+		slider.value_changed.connect(item["callback"])
+		overlay.add_child(slider)
+
+	# Transparent click target over the existing Back artwork.
+	var back_button := Button.new()
+	back_button.name = "SettingsBackHotspot"
+	back_button.text = ""
+	back_button.flat = true
+	back_button.focus_mode = Control.FOCUS_NONE
+	back_button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	back_button.position = Vector2(background_size.x * 0.34, background_size.y * 0.86)
+	back_button.size = Vector2(background_size.x * 0.32, background_size.y * 0.105)
+	for style_name in ["normal", "hover", "pressed", "focus", "disabled"]:
+		back_button.add_theme_stylebox_override(style_name, StyleBoxEmpty.new())
+	back_button.pressed.connect(_rebuild_pause_menu)
+	overlay.add_child(back_button)
 
 
 func _add_settings_slider(parent: VBoxContainer, label_text: String, minimum: float, maximum: float, current_value: float, callback: Callable) -> void:
