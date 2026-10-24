@@ -832,6 +832,15 @@ func _return_to_main_menu() -> void:
 		game_state.reset_runtime_state()
 	inventory_items.clear()
 	heritage_entries.clear()
+	camera_collected = false
+	journal_collected = false
+	journal_is_open = false
+	if journal_close != null:
+		journal_close.visible = false
+	if journal_open != null:
+		journal_open.visible = false
+	if camera_icon != null:
+		camera_icon.visible = false
 	_refresh_inventory_ui()
 	get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
 
