@@ -94,7 +94,7 @@ func _on_inventory_item_dropped_on_target(item_id: String, target_id: String) ->
 		if _hud.call("remove_inventory_item", FILLED_BASKET_ID):
 			_basket_fed = true
 			_game_state.set_state("coop_basket_fed", true)
-			_show_feeding_hint("The basket of seeds is in the feeder.")
+			_show_feeding_hint("The basket of seeds are in the feeder.")
 	else:
 		_show_feeding_hint("That item doesn't belong in this feeder.")
 	_update_chicken_positions()
@@ -131,7 +131,12 @@ func _collect_eggs() -> void:
 	_eggs.visible = false
 	_eggs.modulate.a = 1.0
 	_hud.call("add_inventory_item", EGGS_ITEM_ID, "Coop Eggs", EGGS_TEXTURE)
-	_show_dialogue([{"speaker": "Migs", "text": "Got the eggs! Now I can bring them back to Lola."}])
+	_show_dialogue([
+		{"speaker": "Migs", "text": "Got the eggs! Now I can bring them back to Lola."},
+		{"speaker": "Lola Nena", "text": "Migs!"},
+		{"speaker": "Lola Nena", "text": "Migs, come back to the kitchen, apo. I need you to check the sinigang na bangus."},
+		{"speaker": "Lola Nena", "text": "It is done cooking already. Come back inside before it gets cold."}
+	])
 
 
 func _show_dialogue(lines: Array[Dictionary]) -> void:
