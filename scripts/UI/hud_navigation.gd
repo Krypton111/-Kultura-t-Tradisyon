@@ -69,6 +69,8 @@ var room_scenes := {
 }
 
 func _ready() -> void:
+	# The persistent HUD must remain responsive while gameplay is paused.
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	var game_state := get_node_or_null("/root/GameState")
 	if game_state != null:
 		inventory_items.assign(game_state.get_state("inventory_items", []))
@@ -89,6 +91,7 @@ func _ready() -> void:
 	_create_footsteps_player()
 	_setup_journal_toggle()
 	_setup_inventory_ui()
+	_setup_pause_menu()
 
 
 func _setup_inventory_ui() -> void:
@@ -323,6 +326,8 @@ func _finish_inventory_drag() -> void:
 
 
 func _process(_delta: float) -> void:
+	if pause_menu_open:
+		return
 	_update_journal_hover()
 	if is_instance_valid(inventory_drag_icon):
 		_update_inventory_drag_position()
@@ -460,11 +465,25 @@ func _is_hovering_journal() -> bool:
 		return false
 
 	var mouse_position := get_viewport().get_mouse_position()
+	var settings_icon := get_node_or_null("Settings") as Sprite2D
+	if settings_icon != null and settings_icon.visible and settings_icon.get_rect().has_point(settings_icon.to_local(mouse_position)):
+		_open_pause_menu()
+		get_viewport().set_input_as_handled()
+		return
 	var over_close := journal_close.visible and journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
 	var over_open := journal_open.visible and journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
 	return over_close or over_open
 
 func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		if pause_menu_open:
+			_close_pause_menu()
+		else:
+			_open_pause_menu()
+		get_viewport().set_input_as_handled()
+		return
+	if pause_menu_open:
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
 			if journal_is_open:
@@ -522,6 +541,300 @@ func _close_journal_overlay() -> void:
 		journal_close.visible = journal_collected
 	if journal_open:
 		journal_open.visible = false
+
+
+var pause_menu_open := false
+var pause_menu_instance: Control
+const SAVE_FILE_PATH := "user://kultura_savegame.json"
+const MAIN_MENU_SCENE_PATH := "res://game_scenes/intro.tscn"
+
+
+func _setup_pause_menu() -> void:
+	var settings_icon := get_node_or_null("Settings") as Sprite2D
+	if settings_icon != null:
+		settings_icon.visible = true
+
+
+func _open_pause_menu() -> void:
+	if pause_menu_open:
+		return
+	if journal_is_open:
+		_close_journal_overlay()
+	var camera_controller := get_node_or_null("CameraController")
+	if camera_controller != null and camera_controller.has_method("cancel_camera_mode"):
+		camera_controller.call("cancel_camera_mode")
+	pause_menu_open = true
+	navigation_locked = true
+	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
+	current_direction = ""
+	get_tree().paused = true
+
+	var root := Control.new()
+	root.name = "PauseMenu"
+	root.process_mode = Node.PROCESS_MODE_ALWAYS
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.z_index = 2000
+	add_child(root)
+	pause_menu_instance = root
+
+	var dimmer := ColorRect.new()
+	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0.025, 0.022, 0.018, 0.82)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	root.add_child(dimmer)
+
+	var panel := PanelContainer.new()
+	panel.name = "PausePanel"
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.position = Vector2(-205, -292)
+	panel.size = Vector2(410, 584)
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.98)
+	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(12)
+	panel_style.content_margin_left = 28
+	panel_style.content_margin_right = 28
+	panel_style.content_margin_top = 24
+	panel_style.content_margin_bottom = 24
+	panel.add_theme_stylebox_override("panel", panel_style)
+	root.add_child(panel)
+
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 10)
+	panel.add_child(layout)
+
+	var heading := Label.new()
+	heading.text = "PAUSED"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 34)
+	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	layout.add_child(heading)
+
+	var subtitle := Label.new()
+	subtitle.text = "KULTURA AT TRADISYON"
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 13)
+	subtitle.add_theme_color_override("font_color", Color(0.88, 0.84, 0.76))
+	layout.add_child(subtitle)
+
+	var separator := HSeparator.new()
+	layout.add_child(separator)
+
+	_add_pause_button(layout, "Resume", _close_pause_menu)
+	_add_pause_button(layout, "Save Game", _save_game)
+	_add_pause_button(layout, "Load Game", _load_game)
+	_add_pause_button(layout, "Settings", _show_pause_settings)
+	_add_pause_button(layout, "Credits", _show_pause_credits)
+	_add_pause_button(layout, "Main Menu", _return_to_main_menu)
+
+
+func _add_pause_button(parent: VBoxContainer, label_text: String, callback: Callable) -> Button:
+	var button := Button.new()
+	button.text = label_text
+	button.custom_minimum_size = Vector2(300, 48)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.focus_mode = Control.FOCUS_ALL
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.add_theme_font_size_override("font_size", 19)
+	button.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	button.add_theme_color_override("font_hover_color", Color(0.12, 0.10, 0.08))
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.31, 0.25, 0.18, 1.0)
+	normal.border_color = Color(0.72, 0.56, 0.32, 1.0)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(6)
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.83, 0.69, 0.45, 1.0)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", hover)
+	button.pressed.connect(callback)
+	parent.add_child(button)
+	return button
+
+
+func _close_pause_menu() -> void:
+	if not pause_menu_open:
+		return
+	pause_menu_open = false
+	get_tree().paused = false
+	navigation_locked = false
+	if is_instance_valid(pause_menu_instance):
+		pause_menu_instance.queue_free()
+	pause_menu_instance = null
+	_update_cursor(get_viewport().get_mouse_position())
+
+
+func _save_game() -> void:
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null:
+		_show_pause_message("Save unavailable", "Game state could not be found.")
+		return
+	var save_data: Dictionary = {
+		"scene_path": get_tree().current_scene.scene_file_path if get_tree().current_scene != null else LIVING_ROOM,
+		"state": _encode_save_value(game_state.get("_values"))
+	}
+	var file := FileAccess.open(SAVE_FILE_PATH, FileAccess.WRITE)
+	if file == null:
+		_show_pause_message("Save failed", "The save file could not be written.")
+		return
+	file.store_string(JSON.stringify(save_data))
+	file.close()
+	_show_pause_message("Game saved", "Your progress has been saved on this device.")
+
+
+func _load_game() -> void:
+	if not FileAccess.file_exists(SAVE_FILE_PATH):
+		_show_pause_message("No save found", "Save your game first, then load it here.")
+		return
+	var file := FileAccess.open(SAVE_FILE_PATH, FileAccess.READ)
+	if file == null:
+		_show_pause_message("Load failed", "The save file could not be opened.")
+		return
+	var parsed: Variant = JSON.parse_string(file.get_as_text())
+	file.close()
+	if not (parsed is Dictionary) or not (parsed.get("state", {}) is Dictionary):
+		_show_pause_message("Load failed", "The save file is invalid.")
+		return
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null:
+		_show_pause_message("Load failed", "Game state could not be found.")
+		return
+	var loaded_state: Dictionary = _decode_save_value(parsed["state"])
+	game_state.set("_values", loaded_state)
+	inventory_items.clear()
+	inventory_items.assign(game_state.get_state("inventory_items", []))
+	heritage_entries.assign(game_state.get_state("heritage_entries", []))
+	camera_collected = bool(game_state.get_state("camera_collected", false))
+	journal_collected = bool(game_state.get_state("journal_collected", false))
+	_refresh_inventory_ui()
+	var scene_path := str(parsed.get("scene_path", LIVING_ROOM))
+	if not ResourceLoader.exists(scene_path):
+		scene_path = LIVING_ROOM
+	_close_pause_menu()
+	await get_tree().process_frame
+	get_tree().change_scene_to_file(scene_path)
+
+
+func _encode_save_value(value: Variant) -> Variant:
+	if value is Texture2D:
+		return {"__saved_texture_path": value.resource_path}
+	if value is Array:
+		var encoded: Array = []
+		for item in value:
+			encoded.append(_encode_save_value(item))
+		return encoded
+	if value is Dictionary:
+		var encoded: Dictionary = {}
+		for key in value:
+			encoded[key] = _encode_save_value(value[key])
+		return encoded
+	if value is Object:
+		return null
+	return value
+
+
+func _decode_save_value(value: Variant) -> Variant:
+	if value is Dictionary:
+		if value.has("__saved_texture_path"):
+			var path := str(value.get("__saved_texture_path", ""))
+			return load(path) if not path.is_empty() and ResourceLoader.exists(path) else null
+		var decoded: Dictionary = {}
+		for key in value:
+			decoded[key] = _decode_save_value(value[key])
+		return decoded
+	if value is Array:
+		var decoded: Array = []
+		for item in value:
+			decoded.append(_decode_save_value(item))
+		return decoded
+	return value
+
+
+func _show_pause_settings() -> void:
+	_show_pause_subpage("SETTINGS", "Audio settings are controlled by the game's Audio buses. Use the sliders below to adjust master volume.", true)
+
+
+func _show_pause_credits() -> void:
+	_show_pause_subpage("CREDITS", "Kultura at Tradisyon\nA cultural heritage game project\n\nCreated with Godot Engine.", false)
+
+
+func _show_pause_subpage(title_text: String, description: String, show_volume: bool) -> void:
+	if not is_instance_valid(pause_menu_instance):
+		return
+	for child in pause_menu_instance.get_children():
+		child.queue_free()
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.position = Vector2(-250, -210)
+	panel.size = Vector2(500, 420)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.99)
+	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override("panel", panel_style)
+	pause_menu_instance.add_child(panel)
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 18)
+	panel.add_child(layout)
+	var heading := Label.new()
+	heading.text = title_text
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 30)
+	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	layout.add_child(heading)
+	var description_label := Label.new()
+	description_label.text = description
+	description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	description_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	description_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	description_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	description_label.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	layout.add_child(description_label)
+	if show_volume:
+		var bus_index := AudioServer.get_bus_index("Master")
+		var slider := HSlider.new()
+		slider.min_value = 0.0
+		slider.max_value = 1.0
+		slider.step = 0.05
+		slider.value = db_to_linear(AudioServer.get_bus_volume_db(bus_index)) if bus_index >= 0 else 1.0
+		slider.value_changed.connect(func(value: float):
+			if bus_index >= 0:
+				AudioServer.set_bus_volume_db(bus_index, linear_to_db(maxf(value, 0.001)))
+		)
+		layout.add_child(slider)
+	var back := _add_pause_button(layout, "Back", func(): _rebuild_pause_menu())
+	back.custom_minimum_size = Vector2(300, 46)
+
+
+func _rebuild_pause_menu() -> void:
+	if not is_instance_valid(pause_menu_instance):
+		return
+	pause_menu_instance.queue_free()
+	pause_menu_instance = null
+	pause_menu_open = false
+	get_tree().paused = false
+	_open_pause_menu()
+
+
+func _show_pause_message(title_text: String, body_text: String) -> void:
+	_show_pause_subpage(title_text, body_text, false)
+
+
+func _return_to_main_menu() -> void:
+	_close_pause_menu()
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.reset_runtime_state()
+	inventory_items.clear()
+	heritage_entries.clear()
+	_refresh_inventory_ui()
+	get_tree().change_scene_to_file(MAIN_MENU_SCENE_PATH)
+
 
 func _on_viewport_resized() -> void:
 	_resize_navigation_buttons()
