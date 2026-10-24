@@ -259,8 +259,6 @@ func _on_ending_dialogue_finished(choice: String) -> void:
 	_show_ending_card(choice)
 
 func _show_ending_card(choice: String) -> void:
-	# HUD is a persistent CanvasLayer in this project, not a Control. Keep the
-	# reference as Node so the final overlay is not silently skipped by a cast.
 	var hud := get_node_or_null("/root/HUD")
 	if hud == null:
 		push_warning("HUD was not found; cannot show the ending screen.")
@@ -270,77 +268,112 @@ func _show_ending_card(choice: String) -> void:
 	var existing := hud.get_node_or_null("EndingChoiceOverlay")
 	if existing != null:
 		existing.queue_free()
+
 	var overlay := Control.new()
 	overlay.name = "EndingChoiceOverlay"
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	hud.add_child(overlay)
 
-	# Fade to black first, then reveal the ending photograph-style composition.
-	var fade := ColorRect.new()
-	fade.name = "EndingFade"
-	fade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	fade.color = Color(0.0, 0.0, 0.0, 1.0)
-	fade.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.add_child(fade)
+	# The screen begins completely black.
+	var black := ColorRect.new()
+	black.name = "EndingBlackScreen"
+	black.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	black.color = Color.BLACK
+	black.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(black)
 
-	var background := TextureRect.new()
-	background.name = "EndingPlaceholderPhoto"
-	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	background.texture = load("res://GAME ASSETS/Living Room.jpg") as Texture2D
-	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
-	background.modulate.a = 0.0
-	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(background)
+	# Build a photograph-like card using existing project artwork as placeholders.
+	var photo_frame := PanelContainer.new()
+	photo_frame.name = "EndingPhotographFrame"
+	photo_frame.anchor_left = 0.08
+	photo_frame.anchor_top = 0.05
+	photo_frame.anchor_right = 0.92
+	photo_frame.anchor_bottom = 0.82
+	var frame_style := StyleBoxFlat.new()
+	frame_style.bg_color = Color(0.96, 0.93, 0.84, 1.0)
+	frame_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	frame_style.set_border_width_all(5)
+	frame_style.content_margin_left = 12.0
+	frame_style.content_margin_right = 12.0
+	frame_style.content_margin_top = 12.0
+	frame_style.content_margin_bottom = 12.0
+	photo_frame.add_theme_stylebox_override("panel", frame_style)
+	photo_frame.modulate.a = 0.0
+	photo_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(photo_frame)
 
-	# Temporary portrait artwork from the existing asset folder. These are
-	# placeholders until dedicated ending illustrations are ready.
+	var photo_layout := VBoxContainer.new()
+	photo_layout.add_theme_constant_override("separation", 8)
+	photo_frame.add_child(photo_layout)
+
+	var photo := TextureRect.new()
+	photo.name = "EndingPlaceholderPhoto"
+	photo.texture = load("res://GAME ASSETS/Living Room.jpg") as Texture2D
+	photo.custom_minimum_size = Vector2(600, 340)
+	photo.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	photo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	photo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	photo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	photo_layout.add_child(photo)
+
+	var portrait_row := HBoxContainer.new()
+	portrait_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	portrait_row.add_theme_constant_override("separation", 16)
+	photo_layout.add_child(portrait_row)
+
 	var portrait := TextureRect.new()
 	portrait.name = "EndingPlaceholderPortrait"
 	if choice == "stay":
 		portrait.texture = load("res://GAME ASSETS/Living Room/lola_nena_looking.png") as Texture2D
 	else:
 		portrait.texture = load("res://GAME ASSETS/Kitchen/lola nena standing.png") as Texture2D
-	portrait.anchor_left = 0.57
-	portrait.anchor_top = 0.12
-	portrait.anchor_right = 0.94
-	portrait.anchor_bottom = 0.78
+	portrait.custom_minimum_size = Vector2(110, 90)
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	portrait.modulate.a = 0.0
 	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(portrait)
+	portrait_row.add_child(portrait)
 
-	var caption_panel := PanelContainer.new()
-	caption_panel.anchor_left = 0.06
-	caption_panel.anchor_top = 0.70
-	caption_panel.anchor_right = 0.94
-	caption_panel.anchor_bottom = 0.94
+	var photo_caption := Label.new()
+	photo_caption.text = "A MEMORY TO CARRY FORWARD"
+	photo_caption.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	photo_caption.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	photo_caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	photo_caption.add_theme_font_size_override("font_size", 18)
+	photo_caption.add_theme_color_override("font_color", Color(0.20, 0.15, 0.10))
+	portrait_row.add_child(photo_caption)
+
+	var ending_caption := PanelContainer.new()
+	ending_caption.name = "EndingCaption"
+	ending_caption.anchor_left = 0.08
+	ending_caption.anchor_top = 0.85
+	ending_caption.anchor_right = 0.92
+	ending_caption.anchor_bottom = 0.97
 	var caption_style := StyleBoxFlat.new()
-	caption_style.bg_color = Color(0.10, 0.075, 0.05, 0.92)
+	caption_style.bg_color = Color(0.10, 0.075, 0.05, 0.96)
 	caption_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
 	caption_style.set_border_width_all(2)
-	caption_style.set_corner_radius_all(12)
-	caption_style.content_margin_left = 28.0
-	caption_style.content_margin_right = 28.0
-	caption_style.content_margin_top = 14.0
-	caption_style.content_margin_bottom = 14.0
-	caption_panel.add_theme_stylebox_override("panel", caption_style)
-	caption_panel.modulate.a = 0.0
-	caption_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	overlay.add_child(caption_panel)
+	caption_style.set_corner_radius_all(10)
+	caption_style.content_margin_left = 20.0
+	caption_style.content_margin_right = 20.0
+	caption_style.content_margin_top = 8.0
+	caption_style.content_margin_bottom = 8.0
+	ending_caption.add_theme_stylebox_override("panel", caption_style)
+	ending_caption.modulate.a = 0.0
+	ending_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(ending_caption)
 
 	var caption_layout := VBoxContainer.new()
 	caption_layout.alignment = BoxContainer.ALIGNMENT_CENTER
-	caption_layout.add_theme_constant_override("separation", 8)
-	caption_panel.add_child(caption_layout)
+	caption_layout.add_theme_constant_override("separation", 4)
+	ending_caption.add_child(caption_layout)
 
 	var heading := Label.new()
 	heading.text = "THE END"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 36)
+	heading.add_theme_font_size_override("font_size", 30)
 	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
 	caption_layout.add_child(heading)
 
@@ -351,24 +384,42 @@ func _show_ending_card(choice: String) -> void:
 		ending_text.text = "Migs returns to the city with the stories Lola Nena shared, ready to help others appreciate and preserve their own cultural heritage."
 	ending_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ending_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	ending_text.add_theme_font_size_override("font_size", 19)
+	ending_text.add_theme_font_size_override("font_size", 16)
 	ending_text.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
 	caption_layout.add_child(ending_text)
 
-	var thank_you := Label.new()
-	thank_you.text = "Thank you for playing Kultura at Tradisyon."
-	thank_you.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	thank_you.add_theme_font_size_override("font_size", 15)
-	thank_you.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
-	caption_layout.add_child(thank_you)
+	# Camera flash: a brief white burst while the screen is still black.
+	var flash := ColorRect.new()
+	flash.name = "CameraFlash"
+	flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	flash.color = Color(1.0, 1.0, 1.0, 0.0)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(flash)
 
-	var fade_tween := create_tween()
-	fade_tween.tween_property(background, "modulate:a", 1.0, 1.1)
-	fade_tween.parallel().tween_property(portrait, "modulate:a", 1.0, 1.1)
-	fade_tween.parallel().tween_property(caption_panel, "modulate:a", 1.0, 1.1)
-	fade_tween.tween_property(fade, "color:a", 0.0, 1.0)
-	await fade_tween.finished
-	fade.queue_free()
+	var flash_tween := create_tween()
+	flash_tween.tween_property(flash, "color:a", 1.0, 0.08)
+	flash_tween.tween_interval(0.10)
+	flash_tween.tween_property(flash, "color:a", 0.0, 0.28)
+	await flash_tween.finished
+	flash.queue_free()
+
+	# Reveal the photograph after the flash, then fade away from black.
+	var reveal_tween := create_tween()
+	reveal_tween.tween_property(photo_frame, "modulate:a", 1.0, 0.75)
+	reveal_tween.parallel().tween_property(ending_caption, "modulate:a", 1.0, 0.75)
+	reveal_tween.tween_property(black, "color:a", 0.0, 0.8)
+	await reveal_tween.finished
+
+	# Keep the ending photograph visible for three seconds.
+	await get_tree().create_timer(3.0).timeout
+
+	# Fade the photograph out to black, then close the application.
+	var closing_tween := create_tween()
+	closing_tween.tween_property(photo_frame, "modulate:a", 0.0, 0.8)
+	closing_tween.parallel().tween_property(ending_caption, "modulate:a", 0.0, 0.8)
+	closing_tween.tween_property(black, "color:a", 1.0, 1.0)
+	await closing_tween.finished
+	get_tree().quit()
 
 func _process(_delta: float) -> void:
 	# Keep button-based interactions locked until both required room items are collected.
