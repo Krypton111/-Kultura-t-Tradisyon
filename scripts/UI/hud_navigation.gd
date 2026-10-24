@@ -425,7 +425,8 @@ func _is_hovering_camera_target(mouse_position: Vector2) -> bool:
 		return false
 	var current_scene := get_tree().current_scene
 	if current_scene != null and current_scene.has_method("get_heritage_photo_target"):
-		return not Dictionary(current_scene.call("get_heritage_photo_target", mouse_position)).is_empty()
+		var target: Dictionary = current_scene.call("get_heritage_photo_target", mouse_position)
+		return not target.is_empty()
 	return false
 
 
