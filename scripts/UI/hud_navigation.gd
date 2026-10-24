@@ -727,12 +727,11 @@ func _show_pause_slot_menu(load_mode: bool) -> void:
 	layout.add_child(slots_grid)
 
 	for slot in range(1, 11):
-		var slot_path := _save_file_path(slot)
-		var has_save := FileAccess.file_exists(slot_path)
+		var has_save := FileAccess.file_exists(_save_file_path(slot))
 		var slot_button := _add_pause_button(
 			slots_grid,
 			"Slot %02d — %s" % [slot, "Saved" if has_save else "Empty"],
-			Callable(self, "_load_game_from_slot").bind(slot) if load_mode else Callable(self, "_save_game_to_slot").bind(slot)
+			Callable(self, "_on_save_slot_selected").bind(slot) if not load_mode else Callable(self, "_on_load_slot_selected").bind(slot)
 		)
 		slot_button.custom_minimum_size = Vector2(250, 54)
 		if load_mode and not has_save:
@@ -740,6 +739,76 @@ func _show_pause_slot_menu(load_mode: bool) -> void:
 
 	var back := _add_pause_button(layout, "Back", func(): _rebuild_pause_menu())
 	back.custom_minimum_size = Vector2(300, 44)
+
+
+func _on_save_slot_selected(slot: int) -> void:
+	if FileAccess.file_exists(_save_file_path(slot)):
+		_show_slot_confirmation(
+			"Overwrite Save?",
+			"Slot %02d already contains saved progress. Are you sure you want to overwrite it?" % slot,
+			Callable(self, "_save_game_to_slot").bind(slot),
+			false
+		)
+	else:
+		_save_game_to_slot(slot)
+
+
+func _on_load_slot_selected(slot: int) -> void:
+	if not FileAccess.file_exists(_save_file_path(slot)):
+		_show_pause_message("No save found", "Slot %02d is empty." % slot)
+		return
+	_show_slot_confirmation(
+		"Load This Save?",
+		"Load Slot %02d? Your current unsaved progress will be replaced." % slot,
+		Callable(self, "_load_game_from_slot").bind(slot),
+		true
+	)
+
+
+func _show_slot_confirmation(title_text: String, message_text: String, confirm_action: Callable, load_mode: bool) -> void:
+	if not is_instance_valid(pause_menu_instance):
+		return
+	for child in pause_menu_instance.get_children():
+		child.queue_free()
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.position = Vector2(-280, -190)
+	panel.size = Vector2(560, 380)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.99)
+	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override("panel", panel_style)
+	pause_menu_instance.add_child(panel)
+
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 18)
+	panel.add_child(layout)
+
+	var heading := Label.new()
+	heading.text = title_text
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_override("font", PAUSE_MENU_FONT)
+	heading.add_theme_font_size_override("font_size", 30)
+	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	layout.add_child(heading)
+
+	var message := Label.new()
+	message.text = message_text
+	message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	message.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	message.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	message.add_theme_font_override("font", PAUSE_MENU_FONT)
+	message.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	layout.add_child(message)
+
+	var confirm_button := _add_pause_button(layout, "Yes, Load Game" if load_mode else "Yes, Overwrite", func(): confirm_action.call())
+	confirm_button.custom_minimum_size = Vector2(300, 48)
+	var cancel_button := _add_pause_button(layout, "Cancel", func(): _show_pause_slot_menu(load_mode))
+	cancel_button.custom_minimum_size = Vector2(300, 44)
 
 
 func _save_game_to_slot(slot: int) -> void:
@@ -775,10 +844,31 @@ func _load_game_from_slot(slot: int) -> void:
 	if not (parsed is Dictionary) or not (parsed.get("state", {}) is Dictionary):
 		_show_pause_message("Load failed", "Slot %02d contains an invalid save." % slot)
 		return
+	var scene_path := str(parsed.get("scene_path", LIVING_ROOM))
+	if not ResourceLoader.exists(scene_path):
+		scene_path = LIVING_ROOM
+
+	# Fade to black before switching scenes, then fade back in after the new scene is ready.
+	if fade_rect == null or not is_instance_valid(fade_rect):
+		_create_fade_rect()
+	if fade_tween != null and fade_tween.is_running():
+		fade_tween.kill()
+	fade_rect.size = Vector2(_screen_width(), _screen_height())
+	fade_rect.color = Color(0, 0, 0, 0)
+	fade_rect.mouse_filter = Control.MOUSE_FILTER_STOP
+	fade_tween = create_tween()
+	fade_tween.tween_property(fade_rect, "color:a", 1.0, 0.65)
+	await fade_tween.finished
+
 	var game_state := get_node_or_null("/root/GameState")
 	if game_state == null:
+		fade_tween = create_tween()
+		fade_tween.tween_property(fade_rect, "color:a", 0.0, 0.45)
+		await fade_tween.finished
+		fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_show_pause_message("Load failed", "Game state could not be found.")
 		return
+
 	var loaded_state: Dictionary = _decode_save_value(parsed["state"])
 	game_state.set("_values", loaded_state)
 	inventory_items.clear()
@@ -787,12 +877,23 @@ func _load_game_from_slot(slot: int) -> void:
 	camera_collected = bool(game_state.get_state("camera_collected", false))
 	journal_collected = bool(game_state.get_state("journal_collected", false))
 	_refresh_inventory_ui()
-	var scene_path := str(parsed.get("scene_path", LIVING_ROOM))
-	if not ResourceLoader.exists(scene_path):
-		scene_path = LIVING_ROOM
+
 	_close_pause_menu()
 	await get_tree().process_frame
-	get_tree().change_scene_to_file(scene_path)
+	var change_error := get_tree().change_scene_to_file(scene_path)
+	if change_error != OK:
+		fade_tween = create_tween()
+		fade_tween.tween_property(fade_rect, "color:a", 0.0, 0.45)
+		await fade_tween.finished
+		fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		return
+	await get_tree().process_frame
+	_set_brightness(brightness_level)
+	_apply_music_volume_to_all_players()
+	fade_tween = create_tween()
+	fade_tween.tween_property(fade_rect, "color:a", 0.0, 0.65)
+	await fade_tween.finished
+	fade_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
 func _encode_save_value(value: Variant) -> Variant:
