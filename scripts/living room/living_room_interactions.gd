@@ -86,6 +86,235 @@ func _ready() -> void:
 			push_warning("Could not load the opening dialogue scene.")
 			hud.set("navigation_locked", false)
 
+	# Resume the ending flow after the room and persistent HUD are ready.
+	call_deferred("_resume_ending_if_needed")
+
+func _resume_ending_if_needed() -> void:
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null or not bool(game_state.get_state("lunch_completed", false)):
+		return
+	if bool(game_state.get_state("ending_completed", false)):
+		_show_ending_card(str(game_state.get_state("ending_choice", "")))
+		return
+	_start_ending_question()
+
+func _start_ending_question() -> void:
+	if _heritage_dialogue_open:
+		return
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null or not bool(game_state.get_state("lunch_completed", false)):
+		return
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "Migs, after everything we shared today, I have something important to ask you."},
+		{"speaker": "Lola Nena", "text": "Would you like to stay here in the province with me? You could help care for our home, keep our traditions alive, and pass our heritage on to the next generation."},
+		{"speaker": "Lola Nena", "text": "Or would you rather return to the city, carrying what you learned with you and sharing our traditions and heritage with the people there? Both paths can make a difference. The choice is yours, hijo."}
+	]
+	_start_living_room_dialogue(lines, Callable(self, "_on_ending_question_finished"))
+
+func _on_ending_question_finished() -> void:
+	_heritage_dialogue_open = false
+	var hud := get_node_or_null("/root/HUD")
+	if hud != null:
+		hud.set("navigation_locked", true)
+	_show_ending_choice_panel()
+
+func _show_ending_choice_panel() -> void:
+	var hud := get_node_or_null("/root/HUD") as Control
+	if hud == null:
+		return
+	var existing := hud.get_node_or_null("EndingChoiceOverlay")
+	if existing != null:
+		existing.queue_free()
+	var overlay := Control.new()
+	overlay.name = "EndingChoiceOverlay"
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	hud.add_child(overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.035, 0.025, 0.018, 0.78)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(dim)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(760, 420)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.99)
+	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(14)
+	panel_style.content_margin_left = 34.0
+	panel_style.content_margin_right = 34.0
+	panel_style.content_margin_top = 28.0
+	panel_style.content_margin_bottom = 28.0
+	panel.add_theme_stylebox_override("panel", panel_style)
+	center.add_child(panel)
+
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 18)
+	panel.add_child(layout)
+
+	var heading := Label.new()
+	heading.text = "A CHOICE FOR THE FUTURE"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 30)
+	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	layout.add_child(heading)
+
+	var prompt := Label.new()
+	prompt.text = "What will Migs do with the traditions and heritage he has learned?"
+	prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt.add_theme_font_size_override("font_size", 20)
+	prompt.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	layout.add_child(prompt)
+
+	layout.add_child(_make_ending_choice_button("Stay in the Province", "Help Lola Nena preserve and pass on their heritage.", Callable(self, "_choose_ending").bind("stay")))
+	layout.add_child(_make_ending_choice_button("Return to the City", "Share what he learned with others in the city.", Callable(self, "_choose_ending").bind("city")))
+
+func _make_ending_choice_button(title_text: String, description_text: String, callback: Callable) -> Button:
+	var button := Button.new()
+	button.text = title_text + "\n" + description_text
+	button.custom_minimum_size = Vector2(660, 88)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.focus_mode = Control.FOCUS_ALL
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.add_theme_font_size_override("font_size", 20)
+	button.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 0.86, 0.59))
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.24, 0.19, 0.14, 1.0)
+	normal.border_color = Color(0.61, 0.46, 0.28, 1.0)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(8)
+	normal.content_margin_left = 14.0
+	normal.content_margin_right = 14.0
+	normal.content_margin_top = 10.0
+	normal.content_margin_bottom = 10.0
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.31, 0.24, 0.16, 1.0)
+	hover.border_color = Color(0.91, 0.76, 0.49, 1.0)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", hover)
+	button.add_theme_stylebox_override("focus", hover)
+	button.pressed.connect(callback)
+	return button
+
+func _choose_ending(choice: String) -> void:
+	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null:
+		return
+	var overlay := hud.get_node_or_null("EndingChoiceOverlay") if hud != null else null
+	if overlay != null:
+		overlay.queue_free()
+	game_state.set_state("ending_choice", choice)
+	var lines: Array[Dictionary] = []
+	if choice == "stay":
+		lines = [
+			{"speaker": "Migs", "text": "I want to stay, Lola. There is still so much I can learn from you, and I want to help keep our traditions alive."},
+			{"speaker": "Lola Nena", "text": "That makes this old heart happy, hijo. Heritage lives when we care for it together and teach it to those who come after us."},
+			{"speaker": "Migs", "text": "I’ll help look after our home and document the stories, so our family and community can keep remembering them."}
+		]
+	else:
+		lines = [
+			{"speaker": "Migs", "text": "I think I should return to the city, Lola. I want to share what I learned with my friends and help them appreciate our heritage, too."},
+			{"speaker": "Lola Nena", "text": "That is a good path as well, hijo. Traditions can travel with us. Share our stories, practice what you have learned, and encourage others to protect their own heritage."},
+			{"speaker": "Migs", "text": "I’ll carry these memories with me and find ways to keep our traditions alive, even when I’m far from home."}
+		]
+	_start_living_room_dialogue(lines, Callable(self, "_on_ending_dialogue_finished").bind(choice))
+
+func _on_ending_dialogue_finished(choice: String) -> void:
+	_heritage_dialogue_open = false
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("ending_completed", true)
+	_show_ending_card(choice)
+
+func _show_ending_card(choice: String) -> void:
+	var hud := get_node_or_null("/root/HUD") as Control
+	if hud == null:
+		return
+	var existing := hud.get_node_or_null("EndingChoiceOverlay")
+	if existing != null:
+		existing.queue_free()
+	var overlay := Control.new()
+	overlay.name = "EndingChoiceOverlay"
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	hud.add_child(overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.035, 0.025, 0.018, 0.86)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(dim)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(760, 390)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.99)
+	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(14)
+	panel_style.content_margin_left = 36.0
+	panel_style.content_margin_right = 36.0
+	panel_style.content_margin_top = 34.0
+	panel_style.content_margin_bottom = 34.0
+	panel.add_theme_stylebox_override("panel", panel_style)
+	center.add_child(panel)
+
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 20)
+	panel.add_child(layout)
+
+	var heading := Label.new()
+	heading.text = "THE END"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 36)
+	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	layout.add_child(heading)
+
+	var ending_text := Label.new()
+	if choice == "stay":
+		ending_text.text = "Migs chooses to stay in the province, helping Lola Nena care for their home and pass their family's traditions and heritage to future generations. By learning, documenting, and practicing these traditions, he strengthens their place in the community."
+	else:
+		ending_text.text = "Migs returns to the city carrying the stories and lessons he learned from Lola Nena. By sharing them with friends and his wider community, he helps keep their traditions alive beyond the province."
+	ending_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ending_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ending_text.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	ending_text.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	ending_text.add_theme_font_size_override("font_size", 20)
+	ending_text.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	layout.add_child(ending_text)
+
+	var subtitle := Label.new()
+	subtitle.text = "Cultural heritage lives on when we choose to care for it, share it, and pass it on."
+	subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	subtitle.add_theme_font_size_override("font_size", 17)
+	subtitle.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	layout.add_child(subtitle)
+
+	var finish_label := Label.new()
+	finish_label.text = "Thank you for playing Kultura at Tradisyon."
+	finish_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	finish_label.add_theme_font_size_override("font_size", 15)
+	finish_label.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	layout.add_child(finish_label)
+
 func _process(_delta: float) -> void:
 	# Keep button-based interactions locked until both required room items are collected.
 	var unlocked := _room_interactables_unlocked()
