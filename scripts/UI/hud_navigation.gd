@@ -852,9 +852,24 @@ func _add_settings_slider(parent: VBoxContainer, label_text: String, minimum: fl
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	slider.focus_mode = Control.FOCUS_ALL
 	slider.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	slider.add_theme_icon_override("grabber", SLIDER_KNOB_TEXTURE)
-	slider.add_theme_icon_override("grabber_highlight", SLIDER_KNOB_TEXTURE)
-	slider.add_theme_icon_override("grabber_pressed", SLIDER_KNOB_TEXTURE)
+
+	# Godot draws slider theme icons at their texture's native size. Downscale
+	# the high-resolution knob image before assigning it so it stays compact.
+	var knob_texture: Texture2D = SLIDER_KNOB_TEXTURE
+	var knob_image := SLIDER_KNOB_TEXTURE.get_image()
+	if knob_image != null and not knob_image.is_empty():
+		var largest_dimension := maxi(knob_image.get_width(), knob_image.get_height())
+		const MAX_KNOB_SIZE := 28
+		if largest_dimension > MAX_KNOB_SIZE:
+			var scale_factor := float(MAX_KNOB_SIZE) / float(largest_dimension)
+			var knob_width := maxi(1, roundi(float(knob_image.get_width()) * scale_factor))
+			var knob_height := maxi(1, roundi(float(knob_image.get_height()) * scale_factor))
+			knob_image.resize(knob_width, knob_height, Image.INTERPOLATE_BILINEAR)
+			knob_texture = ImageTexture.create_from_image(knob_image)
+
+	slider.add_theme_icon_override("grabber", knob_texture)
+	slider.add_theme_icon_override("grabber_highlight", knob_texture)
+	slider.add_theme_icon_override("grabber_pressed", knob_texture)
 	slider.value_changed.connect(callback)
 	setting_group.add_child(slider)
 
