@@ -95,6 +95,7 @@ func _ready() -> void:
 	_setup_journal_toggle()
 	_setup_inventory_ui()
 	_setup_pause_menu()
+	_set_brightness(brightness_level)
 
 
 func _setup_inventory_ui() -> void:
@@ -922,15 +923,36 @@ func _add_settings_slider(parent: VBoxContainer, label_text: String, minimum: fl
 
 func _set_brightness(value: float) -> void:
 	brightness_level = clampf(value, 0.35, 1.0)
+
+	# Remove the old world-only modulator so brightness is not applied twice.
 	var scene := get_tree().current_scene
-	if scene == null:
-		return
-	var canvas_modulate := scene.get_node_or_null("GameplayBrightness") as CanvasModulate
-	if canvas_modulate == null:
-		canvas_modulate = CanvasModulate.new()
-		canvas_modulate.name = "GameplayBrightness"
-		scene.add_child(canvas_modulate)
-	canvas_modulate.color = Color(brightness_level, brightness_level, brightness_level, 1.0)
+	if scene != null:
+		var old_modulator := scene.get_node_or_null("GameplayBrightness")
+		if old_modulator is CanvasModulate:
+			old_modulator.queue_free()
+
+	# A full-screen black overlay on a high CanvasLayer affects the world,
+	# HUD, dialogue, inventory, pause menu, and settings artwork together.
+	var overlay_layer := get_tree().root.get_node_or_null("GlobalBrightnessOverlay") as CanvasLayer
+	if overlay_layer == null:
+		overlay_layer = CanvasLayer.new()
+		overlay_layer.name = "GlobalBrightnessOverlay"
+		overlay_layer.layer = 128
+		overlay_layer.process_mode = Node.PROCESS_MODE_ALWAYS
+		get_tree().root.add_child(overlay_layer)
+
+	var overlay := overlay_layer.get_node_or_null("BrightnessTint") as ColorRect
+	if overlay == null:
+		overlay = ColorRect.new()
+		overlay.name = "BrightnessTint"
+		overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		overlay.color = Color(0.0, 0.0, 0.0, 0.0)
+		overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		overlay_layer.add_child(overlay)
+
+	# Slider 1.0 = transparent overlay (full brightness); lower values darken
+	# every visible layer equally without blocking mouse interaction.
+	overlay.color = Color(0.0, 0.0, 0.0, 1.0 - brightness_level)
 
 
 func _set_sound_volume(value: float) -> void:
