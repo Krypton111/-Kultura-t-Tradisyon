@@ -361,14 +361,27 @@ func reveal_journal() -> void:
 	journal_open.visible = false
 	_fade_hud_sprite_in(journal_close)
 
-func record_heritage_entry(entry_title: String, entry_text: String) -> void:
+func record_heritage_entry(entry_title: String, entry_text: String, object_name: String = "") -> void:
 	for existing in heritage_entries:
 		if str(existing.get("title", "")) == entry_title:
 			return
-	heritage_entries.append({"title": entry_title, "text": entry_text})
+	heritage_entries.append({"title": entry_title, "text": entry_text, "object_name": object_name, "photo_path": ""})
 	var game_state := get_node_or_null("/root/GameState")
 	if game_state != null:
 		game_state.set_state("heritage_entries", heritage_entries)
+
+
+func attach_heritage_photo(entry_title: String, texture_path: String) -> bool:
+	if entry_title.is_empty() or texture_path.is_empty():
+		return false
+	for entry in heritage_entries:
+		if str(entry.get("title", "")) == entry_title:
+			entry["photo_path"] = texture_path
+			var game_state := get_node_or_null("/root/GameState")
+			if game_state != null:
+				game_state.set_state("heritage_entries", heritage_entries)
+			return true
+	return false
 
 func reveal_camera() -> void:
 	camera_collected = true
@@ -405,6 +418,16 @@ func _update_journal_hover() -> void:
 	var hovering := _is_hovering_journal()
 	journal_close.visible = not hovering
 	journal_open.visible = hovering
+
+func _is_hovering_camera_target(mouse_position: Vector2) -> bool:
+	var camera_controller := get_node_or_null("CameraController")
+	if camera_controller == null or not bool(camera_controller.get("camera_mode_active")):
+		return false
+	var current_scene := get_tree().current_scene
+	if current_scene != null and current_scene.has_method("get_heritage_photo_target"):
+		return not Dictionary(current_scene.call("get_heritage_photo_target", mouse_position)).is_empty()
+	return false
+
 
 func _is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 	var current_scene := get_tree().current_scene
@@ -470,6 +493,9 @@ func _input(event: InputEvent) -> void:
 func _open_journal_overlay() -> void:
 	if journal_is_open or JOURNAL_SCENE == null:
 		return
+	var camera_controller := get_node_or_null("CameraController")
+	if camera_controller != null and camera_controller.has_method("cancel_camera_mode"):
+		camera_controller.call("cancel_camera_mode")
 
 	journal_overlay_instance = JOURNAL_SCENE.instantiate() as Control
 	if journal_overlay_instance == null:
@@ -572,6 +598,14 @@ func _resize_navigation_buttons() -> void:
 		fade_rect.size = Vector2(_screen_width(), _screen_height())
 
 func _update_cursor(mouse_position: Vector2) -> void:
+	# While the camera is active, highlight only heritage items already recorded
+	# in the journal, before checking ordinary room interactions or navigation.
+	if _is_hovering_camera_target(mouse_position):
+		if current_direction != "journal":
+			current_direction = "journal"
+			Input.set_custom_mouse_cursor(magnify_cursor, Input.CURSOR_ARROW, _cursor_hotspot(magnify_cursor))
+		return
+
 	# Modal overlays take priority over room interactables. Keep the normal
 	# cursor while the recipe, pot, or dialogue screen is visible.
 	if _is_screen_overlay_open():
@@ -685,6 +719,9 @@ func _go_down() -> void:
 func _change_scene(scene_path: String) -> void:
 	if navigation_locked:
 		return
+	var camera_controller := get_node_or_null("CameraController")
+	if camera_controller != null and camera_controller.has_method("cancel_camera_mode"):
+		camera_controller.call("cancel_camera_mode")
 
 	navigation_locked = true
 	Input.set_custom_mouse_cursor(null, Input.CURSOR_ARROW)
