@@ -670,36 +670,110 @@ func _close_pause_menu() -> void:
 	_update_cursor(get_viewport().get_mouse_position())
 
 
+func _save_file_path(slot: int) -> String:
+	return "user://kultura_save_slot_%02d.json" % slot
+
+
 func _save_game() -> void:
+	_show_pause_slot_menu(false)
+
+
+func _load_game() -> void:
+	_show_pause_slot_menu(true)
+
+
+func _show_pause_slot_menu(load_mode: bool) -> void:
+	if not is_instance_valid(pause_menu_instance):
+		return
+	for child in pause_menu_instance.get_children():
+		child.queue_free()
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.position = Vector2(-300, -300)
+	panel.size = Vector2(600, 600)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.99)
+	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(12)
+	panel.add_theme_stylebox_override("panel", panel_style)
+	pause_menu_instance.add_child(panel)
+
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 8)
+	panel.add_child(layout)
+
+	var heading := Label.new()
+	heading.text = "LOAD GAME" if load_mode else "SAVE GAME"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_override("font", PAUSE_MENU_FONT)
+	heading.add_theme_font_size_override("font_size", 30)
+	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	layout.add_child(heading)
+
+	var hint := Label.new()
+	hint.text = "Choose a slot to load." if load_mode else "Choose a slot to save your progress."
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_font_override("font", PAUSE_MENU_FONT)
+	hint.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	layout.add_child(hint)
+
+	var slots_grid := GridContainer.new()
+	slots_grid.columns = 2
+	slots_grid.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	slots_grid.add_theme_constant_override("h_separation", 10)
+	slots_grid.add_theme_constant_override("v_separation", 8)
+	layout.add_child(slots_grid)
+
+	for slot in range(1, 11):
+		var slot_path := _save_file_path(slot)
+		var has_save := FileAccess.file_exists(slot_path)
+		var slot_button := _add_pause_button(
+			slots_grid,
+			"Slot %02d — %s" % [slot, "Saved" if has_save else "Empty"],
+			Callable(self, "_load_game_from_slot").bind(slot) if load_mode else Callable(self, "_save_game_to_slot").bind(slot)
+		)
+		slot_button.custom_minimum_size = Vector2(250, 54)
+		if load_mode and not has_save:
+			slot_button.disabled = true
+
+	var back := _add_pause_button(layout, "Back", func(): _rebuild_pause_menu())
+	back.custom_minimum_size = Vector2(300, 44)
+
+
+func _save_game_to_slot(slot: int) -> void:
 	var game_state := get_node_or_null("/root/GameState")
 	if game_state == null:
 		_show_pause_message("Save unavailable", "Game state could not be found.")
 		return
 	var save_data: Dictionary = {
+		"slot": slot,
 		"scene_path": get_tree().current_scene.scene_file_path if get_tree().current_scene != null else LIVING_ROOM,
 		"state": _encode_save_value(game_state.get("_values"))
 	}
-	var file := FileAccess.open(SAVE_FILE_PATH, FileAccess.WRITE)
+	var file := FileAccess.open(_save_file_path(slot), FileAccess.WRITE)
 	if file == null:
-		_show_pause_message("Save failed", "The save file could not be written.")
+		_show_pause_message("Save failed", "Slot %02d could not be written." % slot)
 		return
 	file.store_string(JSON.stringify(save_data))
 	file.close()
-	_show_pause_message("Game saved", "Your progress has been saved on this device.")
+	_show_pause_message("Game saved", "Progress saved to Slot %02d." % slot)
 
 
-func _load_game() -> void:
-	if not FileAccess.file_exists(SAVE_FILE_PATH):
-		_show_pause_message("No save found", "Save your game first, then load it here.")
+func _load_game_from_slot(slot: int) -> void:
+	var path := _save_file_path(slot)
+	if not FileAccess.file_exists(path):
+		_show_pause_message("No save found", "Slot %02d is empty." % slot)
 		return
-	var file := FileAccess.open(SAVE_FILE_PATH, FileAccess.READ)
+	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
-		_show_pause_message("Load failed", "The save file could not be opened.")
+		_show_pause_message("Load failed", "Slot %02d could not be opened." % slot)
 		return
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	file.close()
 	if not (parsed is Dictionary) or not (parsed.get("state", {}) is Dictionary):
-		_show_pause_message("Load failed", "The save file is invalid.")
+		_show_pause_message("Load failed", "Slot %02d contains an invalid save." % slot)
 		return
 	var game_state := get_node_or_null("/root/GameState")
 	if game_state == null:
