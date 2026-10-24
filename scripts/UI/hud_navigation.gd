@@ -632,7 +632,7 @@ func _open_pause_menu() -> void:
 	_add_pause_button(layout, "Main Menu", _return_to_main_menu)
 
 
-func _add_pause_button(parent: VBoxContainer, label_text: String, callback: Callable) -> Button:
+func _add_pause_button(parent: Container, label_text: String, callback: Callable) -> Button:
 	var button := Button.new()
 	button.text = label_text
 	button.custom_minimum_size = Vector2(300, 48)
