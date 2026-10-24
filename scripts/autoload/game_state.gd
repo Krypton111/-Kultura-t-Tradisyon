@@ -19,6 +19,7 @@ const DEFAULTS := {
 	"coop_cups_fed": false,
 	"coop_basket_fed": false,
 	"coop_eggs_collected": false,
+	"lunch_completed": false,
 	"heritage_entries": [],
 	"kitchen_task_intro_completed": false,
 	"kitchen_ingredient_task_completed": false,
