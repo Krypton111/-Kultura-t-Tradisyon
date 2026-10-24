@@ -241,6 +241,14 @@ func _on_meal_dialogue_finished() -> void:
 	var game_state := get_node_or_null("/root/GameState")
 	if game_state != null:
 		game_state.set_state("lunch_completed", true)
+
+	# Lola has finished the kitchen conversation and is joining Migs for lunch.
+	# Hide her before the HUD starts its fade-to-black room transition.
+	var kitchen := get_parent()
+	var lola := kitchen.get_node_or_null("LolaNenaStanding") as Sprite2D if kitchen != null else null
+	if lola != null:
+		lola.visible = false
+
 	if _hud == null:
 		return
 	_hud.set("navigation_locked", false)
