@@ -582,33 +582,40 @@ func _open_pause_menu() -> void:
 	add_child(root)
 	pause_menu_instance = root
 
+	# Use the supplied artwork as the pause screen's full-screen base.
+	var background := TextureRect.new()
+	background.name = "PauseMenuBackground"
+	background.texture = preload("res://GAME ASSETS/UI/HUD/Pause Menu BG.png")
+	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(background)
+
+	# A light dim keeps the menu labels readable without hiding the artwork.
 	var dimmer := ColorRect.new()
+	dimmer.name = "PauseMenuDimmer"
 	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	dimmer.color = Color(0.025, 0.022, 0.018, 0.82)
-	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	dimmer.color = Color(0.025, 0.022, 0.018, 0.22)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(dimmer)
 
-	var panel := PanelContainer.new()
-	panel.name = "PausePanel"
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-205, -292)
-	panel.size = Vector2(410, 584)
-	panel.mouse_filter = Control.MOUSE_FILTER_STOP
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.98)
-	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
-	panel_style.set_border_width_all(3)
-	panel_style.set_corner_radius_all(12)
-	panel_style.content_margin_left = 28
-	panel_style.content_margin_right = 28
-	panel_style.content_margin_top = 24
-	panel_style.content_margin_bottom = 24
-	panel.add_theme_stylebox_override("panel", panel_style)
-	root.add_child(panel)
+	var menu_content := Control.new()
+	menu_content.name = "PauseMenuContent"
+	menu_content.set_anchors_preset(Control.PRESET_CENTER)
+	menu_content.position = Vector2(-205, -292)
+	menu_content.size = Vector2(410, 584)
+	menu_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(menu_content)
 
 	var layout := VBoxContainer.new()
+	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layout.offset_left = 12
+	layout.offset_top = 12
+	layout.offset_right = -12
+	layout.offset_bottom = -12
 	layout.add_theme_constant_override("separation", 10)
-	panel.add_child(layout)
+	menu_content.add_child(layout)
 
 	var heading := Label.new()
 	heading.text = "PAUSED"
