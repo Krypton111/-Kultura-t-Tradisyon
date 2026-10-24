@@ -870,12 +870,32 @@ func _load_game_from_slot(slot: int) -> void:
 		return
 
 	var loaded_state: Dictionary = _decode_save_value(parsed["state"])
-	game_state.set("_values", loaded_state)
+	# Start from the current defaults, then overlay the exact saved values.
+	# This prevents missing/new keys from inheriting progress from the run being replaced.
+	var restored_state: Dictionary = {}
+	var defaults: Dictionary = game_state.get("DEFAULTS")
+	if defaults is Dictionary:
+		for key in defaults:
+			var default_value: Variant = defaults[key]
+			restored_state[key] = default_value.duplicate(true) if default_value is Array or default_value is Dictionary else default_value
+	for key in loaded_state:
+		restored_state[key] = loaded_state[key]
+	game_state.set("_values", restored_state)
+
+	# Rebuild every HUD-owned copy from the restored save, never from the previous run.
 	inventory_items.clear()
 	inventory_items.assign(game_state.get_state("inventory_items", []))
+	heritage_entries.clear()
 	heritage_entries.assign(game_state.get_state("heritage_entries", []))
 	camera_collected = bool(game_state.get_state("camera_collected", false))
 	journal_collected = bool(game_state.get_state("journal_collected", false))
+	journal_is_open = false
+	if journal_close != null:
+		journal_close.visible = journal_collected
+	if journal_open != null:
+		journal_open.visible = false
+	if camera_icon != null:
+		camera_icon.visible = camera_collected
 	_refresh_inventory_ui()
 
 	_close_pause_menu()
