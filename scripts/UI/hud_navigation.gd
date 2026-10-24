@@ -326,6 +326,7 @@ func _finish_inventory_drag() -> void:
 
 
 func _process(_delta: float) -> void:
+	_apply_music_volume_to_all_players()
 	if pause_menu_open:
 		return
 	_update_journal_hover()
@@ -837,6 +838,10 @@ func _set_sound_volume(value: float) -> void:
 
 func _set_music_volume(value: float) -> void:
 	music_volume_level = clampf(value, 0.0, 1.0)
+	_apply_music_volume_to_all_players()
+
+
+func _apply_music_volume_to_all_players() -> void:
 	# Music streams are adjusted independently from sound effects by their
 	# AudioStreamPlayer nodes, leaving the Master bus for overall sound volume.
 	for node in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
@@ -1172,6 +1177,8 @@ func _change_scene(scene_path: String) -> void:
 	get_tree().change_scene_to_packed(next_room)
 
 	await get_tree().process_frame
+	_set_brightness(brightness_level)
+	_apply_music_volume_to_all_players()
 
 	fade_tween = create_tween()
 	fade_tween.tween_property(fade_rect, "color:a", 0.0, 1.0)
