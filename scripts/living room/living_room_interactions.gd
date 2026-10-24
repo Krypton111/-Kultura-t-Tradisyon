@@ -367,6 +367,7 @@ func _show_ending_card(choice: String) -> void:
 	fade_tween.parallel().tween_property(portrait, "modulate:a", 1.0, 1.1)
 	fade_tween.parallel().tween_property(caption_panel, "modulate:a", 1.0, 1.1)
 	fade_tween.tween_property(fade, "color:a", 0.0, 1.0)
+	await fade_tween.finished
 	fade.queue_free()
 
 func _process(_delta: float) -> void:
