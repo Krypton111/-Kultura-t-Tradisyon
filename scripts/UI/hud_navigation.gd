@@ -545,6 +545,9 @@ func _close_journal_overlay() -> void:
 
 var pause_menu_open := false
 var pause_menu_instance: Control
+var brightness_level := 1.0
+var sound_volume_level := 1.0
+var music_volume_level := 1.0
 const SAVE_FILE_PATH := "user://kultura_savegame.json"
 const MAIN_MENU_SCENE_PATH := "res://game_scenes/intro.tscn"
 
@@ -755,7 +758,107 @@ func _decode_save_value(value: Variant) -> Variant:
 
 
 func _show_pause_settings() -> void:
-	_show_pause_subpage("SETTINGS", "Audio settings are controlled by the game's Audio buses. Use the sliders below to adjust master volume.", true)
+	if not is_instance_valid(pause_menu_instance):
+		return
+	for child in pause_menu_instance.get_children():
+		child.queue_free()
+
+	var panel := PanelContainer.new()
+	panel.set_anchors_preset(Control.PRESET_CENTER)
+	panel.position = Vector2(-260, -250)
+	panel.size = Vector2(520, 500)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.99)
+	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(12)
+	panel_style.content_margin_left = 28
+	panel_style.content_margin_right = 28
+	panel_style.content_margin_top = 24
+	panel_style.content_margin_bottom = 24
+	panel.add_theme_stylebox_override("panel", panel_style)
+	pause_menu_instance.add_child(panel)
+
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 16)
+	panel.add_child(layout)
+
+	var heading := Label.new()
+	heading.text = "SETTINGS"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 30)
+	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	layout.add_child(heading)
+
+	_add_settings_slider(layout, "Brightness", 0.35, 1.0, brightness_level, _set_brightness)
+	_add_settings_slider(layout, "Sound Volume", 0.0, 1.0, sound_volume_level, _set_sound_volume)
+	_add_settings_slider(layout, "Music Volume", 0.0, 1.0, music_volume_level, _set_music_volume)
+	var back := _add_pause_button(layout, "Back", func(): _rebuild_pause_menu())
+	back.custom_minimum_size = Vector2(300, 46)
+
+
+func _add_settings_slider(parent: VBoxContainer, label_text: String, minimum: float, maximum: float, current_value: float, callback: Callable) -> void:
+	var setting_label := Label.new()
+	setting_label.text = label_text
+	setting_label.add_theme_font_size_override("font_size", 17)
+	setting_label.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	parent.add_child(setting_label)
+
+	var slider := HSlider.new()
+	slider.min_value = minimum
+	slider.max_value = maximum
+	slider.step = 0.05
+	slider.value = clampf(current_value, minimum, maximum)
+	slider.custom_minimum_size = Vector2(360, 24)
+	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.value_changed.connect(callback)
+	parent.add_child(slider)
+
+
+func _set_brightness(value: float) -> void:
+	brightness_level = clampf(value, 0.35, 1.0)
+	var scene := get_tree().current_scene
+	if scene == null:
+		return
+	var canvas_modulate := scene.get_node_or_null("GameplayBrightness") as CanvasModulate
+	if canvas_modulate == null:
+		canvas_modulate = CanvasModulate.new()
+		canvas_modulate.name = "GameplayBrightness"
+		scene.add_child(canvas_modulate)
+	canvas_modulate.color = Color(brightness_level, brightness_level, brightness_level, 1.0)
+
+
+func _set_sound_volume(value: float) -> void:
+	sound_volume_level = clampf(value, 0.0, 1.0)
+	var master_bus := AudioServer.get_bus_index("Master")
+	if master_bus >= 0:
+		AudioServer.set_bus_volume_db(master_bus, linear_to_db(maxf(sound_volume_level, 0.001)))
+
+
+func _set_music_volume(value: float) -> void:
+	music_volume_level = clampf(value, 0.0, 1.0)
+	# Music streams are adjusted independently from sound effects by their
+	# AudioStreamPlayer nodes, leaving the Master bus for overall sound volume.
+	for node in get_tree().root.find_children("*", "AudioStreamPlayer", true, false):
+		_apply_music_volume_to_player(node)
+	for node in get_tree().root.find_children("*", "AudioStreamPlayer2D", true, false):
+		_apply_music_volume_to_player(node)
+	for node in get_tree().root.find_children("*", "AudioStreamPlayer3D", true, false):
+		_apply_music_volume_to_player(node)
+
+
+func _apply_music_volume_to_player(player: Node) -> void:
+	if not player is AudioStreamPlayer and not player is AudioStreamPlayer2D and not player is AudioStreamPlayer3D:
+		return
+	var stream: AudioStream = player.get("stream")
+	var stream_path := stream.resource_path.to_lower() if stream != null else ""
+	var player_name := str(player.name).to_lower()
+	if not (stream_path.contains("music") or stream_path.contains("bgm") or player_name.contains("music") or player_name.contains("bgm")):
+		return
+	if not player.has_meta("settings_base_volume_db"):
+		player.set_meta("settings_base_volume_db", float(player.get("volume_db")))
+	var base_volume := float(player.get_meta("settings_base_volume_db"))
+	player.set("volume_db", base_volume + linear_to_db(maxf(music_volume_level, 0.001)))
 
 
 func _show_pause_credits() -> void:
