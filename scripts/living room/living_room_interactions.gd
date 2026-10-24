@@ -78,6 +78,11 @@ func _ready() -> void:
 			var dialogue_instance := dialogue_scene.instantiate()
 			hud.add_child(dialogue_instance)
 			if dialogue_instance.has_method("start_opening_sequence"):
+				# Start the run only after the opening dialogue reports completion.
+				# The autoload persists through every scene transition and pauses with the game.
+				var gameplay_timer := get_node_or_null("/root/GameplayTimer")
+				if gameplay_timer != null and dialogue_instance.has_signal("sequence_finished"):
+					dialogue_instance.sequence_finished.connect(Callable(gameplay_timer, "start_gameplay"), CONNECT_ONE_SHOT)
 				dialogue_instance.call("start_opening_sequence")
 			else:
 				dialogue_instance.queue_free()
@@ -254,6 +259,12 @@ func _play_ending_dialogue(choice: String) -> void:
 func _on_ending_dialogue_finished(choice: String) -> void:
 	_heritage_dialogue_open = false
 	var game_state := get_node_or_null("/root/GameState")
+	# This is the single successful-completion point shared by both endings.
+	# complete_gameplay() is idempotent, so resumed ending scenes cannot double-count.
+	var gameplay_timer := get_node_or_null("/root/GameplayTimer")
+	if gameplay_timer != null:
+		var completion_seconds: int = gameplay_timer.complete_gameplay()
+		print("Kultura at Tradisyon completion time: %d seconds (%s)" % [completion_seconds, gameplay_timer.get_formatted_time()])
 	if game_state != null:
 		game_state.set_state("ending_completed", true)
 	_show_ending_card(choice)
