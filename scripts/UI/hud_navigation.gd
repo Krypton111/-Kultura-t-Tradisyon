@@ -850,7 +850,7 @@ func _load_game_from_slot(slot: int) -> void:
 
 	# Fade to black before switching scenes, then fade back in after the new scene is ready.
 	if fade_rect == null or not is_instance_valid(fade_rect):
-		_create_fade_rect()
+		_create_fade_overlay()
 	if fade_tween != null and fade_tween.is_running():
 		fade_tween.kill()
 	fade_rect.size = Vector2(_screen_width(), _screen_height())
