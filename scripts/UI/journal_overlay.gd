@@ -9,6 +9,7 @@ signal close_requested
 var _entry_index := 0
 var _entry_titles: Array[Label] = []
 var _entry_texts: Array[Label] = []
+var _entry_photos: Array[TextureRect] = []
 var _page_counter: Label
 var _entries: Array = []
 
@@ -93,13 +94,24 @@ func _create_journal_text() -> void:
 			var body := Label.new()
 			body.name = "FindingText%d" % (entry_slot + 1)
 			body.position = page_positions[slot_index] + Vector2(0, 32)
-			body.size = Vector2(text_width, 105)
+			body.size = Vector2(text_width, 72)
 			body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			body.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 			body.add_theme_font_size_override("font_size", 12)
 			body.add_theme_color_override("font_color", Color(0.25, 0.20, 0.14))
 			page_nodes[page_index].add_child(body)
 			_entry_texts.append(body)
+
+			var photo := TextureRect.new()
+			photo.name = "FindingPhoto%d" % (entry_slot + 1)
+			photo.position = page_positions[slot_index] + Vector2(0, 108)
+			photo.size = Vector2(108, 64)
+			photo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			photo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			photo.visible = false
+			page_nodes[page_index].add_child(photo)
+			_entry_photos.append(photo)
 
 	_page_counter = Label.new()
 	_page_counter.position = Vector2(460, 535)
@@ -119,6 +131,9 @@ func _update_journal_text() -> void:
 		for i in range(1, 4):
 			_entry_titles[i].text = ""
 			_entry_texts[i].text = ""
+		for photo in _entry_photos:
+			photo.texture = null
+			photo.visible = false
 		_page_counter.text = "No entries yet"
 		return
 
@@ -130,9 +145,15 @@ func _update_journal_text() -> void:
 			var entry: Dictionary = _entries[entry_index]
 			_entry_titles[i].text = str(entry.get("title", "Untitled Memory"))
 			_entry_texts[i].text = str(entry.get("text", ""))
+			var photo_path := str(entry.get("photo_path", ""))
+			var photo_texture := load(photo_path) as Texture2D if not photo_path.is_empty() else null
+			_entry_photos[i].texture = photo_texture
+			_entry_photos[i].visible = photo_texture != null
 		else:
 			_entry_titles[i].text = ""
 			_entry_texts[i].text = ""
+			_entry_photos[i].texture = null
+			_entry_photos[i].visible = false
 	var last_index := mini(spread_start + 4, _entries.size())
 	_page_counter.text = "Memories %d–%d of %d" % [spread_start + 1, last_index, _entries.size()]
 
