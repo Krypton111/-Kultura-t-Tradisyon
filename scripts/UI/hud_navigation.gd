@@ -21,6 +21,8 @@ const MAGNIFY_CURSOR := preload("res://GAME ASSETS/UI/HUD/magnifying_cursor.png"
 const FOOTSTEPS_SFX := preload("res://GAME ASSETS/SFX/footsteps.mp3")
 const INVENTORY_ITEM_NAME_FONT: FontFile = preload("res://GAME ASSETS/UI/borgers_script/BorgersScript_PERSONAL_USE_ONLY.otf")
 const PAUSE_MENU_FONT: FontFile = preload("res://GAME ASSETS/UI/borgers_script/BorgersScript_PERSONAL_USE_ONLY.otf")
+const SETTINGS_MENU_TEXTURE: Texture2D = preload("res://GAME ASSETS/UI/HUD/settings menu.png")
+const SLIDER_KNOB_TEXTURE: Texture2D = preload("res://GAME ASSETS/UI/HUD/knob for slider.png")
 const INVENTORY_ITEM_FADE_DURATION := 0.45
 
 const LIVING_ROOM := "res://game_scenes/levels/living_room.tscn"
@@ -759,25 +761,34 @@ func _show_pause_settings() -> void:
 	for child in pause_menu_instance.get_children():
 		child.queue_free()
 
-	var panel := PanelContainer.new()
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = Vector2(-260, -250)
-	panel.size = Vector2(520, 500)
-	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.99)
-	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
-	panel_style.set_border_width_all(3)
-	panel_style.set_corner_radius_all(12)
-	panel_style.content_margin_left = 28
-	panel_style.content_margin_right = 28
-	panel_style.content_margin_top = 24
-	panel_style.content_margin_bottom = 24
-	panel.add_theme_stylebox_override("panel", panel_style)
-	pause_menu_instance.add_child(panel)
+	# Use the supplied settings artwork as the menu background.
+	var background := TextureRect.new()
+	background.name = "SettingsMenuBackground"
+	background.texture = SETTINGS_MENU_TEXTURE
+	background.set_anchors_preset(Control.PRESET_CENTER)
+	background.position = Vector2(-410, -310)
+	background.size = Vector2(820, 620)
+	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pause_menu_instance.add_child(background)
+
+	# Place all controls above the artwork while leaving its edges visible.
+	var content := Control.new()
+	content.name = "SettingsMenuContent"
+	content.set_anchors_preset(Control.PRESET_CENTER)
+	content.position = Vector2(-300, -245)
+	content.size = Vector2(600, 490)
+	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pause_menu_instance.add_child(content)
 
 	var layout := VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 16)
-	panel.add_child(layout)
+	layout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	layout.offset_left = 22
+	layout.offset_right = -22
+	layout.add_theme_constant_override("separation", 8)
+	layout.alignment = BoxContainer.ALIGNMENT_CENTER
+	content.add_child(layout)
 
 	var heading := Label.new()
 	heading.text = "SETTINGS"
@@ -790,27 +801,38 @@ func _show_pause_settings() -> void:
 	_add_settings_slider(layout, "Brightness", 0.35, 1.0, brightness_level, _set_brightness)
 	_add_settings_slider(layout, "Sound Volume", 0.0, 1.0, sound_volume_level, _set_sound_volume)
 	_add_settings_slider(layout, "Music Volume", 0.0, 1.0, music_volume_level, _set_music_volume)
+
 	var back := _add_pause_button(layout, "Back", func(): _rebuild_pause_menu())
-	back.custom_minimum_size = Vector2(300, 46)
+	back.custom_minimum_size = Vector2(300, 42)
 
 
 func _add_settings_slider(parent: VBoxContainer, label_text: String, minimum: float, maximum: float, current_value: float, callback: Callable) -> void:
+	var setting_group := VBoxContainer.new()
+	setting_group.add_theme_constant_override("separation", 2)
+	parent.add_child(setting_group)
+
 	var setting_label := Label.new()
 	setting_label.text = label_text
 	setting_label.add_theme_font_override("font", PAUSE_MENU_FONT)
-	setting_label.add_theme_font_size_override("font_size", 17)
+	setting_label.add_theme_font_size_override("font_size", 18)
 	setting_label.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
-	parent.add_child(setting_label)
+	setting_group.add_child(setting_label)
 
 	var slider := HSlider.new()
+	slider.name = label_text.replace(" ", "") + "Slider"
 	slider.min_value = minimum
 	slider.max_value = maximum
-	slider.step = 0.05
+	slider.step = 0.01
 	slider.value = clampf(current_value, minimum, maximum)
-	slider.custom_minimum_size = Vector2(360, 24)
+	slider.custom_minimum_size = Vector2(440, 36)
 	slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	slider.focus_mode = Control.FOCUS_ALL
+	slider.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	slider.add_theme_icon_override("grabber", SLIDER_KNOB_TEXTURE)
+	slider.add_theme_icon_override("grabber_highlight", SLIDER_KNOB_TEXTURE)
+	slider.add_theme_icon_override("grabber_pressed", SLIDER_KNOB_TEXTURE)
 	slider.value_changed.connect(callback)
-	parent.add_child(slider)
+	setting_group.add_child(slider)
 
 
 func _set_brightness(value: float) -> void:
