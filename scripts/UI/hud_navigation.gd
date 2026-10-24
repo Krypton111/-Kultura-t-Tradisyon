@@ -465,11 +465,6 @@ func _is_hovering_journal() -> bool:
 		return false
 
 	var mouse_position := get_viewport().get_mouse_position()
-	var settings_icon := get_node_or_null("Settings") as Sprite2D
-	if settings_icon != null and settings_icon.visible and settings_icon.get_rect().has_point(settings_icon.to_local(mouse_position)):
-		_open_pause_menu()
-		get_viewport().set_input_as_handled()
-		return
 	var over_close := journal_close.visible and journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
 	var over_open := journal_open.visible and journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
 	return over_close or over_open
@@ -504,6 +499,11 @@ func _input(event: InputEvent) -> void:
 		return
 
 	var mouse_position := get_viewport().get_mouse_position()
+	var settings_icon := get_node_or_null("Settings") as Sprite2D
+	if settings_icon != null and settings_icon.visible and settings_icon.get_rect().has_point(settings_icon.to_local(mouse_position)):
+		_open_pause_menu()
+		get_viewport().set_input_as_handled()
+		return
 	var over_close := journal_close.visible and journal_close.get_rect().has_point(journal_close.to_local(mouse_position))
 	var over_open := journal_open.visible and journal_open.get_rect().has_point(journal_open.to_local(mouse_position))
 	if over_close or over_open:
