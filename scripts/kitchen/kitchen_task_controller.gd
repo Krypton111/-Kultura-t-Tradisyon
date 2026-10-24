@@ -5,6 +5,8 @@ extends Node
 const KitchenTaskModelScript = preload("res://scripts/kitchen/kitchen_task_model.gd")
 const DIALOGUE_SCENE_PATH := "res://game_scenes/UI scenes/dialogue.tscn"
 const POT_TEXTURE_PATH := "res://GAME ASSETS/Kitchen/sinigang pot empty.png"
+const FULL_POT_TEXTURE_PATH := "res://GAME ASSETS/Kitchen/sinigang pot full.png"
+const LIVING_ROOM_SCENE_PATH := "res://game_scenes/levels/living_room.tscn"
 const LEAVE_ARROW_TEXTURE = preload("res://GAME ASSETS/UI/HUD/leave_arrow.png")
 
 const PANEL_BG := Color(0.10, 0.12, 0.15, 0.97)
@@ -82,7 +84,11 @@ func _input(event: InputEvent) -> void:
 	# The completion dialogue already thanks him and explains that she will finish cooking.
 	var lola := kitchen.get_node_or_null("LolaNenaStanding") as Sprite2D
 	if lola != null and lola.visible and _sprite_pixel_hit(lola, mouse_position):
-		if not task_model.is_task_completed(_hud):
+		var lunch_state := bool(game_state.get_state("lunch_completed", false))
+		var eggs_collected := bool(game_state.get_state("coop_eggs_collected", false))
+		if eggs_collected and not lunch_state:
+			_show_full_pot()
+		elif not task_model.is_task_completed(_hud):
 			_start_pot_dialogue()
 		get_viewport().set_input_as_handled()
 		return
@@ -149,6 +155,91 @@ func _start_pot_dialogue() -> void:
 		_pot_dialogue_open = false
 		_show_empty_pot()
 	)
+
+
+
+func _show_full_pot() -> void:
+	if is_instance_valid(_pot_overlay) or _hud == null:
+		return
+	var pot_texture := load(FULL_POT_TEXTURE_PATH) as Texture2D
+	if pot_texture == null:
+		push_warning("Kitchen task: full pot image not found: " + FULL_POT_TEXTURE_PATH)
+		return
+
+	_pot_overlay = Control.new()
+	_pot_overlay.name = "SinigangPotOverlay"
+	_pot_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pot_overlay.z_index = 1100
+	_pot_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	var pot_canvas := CanvasLayer.new()
+	pot_canvas.name = "SinigangPotCanvas"
+	pot_canvas.layer = 99
+	get_tree().current_scene.add_child(pot_canvas)
+	_pot_overlay.set_meta("pot_canvas", pot_canvas)
+	pot_canvas.add_child(_pot_overlay)
+
+	var dimmer := ColorRect.new()
+	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0, 0, 0, 0.62)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pot_overlay.add_child(dimmer)
+
+	var pot := TextureRect.new()
+	pot.name = "SinigangPotFullImage"
+	pot.texture = pot_texture
+	pot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pot.size = Vector2(680, 520)
+	pot.position = (get_viewport().get_visible_rect().size - pot.size) * 0.5 + Vector2(20, 0)
+	pot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pot_overlay.add_child(pot)
+
+	# Reuse the same leave-arrow artwork and hit-area style as the ingredient-pot view.
+	var leave_sprite := Sprite2D.new()
+	leave_sprite.texture = LEAVE_ARROW_TEXTURE
+	leave_sprite.position = Vector2(576, 324)
+	leave_sprite.scale = Vector2(0.3, 0.3)
+	_pot_overlay.add_child(leave_sprite)
+	var leave_button := _make_leave_arrow_button(leave_sprite)
+	leave_button.pressed.connect(_on_full_pot_leave_pressed)
+
+
+func _on_full_pot_leave_pressed() -> void:
+	_close_pot_overlay()
+	_show_meal_dialogue()
+
+
+func _show_meal_dialogue() -> void:
+	if _hud == null:
+		return
+	var packed := load(DIALOGUE_SCENE_PATH) as PackedScene
+	if packed == null:
+		push_warning("Kitchen task: could not load the lunch dialogue.")
+		return
+	var view := packed.instantiate() as Control
+	if view == null:
+		return
+	_hud.set("navigation_locked", true)
+	_hud.add_child(view)
+	var lines: Array[Dictionary] = [
+		{"speaker": "Migs", "text": "Lola, the sinigang na bangus looks delicious! It’s ready."},
+		{"speaker": "Lola Nena", "text": "It turned out nicely, apo. Thank you for helping me prepare everything and take care of the chickens."},
+		{"speaker": "Lola Nena", "text": "Come, Migs. Let’s sit down and eat together before our lunch gets cold."},
+		{"speaker": "Migs", "text": "Sige, Lola! I’m hungry already."}
+	]
+	view.sequence_finished.connect(_on_meal_dialogue_finished)
+	view.call("start_custom_sequence", lines)
+
+
+func _on_meal_dialogue_finished() -> void:
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("lunch_completed", true)
+	if _hud == null:
+		return
+	_hud.set("navigation_locked", false)
+	await get_tree().process_frame
+	_hud.call("_change_scene", LIVING_ROOM_SCENE_PATH)
 
 
 func _show_empty_pot() -> void:
