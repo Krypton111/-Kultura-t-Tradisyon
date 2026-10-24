@@ -36,8 +36,8 @@ func _input(event: InputEvent) -> void:
 	if not camera_mode_active:
 		return
 
-	# Let the existing room-navigation hotspots continue to work.
-	if _is_navigation_hotspot(mouse_position):
+	# Let the journal open normally, and leave camera mode before showing it.
+	if _hud.has_method("_is_hovering_journal") and bool(_hud.call("_is_hovering_journal")):
 		cancel_camera_mode()
 		return
 
@@ -54,8 +54,14 @@ func _input(event: InputEvent) -> void:
 				))
 			if saved:
 				cancel_camera_mode()
+				get_viewport().set_input_as_handled()
+				return
 
-	# Prevent a camera-mode click from accidentally opening the item's dialogue.
+	# Let the existing room-navigation hotspots continue to work if no heritage
+	# item was targeted. Other clicks stay in camera mode and cannot open dialogue.
+	if _is_navigation_hotspot(mouse_position):
+		cancel_camera_mode()
+		return
 	get_viewport().set_input_as_handled()
 
 
