@@ -819,7 +819,8 @@ func _save_game_to_slot(slot: int) -> void:
 	var save_data: Dictionary = {
 		"slot": slot,
 		"scene_path": get_tree().current_scene.scene_file_path if get_tree().current_scene != null else LIVING_ROOM,
-		"state": _encode_save_value(game_state.get("_values"))
+		"state": _encode_save_value(game_state.call("get_state_snapshot") if game_state.has_method("get_state_snapshot") else game_state.get("_values")),
+		"save_version": 2
 	}
 	var file := FileAccess.open(_save_file_path(slot), FileAccess.WRITE)
 	if file == null:
@@ -870,17 +871,12 @@ func _load_game_from_slot(slot: int) -> void:
 		return
 
 	var loaded_state: Dictionary = _decode_save_value(parsed["state"])
-	# Start from the current defaults, then overlay the exact saved values.
-	# This prevents missing/new keys from inheriting progress from the run being replaced.
-	var restored_state: Dictionary = {}
-	var defaults: Dictionary = game_state.get("DEFAULTS")
-	if defaults is Dictionary:
-		for key in defaults:
-			var default_value: Variant = defaults[key]
-			restored_state[key] = default_value.duplicate(true) if default_value is Array or default_value is Dictionary else default_value
-	for key in loaded_state:
-		restored_state[key] = loaded_state[key]
-	game_state.set("_values", restored_state)
+	# Restore the complete snapshot against fresh defaults. No progress from the
+	# currently running session should survive unless it exists in this save.
+	if game_state.has_method("restore_state"):
+		game_state.call("restore_state", loaded_state)
+	else:
+		game_state.set("_values", loaded_state)
 
 	# Rebuild every HUD-owned copy from the restored save, never from the previous run.
 	inventory_items.clear()
