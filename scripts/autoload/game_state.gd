@@ -55,6 +55,23 @@ func has_state(key: String) -> bool:
 	return _values.has(key)
 
 
+func restore_state(snapshot: Dictionary) -> void:
+	# Rebuild from defaults first so a save can never inherit progress from
+	# the currently running session, and future state keys remain initialized.
+	_values.clear()
+	for key in DEFAULTS:
+		var default_value: Variant = DEFAULTS[key]
+		_values[key] = default_value.duplicate(true) if default_value is Array or default_value is Dictionary else default_value
+	for key in snapshot:
+		var value: Variant = snapshot[key]
+		_values[key] = value.duplicate(true) if value is Array or value is Dictionary else value
+	state_changed.emit("*", get_state_snapshot())
+
+
+func get_state_snapshot() -> Dictionary:
+	return _values.duplicate(true)
+
+
 func add_unique_id(key: String, value: String) -> bool:
 	var values: Array = get_state(key, [])
 	if values.has(value):
