@@ -20,6 +20,7 @@ const DOWN_CURSOR := preload("res://GAME ASSETS/UI/HUD/bottom room.png")
 const MAGNIFY_CURSOR := preload("res://GAME ASSETS/UI/HUD/magnifying_cursor.png")
 const FOOTSTEPS_SFX := preload("res://GAME ASSETS/SFX/footsteps.mp3")
 const INVENTORY_ITEM_NAME_FONT: FontFile = preload("res://GAME ASSETS/UI/borgers_script/BorgersScript_PERSONAL_USE_ONLY.otf")
+const PAUSE_MENU_FONT: FontFile = preload("res://GAME ASSETS/UI/borgers_script/BorgersScript_PERSONAL_USE_ONLY.otf")
 const INVENTORY_ITEM_FADE_DURATION := 0.45
 
 const LIVING_ROOM := "res://game_scenes/levels/living_room.tscn"
@@ -617,22 +618,8 @@ func _open_pause_menu() -> void:
 	layout.add_theme_constant_override("separation", 10)
 	menu_content.add_child(layout)
 
-	var heading := Label.new()
-	heading.text = "PAUSED"
-	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 34)
-	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
-	layout.add_child(heading)
-
-	var subtitle := Label.new()
-	subtitle.text = "KULTURA AT TRADISYON"
-	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	subtitle.add_theme_font_size_override("font_size", 13)
-	subtitle.add_theme_color_override("font_color", Color(0.88, 0.84, 0.76))
-	layout.add_child(subtitle)
-
-	var separator := HSeparator.new()
-	layout.add_child(separator)
+	# Keep the artwork clean: no title or paused text over the background.
+	layout.alignment = BoxContainer.ALIGNMENT_CENTER
 
 	_add_pause_button(layout, "Resume", _close_pause_menu)
 	_add_pause_button(layout, "Save Game", _save_game)
@@ -649,6 +636,7 @@ func _add_pause_button(parent: VBoxContainer, label_text: String, callback: Call
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.focus_mode = Control.FOCUS_ALL
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.add_theme_font_override("font", PAUSE_MENU_FONT)
 	button.add_theme_font_size_override("font_size", 19)
 	button.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
 	button.add_theme_color_override("font_hover_color", Color(0.12, 0.10, 0.08))
@@ -794,6 +782,7 @@ func _show_pause_settings() -> void:
 	var heading := Label.new()
 	heading.text = "SETTINGS"
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_override("font", PAUSE_MENU_FONT)
 	heading.add_theme_font_size_override("font_size", 30)
 	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
 	layout.add_child(heading)
@@ -808,6 +797,7 @@ func _show_pause_settings() -> void:
 func _add_settings_slider(parent: VBoxContainer, label_text: String, minimum: float, maximum: float, current_value: float, callback: Callable) -> void:
 	var setting_label := Label.new()
 	setting_label.text = label_text
+	setting_label.add_theme_font_override("font", PAUSE_MENU_FONT)
 	setting_label.add_theme_font_size_override("font_size", 17)
 	setting_label.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
 	parent.add_child(setting_label)
@@ -899,11 +889,13 @@ func _show_pause_subpage(title_text: String, description: String, show_volume: b
 	var heading := Label.new()
 	heading.text = title_text
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_override("font", PAUSE_MENU_FONT)
 	heading.add_theme_font_size_override("font_size", 30)
 	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
 	layout.add_child(heading)
 	var description_label := Label.new()
 	description_label.text = description
+	description_label.add_theme_font_override("font", PAUSE_MENU_FONT)
 	description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	description_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	description_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
