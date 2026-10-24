@@ -138,9 +138,15 @@ func _start_pot_dialogue() -> void:
 	if _pot_dialogue_open or is_instance_valid(_pot_overlay):
 		return
 	_pot_dialogue_open = true
+
+	# Show the empty sinigang pot immediately on Lola's click, then run her
+	# instructions automatically over it so the player does not need another click.
+	_show_empty_pot()
+
 	var packed := load(DIALOGUE_SCENE_PATH) as PackedScene
 	if packed == null:
 		_pot_dialogue_open = false
+		push_warning("Kitchen task: could not load the pot instructions dialogue.")
 		return
 	var view := packed.instantiate() as Control
 	if view == null:
@@ -150,11 +156,10 @@ func _start_pot_dialogue() -> void:
 	var lines: Array[Dictionary] = [
 		{"speaker": "Lola Nena", "text": "Migs, please put all the ingredients you gathered into this pot. Drag each item from your inventory and drop it into the pot."}
 	]
-	view.call("start_custom_sequence", lines)
 	view.sequence_finished.connect(func():
 		_pot_dialogue_open = false
-		_show_empty_pot()
 	)
+	view.call("start_custom_sequence", lines)
 
 
 
@@ -173,7 +178,8 @@ func _show_full_pot() -> void:
 	_pot_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	var pot_canvas := CanvasLayer.new()
 	pot_canvas.name = "SinigangPotCanvas"
-	pot_canvas.layer = 99
+	# Keep the pot behind the HUD layer so Lola's dialogue and inventory remain visible.
+	pot_canvas.layer = 0
 	get_tree().current_scene.add_child(pot_canvas)
 	_pot_overlay.set_meta("pot_canvas", pot_canvas)
 	pot_canvas.add_child(_pot_overlay)
