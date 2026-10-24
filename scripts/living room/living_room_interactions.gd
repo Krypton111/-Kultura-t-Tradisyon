@@ -109,9 +109,14 @@ func _start_ending_question() -> void:
 	if game_state == null or not bool(game_state.get_state("lunch_completed", false)):
 		return
 	var lines: Array[Dictionary] = [
-		{"speaker": "Lola Nena", "text": "Migs, after everything we shared today, I have something important to ask you."},
-		{"speaker": "Lola Nena", "text": "Would you like to stay here in the province with me? You could help care for our home, keep our traditions alive, and pass our heritage on to the next generation."},
-		{"speaker": "Lola Nena", "text": "Or would you rather return to the city, carrying what you learned with you and sharing our traditions and heritage with the people there? Both paths can make a difference. The choice is yours, hijo."}
+		{"speaker": "Lola Nena", "text": "Migs, seeing you here in our home again makes me happy. Today, we shared a meal, remembered the stories behind our old belongings, and talked about the traditions our family has carried for generations."},
+		{"speaker": "Migs", "text": "I never realized how much meaning was hidden in the things around us, Lola. Every story helped me understand our family and where we came from a little better."},
+		{"speaker": "Lola Nena", "text": "That is why I have always wanted to share these things with you, hijo. Our heritage is more than old objects and stories. It lives in the food we prepare, the work we do, the celebrations we keep, and the lessons we pass from one generation to the next."},
+		{"speaker": "Migs", "text": "I understand that more now. I want other people to appreciate these traditions too, and I also want to make sure our family's stories are not forgotten."},
+		{"speaker": "Lola Nena", "text": "There are different ways you can help. You could stay here in the province with me, help care for our home, learn more of our customs, and pass them on to the younger ones."},
+		{"speaker": "Lola Nena", "text": "Or you could return to the city and share what you have learned with your friends and community. Even far from here, you can keep our traditions alive by telling our stories and encouraging others to value their own heritage."},
+		{"speaker": "Migs", "text": "Both choices matter, Lola. I just need to think about where I can do the most good."},
+		{"speaker": "Lola Nena", "text": "You do not have to carry every responsibility alone, Migs. Whatever you choose, remember that heritage survives when people care for it and share it. Take your time, hijo. The decision is yours."}
 	]
 	_start_living_room_dialogue(lines, Callable(self, "_on_ending_question_finished"))
 
@@ -180,7 +185,7 @@ func _show_ending_choice_panel() -> void:
 	prompt.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
 	layout.add_child(prompt)
 
-	layout.add_child(_make_ending_choice_button("Stay in the Province", "Help Lola Nena preserve and pass on their heritage.", Callable(self, "_choose_ending").bind("stay")))
+	layout.add_child(_make_ending_choice_button("Stay and Help Lola Nena", "Remain in the province and preserve their family heritage together.", Callable(self, "_choose_ending").bind("stay")))
 	layout.add_child(_make_ending_choice_button("Return to the City", "Share what he learned with others in the city.", Callable(self, "_choose_ending").bind("city")))
 
 func _make_ending_choice_button(title_text: String, description_text: String, callback: Callable) -> Button:
@@ -227,15 +232,21 @@ func _play_ending_dialogue(choice: String) -> void:
 	var lines: Array[Dictionary] = []
 	if choice == "stay":
 		lines = [
-			{"speaker": "Migs", "text": "I want to stay, Lola. There is still so much I can learn from you, and I want to help keep our traditions alive."},
-			{"speaker": "Lola Nena", "text": "That makes this old heart happy, hijo. Heritage lives when we care for it together and teach it to those who come after us."},
-			{"speaker": "Migs", "text": "I’ll help look after our home and document the stories, so our family and community can keep remembering them."}
+			{"speaker": "Migs", "text": "I have decided to stay here with you, Lola. I want to learn more about our traditions instead of only hearing about them once in a while."},
+			{"speaker": "Lola Nena", "text": "I would love that, hijo. There is still so much I can teach you, from the stories of our elders to the little everyday practices that make our culture special."},
+			{"speaker": "Migs", "text": "I can help with the house, join in our traditions, and write down the stories so we can share them with the younger members of our family."},
+			{"speaker": "Lola Nena", "text": "Remember that preserving heritage is not only about keeping the past untouched. It is also about understanding its meaning and finding thoughtful ways to pass it on as life changes."},
+			{"speaker": "Migs", "text": "I’ll keep learning from you and from our community, Lola. I want the next generation to feel connected to these stories just as I do now."},
+			{"speaker": "Lola Nena", "text": "Then we will do it together, hijo. As long as we keep caring, practicing, and teaching, our traditions will continue to live in our home."}
 		]
 	else:
 		lines = [
-			{"speaker": "Migs", "text": "I think I should return to the city, Lola. I want to share what I learned with my friends and help them appreciate our heritage, too."},
-			{"speaker": "Lola Nena", "text": "That is a good path as well, hijo. Traditions can travel with us. Share our stories, practice what you have learned, and encourage others to protect their own heritage."},
-			{"speaker": "Migs", "text": "I’ll carry these memories with me and find ways to keep our traditions alive, even when I’m far from home."}
+			{"speaker": "Migs", "text": "I think I should return to the city, Lola. I want to share what I learned with my friends and help them understand why our traditions matter."},
+			{"speaker": "Lola Nena", "text": "I will miss having you here, hijo, but I understand. Distance does not mean you have to leave your heritage behind."},
+			{"speaker": "Migs", "text": "I could tell my friends about our stories, share the meaning behind our food and customs, and encourage them to learn about their own families too."},
+			{"speaker": "Lola Nena", "text": "That would make me proud. Share our stories with care and respect, and remember that every community has traditions worth understanding and protecting."},
+			{"speaker": "Migs", "text": "I’ll keep in touch and come back whenever I can. I want to keep learning from you even while I share what you have taught me with others."},
+			{"speaker": "Lola Nena", "text": "Then take these memories with you, hijo. Wherever life brings you, you can help our heritage live on by remembering it, practicing it, and passing it along."}
 		]
 	_start_living_room_dialogue(lines, Callable(self, "_on_ending_dialogue_finished").bind(choice))
 
