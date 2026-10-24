@@ -5,10 +5,12 @@ const DIALOGUE_SCENE_PATH := "res://game_scenes/UI scenes/dialogue.tscn"
 const BACKYARD_SCENE_PATH := "res://game_scenes/levels/backyard.tscn"
 const EGGS_TEXTURE: Texture2D = preload("res://GAME ASSETS/Backyard/chicken coop/coop eggs.png")
 const DOWN_CURSOR: Texture2D = preload("res://GAME ASSETS/UI/HUD/bottom room.png")
+const MAGNIFY_CURSOR: Texture2D = preload("res://GAME ASSETS/UI/HUD/magnifying_cursor.png")
 const DOWN_CURSOR_MAX_SIZE := 160.0
 const DOWN_NAV_WIDTH := 450.0
 const DOWN_NAV_HEIGHT := 100.0
 const DOWN_NAV_BOTTOM_MARGIN := 12.0
+const CURSOR_MAX_SIZE := 96.0
 const FILLED_CUPS_ID := "cups_with_seeds_close_up"
 const FILLED_BASKET_ID := "basket_with_seeds_close_up"
 const EGGS_ITEM_ID := "coop_eggs"
@@ -27,6 +29,7 @@ var _busy := false
 var _return_navigation_layer: CanvasLayer
 var _return_navigation_button: Button
 var _down_cursor: Texture2D
+var _magnify_cursor: Texture2D
 
 func _ready() -> void:
 	_hud = get_node_or_null("/root/HUD")
@@ -83,6 +86,7 @@ func _setup_return_navigation() -> void:
 	_return_navigation_layer.add_child(_return_navigation_button)
 
 	_down_cursor = _prepare_cursor(DOWN_CURSOR, DOWN_CURSOR_MAX_SIZE)
+	_magnify_cursor = _prepare_cursor(MAGNIFY_CURSOR, CURSOR_MAX_SIZE)
 
 func _process(_delta: float) -> void:
 	if _return_navigation_button == null or _hud == null:
@@ -92,6 +96,10 @@ func _process(_delta: float) -> void:
 		return
 
 	var mouse_position := get_viewport().get_mouse_position()
+	if _eggs != null and _eggs.visible and _sprite_pixel_hit(_eggs, mouse_position):
+		Input.set_custom_mouse_cursor(_magnify_cursor, Input.CURSOR_ARROW, _cursor_hotspot(_magnify_cursor))
+		return
+
 	var hotspot := _return_navigation_button.get_global_rect()
 	if hotspot.has_point(mouse_position):
 		Input.set_custom_mouse_cursor(_down_cursor, Input.CURSOR_ARROW, _cursor_hotspot(_down_cursor))
