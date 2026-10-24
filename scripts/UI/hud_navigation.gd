@@ -765,7 +765,9 @@ func _show_pause_settings() -> void:
 	# preserving its aspect ratio instead of drawing it at a fixed pixel size.
 	var viewport_size := get_viewport().get_visible_rect().size
 	var texture_size := Vector2(SETTINGS_MENU_TEXTURE.get_width(), SETTINGS_MENU_TEXTURE.get_height())
-	var max_background_size := viewport_size * 0.82
+	# Keep the high-resolution artwork compact and fully visible. The 62%
+	# viewport limit leaves space around the menu on smaller screens too.
+	var max_background_size := viewport_size * 0.62
 	var fit_scale := minf(
 		max_background_size.x / maxf(texture_size.x, 1.0),
 		max_background_size.y / maxf(texture_size.y, 1.0)
@@ -775,22 +777,32 @@ func _show_pause_settings() -> void:
 	var background := TextureRect.new()
 	background.name = "SettingsMenuBackground"
 	background.texture = SETTINGS_MENU_TEXTURE
-	background.set_anchors_preset(Control.PRESET_CENTER)
-	background.position = -background_size * 0.5
-	background.size = background_size
+	background.anchor_left = 0.5
+	background.anchor_top = 0.5
+	background.anchor_right = 0.5
+	background.anchor_bottom = 0.5
+	background.offset_left = -background_size.x * 0.5
+	background.offset_top = -background_size.y * 0.5
+	background.offset_right = background_size.x * 0.5
+	background.offset_bottom = background_size.y * 0.5
 	background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pause_menu_instance.add_child(background)
 
-	# Keep the controls proportional to the artwork so they remain aligned
-	# when the background is scaled for different screen resolutions.
+	# Center the controls with explicit offsets as well, avoiding anchor/size
+	# ambiguity that can push controls outside the artwork.
 	var content_size := Vector2(background_size.x * 0.732, background_size.y * 0.79)
 	var content := Control.new()
 	content.name = "SettingsMenuContent"
-	content.set_anchors_preset(Control.PRESET_CENTER)
-	content.position = -content_size * 0.5
-	content.size = content_size
+	content.anchor_left = 0.5
+	content.anchor_top = 0.5
+	content.anchor_right = 0.5
+	content.anchor_bottom = 0.5
+	content.offset_left = -content_size.x * 0.5
+	content.offset_top = -content_size.y * 0.5
+	content.offset_right = content_size.x * 0.5
+	content.offset_bottom = content_size.y * 0.5
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pause_menu_instance.add_child(content)
 
