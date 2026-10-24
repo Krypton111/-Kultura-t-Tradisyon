@@ -786,21 +786,8 @@ func _show_pause_settings() -> void:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pause_menu_instance.add_child(background)
 
-	# Invisible HSliders sit directly over the three tracks already drawn in
-	# the artwork. Only the custom knob is rendered; no extra UI is added.
-	var knob_texture: Texture2D = SLIDER_KNOB_TEXTURE
-	var knob_image := SLIDER_KNOB_TEXTURE.get_image()
-	if knob_image != null and not knob_image.is_empty():
-		var largest_dimension := maxi(knob_image.get_width(), knob_image.get_height())
-		var max_knob_size := maxi(50, roundi(minf(background_size.x, background_size.y) * 0.055))
-		if largest_dimension > max_knob_size:
-			var scale_factor := float(max_knob_size) / float(largest_dimension)
-			knob_image.resize(
-				maxi(1, roundi(float(knob_image.get_width()) * scale_factor)),
-				maxi(1, roundi(float(knob_image.get_height()) * scale_factor)),
-				Image.INTERPOLATE_BILINEAR
-			)
-			knob_texture = ImageTexture.create_from_image(knob_image)
+	# Each slider has its own editable layout values below. Values are
+	# proportions of the scaled settings artwork, so they adapt to resolution.
 
 	var overlay := Control.new()
 	overlay.name = "SettingsInteractionOverlay"
@@ -817,27 +804,53 @@ func _show_pause_settings() -> void:
 
 	# Shorten the knob's travel distance while keeping the slider centered
 	# over the existing illustrated track.
-	var track_left := background_size.x * 0.3
-	var track_width := background_size.x * 0.4
-	var track_height := background_size.y * 0.065
-	var slider_centers := [0.262, 0.447, 0.629]
+	# EDIT THESE VALUES INDEPENDENTLY for each slider:
+	# left / width / height control the interactive track area;
+	# y controls its vertical center; knob_width / knob_height control its knob.
 	var slider_values := [
-		{"name": "BrightnessSlider", "min": 0.35, "max": 1.0, "value": brightness_level, "callback": _set_brightness},
-		{"name": "SoundVolumeSlider", "min": 0.0, "max": 1.0, "value": sound_volume_level, "callback": _set_sound_volume},
-		{"name": "MusicVolumeSlider", "min": 0.0, "max": 1.0, "value": music_volume_level, "callback": _set_music_volume}
+		{
+			"name": "BrightnessSlider", "min": 0.35, "max": 1.0,
+			"value": brightness_level, "callback": _set_brightness,
+			"left": 0.30, "width": 0.40, "height": 0.065, "y": 0.262,
+			"knob_width": 0.055, "knob_height": 0.055
+		},
+		{
+			"name": "SoundVolumeSlider", "min": 0.0, "max": 1.0,
+			"value": sound_volume_level, "callback": _set_sound_volume,
+			"left": 0.30, "width": 0.40, "height": 0.065, "y": 0.447,
+			"knob_width": 0.055, "knob_height": 0.055
+		},
+		{
+			"name": "MusicVolumeSlider", "min": 0.0, "max": 1.0,
+			"value": music_volume_level, "callback": _set_music_volume,
+			"left": 0.30, "width": 0.40, "height": 0.065, "y": 0.629,
+			"knob_width": 0.055, "knob_height": 0.055
+		}
 	]
-	for i in range(slider_values.size()):
-		var item: Dictionary = slider_values[i]
+	for item in slider_values:
 		var slider := HSlider.new()
 		slider.name = str(item["name"])
 		slider.min_value = float(item["min"])
 		slider.max_value = float(item["max"])
 		slider.step = 0.01
 		slider.value = clampf(float(item["value"]), slider.min_value, slider.max_value)
-		slider.position = Vector2(track_left, background_size.y * float(slider_centers[i]) - track_height * 0.5)
+		var track_left := background_size.x * float(item["left"])
+		var track_width := background_size.x * float(item["width"])
+		var track_height := background_size.y * float(item["height"])
+		slider.position = Vector2(track_left, background_size.y * float(item["y"]) - track_height * 0.5)
 		slider.size = Vector2(track_width, track_height)
 		slider.focus_mode = Control.FOCUS_NONE
 		slider.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+
+		# Resize this slider's knob separately, allowing independent width/height.
+		var knob_image := SLIDER_KNOB_TEXTURE.get_image()
+		var knob_texture: Texture2D = SLIDER_KNOB_TEXTURE
+		if knob_image != null and not knob_image.is_empty():
+			var knob_width_px := maxi(1, roundi(background_size.x * float(item["knob_width"])))
+			var knob_height_px := maxi(1, roundi(background_size.y * float(item["knob_height"])))
+			knob_image.resize(knob_width_px, knob_height_px, Image.INTERPOLATE_BILINEAR)
+			knob_texture = ImageTexture.create_from_image(knob_image)
+
 		slider.add_theme_icon_override("grabber", knob_texture)
 		slider.add_theme_icon_override("grabber_highlight", knob_texture)
 		slider.add_theme_icon_override("grabber_pressed", knob_texture)
