@@ -792,7 +792,7 @@ func _show_pause_settings() -> void:
 	var knob_image := SLIDER_KNOB_TEXTURE.get_image()
 	if knob_image != null and not knob_image.is_empty():
 		var largest_dimension := maxi(knob_image.get_width(), knob_image.get_height())
-		var max_knob_size := maxi(24, roundi(minf(background_size.x, background_size.y) * 0.055))
+		var max_knob_size := maxi(50, roundi(minf(background_size.x, background_size.y) * 0.055))
 		if largest_dimension > max_knob_size:
 			var scale_factor := float(max_knob_size) / float(largest_dimension)
 			knob_image.resize(
@@ -817,8 +817,8 @@ func _show_pause_settings() -> void:
 
 	# Shorten the knob's travel distance while keeping the slider centered
 	# over the existing illustrated track.
-	var track_left := background_size.x * 0.14
-	var track_width := background_size.x * 0.72
+	var track_left := background_size.x * 0.3
+	var track_width := background_size.x * 0.4
 	var track_height := background_size.y * 0.065
 	var slider_centers := [0.262, 0.447, 0.629]
 	var slider_values := [

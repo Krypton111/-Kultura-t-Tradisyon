@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://8un8hewhj1c3" path="res://GAME ASSETS/UI/HUD/journal_open.png" id="4_ogk7k"]
 [ext_resource type="Texture2D" uid="uid://bih7b0kx1pr3p" path="res://GAME ASSETS/UI/HUD/camera.png" id="5_i4v7e"]
 [ext_resource type="Script" uid="uid://bf0f33utbuknv" path="res://scripts/UI/hud_navigation.gd" id="6_nav"]
-[ext_resource type="Script" path="res://scripts/HUD/camera.gd" id="7_camera"]
+[ext_resource type="Script" uid="uid://dafbrkoq6fspu" path="res://scripts/HUD/camera.gd" id="7_camera"]
 
 [node name="HUD" type="CanvasLayer" unique_id=395861787]
 layer = 100
@@ -38,7 +38,7 @@ position = Vector2(1073.6, 587.4)
 scale = Vector2(0.095, 0.095)
 texture = ExtResource("5_i4v7e")
 
-[node name="CameraController" type="Node" parent="."]
+[node name="CameraController" type="Node" parent="." unique_id=912002638]
 script = ExtResource("7_camera")
 
 [node name="item1" type="Container" parent="." unique_id=2117265517]
