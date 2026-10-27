@@ -27,6 +27,8 @@ const JOURNAL_IMAGE_PATHS := {
 
 var _heritage_dialogue_open := false
 var _story_images: Dictionary = {}
+# Cache room-interactable pixel data once; get_image() on every pointer event is costly in HTML5.
+var _interactable_images: Dictionary = {}
 var _recorded_story_ids: Array[String] = []
 var _visited_story_ids: Array[String] = []
 var _final_kitchen_dialogue_started := false
@@ -72,6 +74,13 @@ func _ready() -> void:
 		var sprite := get_node_or_null(NodePath(str(object_name))) as Sprite2D
 		if sprite != null and sprite.texture != null:
 			_story_images[object_name] = sprite.texture.get_image()
+
+	# TV and window hit-testing used to copy texture images repeatedly while the
+	# mouse moved. Cache these images once to avoid avoidable browser stutter.
+	for node_name in ["Stand+closedTV", "Stand+openTv", "WindowOpen", "WindowClosed"]:
+		var interactable_sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
+		if interactable_sprite != null and interactable_sprite.texture != null:
+			_interactable_images[node_name] = interactable_sprite.texture.get_image()
 
 	if hud != null and bool(hud.get_meta("opening_intro_transition", false)):
 		modulate = Color(0, 0, 0, 1)
@@ -756,7 +765,8 @@ func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 			return true
 	for node_name in ["WindowOpen", "WindowClosed"]:
 		var window_sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
-		if window_sprite != null and window_sprite.visible and _is_opaque_pixel_clicked(window_sprite, mouse_position, window_sprite.texture.get_image()):
+		var window_image: Image = _interactable_images.get(node_name)
+		if window_sprite != null and window_sprite.visible and window_image != null and _is_opaque_pixel_clicked(window_sprite, mouse_position, window_image):
 			return true
 	return false
 
@@ -764,7 +774,7 @@ func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 func _is_tv_screen_hovered(sprite: Sprite2D, mouse_position: Vector2) -> bool:
 	if sprite.texture == null or not sprite.visible:
 		return false
-	var image := sprite.texture.get_image()
+	var image: Image = _interactable_images.get(str(sprite.name))
 	if image == null or image.is_empty():
 		return false
 	var local_point := sprite.to_local(mouse_position)
