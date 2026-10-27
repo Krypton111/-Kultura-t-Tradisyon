@@ -87,9 +87,8 @@ func _ready() -> void:
 
 	ambient_stream = _load_first_audio(AMBIENT_PATHS)
 	photograph_stream = _load_first_audio(PHOTOGRAPH_PATHS)
-	tv_stream = _load_first_audio(TV_SOUND_PATHS)
-	if tv_stream:
-		_set_stream_loop(tv_stream, true)
+	# Load the TV loop only when the player actually turns the TV on.
+	# This avoids loading a potentially large optional sound during game startup.
 	if ambient_stream:
 		_set_stream_loop(ambient_stream, true)
 		ambient_player.stream = ambient_stream
