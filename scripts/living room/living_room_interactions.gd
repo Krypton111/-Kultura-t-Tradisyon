@@ -241,7 +241,7 @@ func _make_ending_choice_button(title_text: String, description_text: String, ca
 	button.custom_minimum_size = Vector2(660, 88)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.focus_mode = Control.FOCUS_ALL
-	button.mouse_default_cursor_shape = Control.CURSOR_ARROW
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.add_theme_font_size_override("font_size", 20)
 	button.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
 	button.add_theme_color_override("font_hover_color", Color(1.0, 0.86, 0.59))
