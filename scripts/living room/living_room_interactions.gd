@@ -26,9 +26,6 @@ const JOURNAL_IMAGE_PATHS := {
 @onready var lola_looking: Sprite2D = get_node("LolaNenaLooking")
 
 var _heritage_dialogue_open := false
-var _story_images: Dictionary = {}
-# Cache room-interactable pixel data once; get_image() on every pointer event is costly in HTML5.
-var _interactable_images: Dictionary = {}
 var _recorded_story_ids: Array[String] = []
 var _visited_story_ids: Array[String] = []
 var _final_kitchen_dialogue_started := false
@@ -68,19 +65,7 @@ func _ready() -> void:
 	if not lola_has_moved:
 		_create_interaction_button(lola_not_looking, Callable(self, "_on_lola_clicked"), "LolaNenaButton")
 
-	# Cache each heritage object's texture once; hit-testing uses its actual
-	# opaque pixels so transparent parts of layered artwork don't steal clicks.
-	for object_name in HERITAGE_STORIES.keys():
-		var sprite := get_node_or_null(NodePath(str(object_name))) as Sprite2D
-		if sprite != null and sprite.texture != null:
-			_story_images[object_name] = sprite.texture.get_image()
-
-	# TV and window hit-testing used to copy texture images repeatedly while the
-	# mouse moved. Cache these images once to avoid avoidable browser stutter.
-	for node_name in ["Stand+closedTV", "Stand+openTv", "WindowOpen", "WindowClosed"]:
-		var interactable_sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
-		if interactable_sprite != null and interactable_sprite.texture != null:
-			_interactable_images[node_name] = interactable_sprite.texture.get_image()
+	# Use Sprite2D bounds for hit-testing to avoid expensive texture readback in web builds.
 
 	if hud != null and bool(hud.get_meta("opening_intro_transition", false)):
 		modulate = Color(0, 0, 0, 1)
@@ -535,19 +520,15 @@ func _input(event: InputEvent) -> void:
 		# A completed story remains completed when the player returns to this room.
 		if _visited_story_ids.has(sprite.name):
 			continue
-		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(sprite.name)):
+		if _is_sprite_bounds_clicked(sprite, mouse_position):
 			_open_heritage_story(sprite.name)
 			get_viewport().set_input_as_handled()
 			return
 
-func _is_opaque_pixel_clicked(sprite: Sprite2D, mouse_position: Vector2, image: Image) -> bool:
-	if image == null or image.is_empty() or not sprite.visible:
+func _is_sprite_bounds_clicked(sprite: Sprite2D, mouse_position: Vector2) -> bool:
+	if not sprite.visible or sprite.texture == null:
 		return false
-	var local_point := sprite.to_local(mouse_position)
-	var pixel := Vector2i(floori(local_point.x + image.get_width() * 0.5), floori(local_point.y + image.get_height() * 0.5))
-	if pixel.x < 0 or pixel.y < 0 or pixel.x >= image.get_width() or pixel.y >= image.get_height():
-		return false
-	return image.get_pixelv(pixel).a > 0.12
+	return sprite.get_rect().has_point(sprite.to_local(mouse_position))
 
 func _open_heritage_story(object_name: String) -> void:
 	if _heritage_dialogue_open or not HERITAGE_STORIES.has(object_name):
@@ -678,7 +659,7 @@ func get_heritage_photo_target(mouse_position: Vector2) -> Dictionary:
 		var story: Dictionary = HERITAGE_STORIES[sprite.name]
 		if _heritage_entry_has_photo(str(story.get("title", ""))):
 			continue
-		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(sprite.name)):
+		if _is_sprite_bounds_clicked(sprite, mouse_position):
 			return {
 				"object_name": str(sprite.name),
 				"title": str(story.get("title", "")),
@@ -755,7 +736,7 @@ func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 		var sprite := get_node_or_null(NodePath(str(object_name))) as Sprite2D
 		if sprite == null or not sprite.visible:
 			continue
-		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(object_name)):
+		if _is_sprite_bounds_clicked(sprite, mouse_position):
 			return true
 	# The TV and window are interactable, but the TV stand itself is not.
 	# The TV screen occupies the upper portion of the combined TV/stand artwork.
@@ -765,8 +746,7 @@ func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 			return true
 	for node_name in ["WindowOpen", "WindowClosed"]:
 		var window_sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
-		var window_image: Image = _interactable_images.get(node_name)
-		if window_sprite != null and window_sprite.visible and window_image != null and _is_opaque_pixel_clicked(window_sprite, mouse_position, window_image):
+		if window_sprite != null and window_sprite.visible and _is_sprite_bounds_clicked(window_sprite, mouse_position):
 			return true
 	return false
 
@@ -774,21 +754,12 @@ func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
 func _is_tv_screen_hovered(sprite: Sprite2D, mouse_position: Vector2) -> bool:
 	if sprite.texture == null or not sprite.visible:
 		return false
-	var image: Image = _interactable_images.get(str(sprite.name))
-	if image == null or image.is_empty():
-		return false
 	var local_point := sprite.to_local(mouse_position)
-	var pixel := Vector2i(
-		floori(local_point.x + image.get_width() * 0.5),
-		floori(local_point.y + image.get_height() * 0.5)
-	)
-	if pixel.x < 0 or pixel.y < 0 or pixel.x >= image.get_width() or pixel.y >= image.get_height():
+	var rect := sprite.get_rect()
+	if not rect.has_point(local_point):
 		return false
-	# Restrict the cursor to the TV portion at the top of the combined artwork,
-	# excluding the stand in the lower section.
-	if pixel.y >= int(image.get_height() * 0.58):
-		return false
-	return image.get_pixelv(pixel).a > 0.12
+	# Restrict the cursor to the upper portion of the combined TV/stand artwork.
+	return local_point.y < rect.position.y + rect.size.y * 0.58
 
 func can_go_to_kitchen() -> bool:
 	var hud := get_node_or_null("/root/HUD")
@@ -822,11 +793,8 @@ func _create_tv_button() -> void:
 func _create_interaction_button(sprite: Sprite2D, callback: Callable, button_name: String) -> void:
 	if sprite.texture == null:
 		return
-	var image := sprite.texture.get_image()
-	if image == null:
-		return
-	var used_rect := image.get_used_rect()
-	if used_rect.size.x <= 0 or used_rect.size.y <= 0:
+	var local_rect := sprite.get_rect()
+	if local_rect.size.x <= 0.0 or local_rect.size.y <= 0.0:
 		return
 	var button := Button.new()
 	button.name = button_name
@@ -840,11 +808,8 @@ func _create_interaction_button(sprite: Sprite2D, callback: Callable, button_nam
 	button.add_theme_stylebox_override("hover", empty_style)
 	button.add_theme_stylebox_override("pressed", empty_style)
 	button.add_theme_stylebox_override("focus", empty_style)
-	var scaled_size := Vector2(image.get_width(), image.get_height()) * sprite.scale
-	var scaled_used_position := Vector2(used_rect.position) * sprite.scale
-	var scaled_used_size := Vector2(used_rect.size) * sprite.scale
-	button.position = sprite.position - (scaled_size / 2.0) + scaled_used_position
-	button.size = scaled_used_size
+	button.position = sprite.position + local_rect.position * sprite.scale
+	button.size = local_rect.size * sprite.scale
 	button.pressed.connect(callback)
 	add_child(button)
 
