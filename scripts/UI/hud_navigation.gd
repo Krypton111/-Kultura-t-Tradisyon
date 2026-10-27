@@ -107,6 +107,12 @@ func _ready() -> void:
 	_setup_inventory_ui()
 	_setup_pause_menu()
 	_set_brightness(brightness_level)
+	# Apply the saved music level once at startup. Do not traverse the entire
+	# scene tree every frame just to reapply an unchanged volume.
+	_apply_music_volume_to_all_players()
+	var tree := get_tree()
+	if not tree.node_added.is_connected(_on_tree_node_added):
+		tree.node_added.connect(_on_tree_node_added)
 
 
 func _setup_inventory_ui() -> void:
@@ -357,7 +363,6 @@ func _finish_inventory_drag() -> void:
 
 
 func _process(_delta: float) -> void:
-	_apply_music_volume_to_all_players()
 	if pause_menu_open:
 		return
 	_update_journal_hover()
@@ -1424,6 +1429,13 @@ func _set_sound_volume(value: float) -> void:
 func _set_music_volume(value: float) -> void:
 	music_volume_level = clampf(value, 0.0, 1.0)
 	_apply_music_volume_to_all_players()
+
+
+func _on_tree_node_added(node: Node) -> void:
+	# Apply the music setting when a scene introduces a new audio player, rather
+	# than repeatedly searching every node in the game tree on every frame.
+	if node is AudioStreamPlayer or node is AudioStreamPlayer2D or node is AudioStreamPlayer3D:
+		call_deferred("_apply_music_volume_to_player", node)
 
 
 func _apply_music_volume_to_all_players() -> void:
