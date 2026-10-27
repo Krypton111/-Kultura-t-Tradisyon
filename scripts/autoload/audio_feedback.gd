@@ -1,4 +1,6 @@
 extends Node
+
+const TV_SOUND_PRELOAD: AudioStream = preload("res://GAME ASSETS/SFX/tv sounds.mp3")
 ## Global audio feedback for UI, dialogue clicks, and inventory interactions.
 ## The photograph sound can be triggered from the ending with play_photograph().
 
@@ -89,8 +91,11 @@ func _ready() -> void:
 
 	ambient_stream = _load_first_audio(AMBIENT_PATHS)
 	photograph_stream = _load_first_audio(PHOTOGRAPH_PATHS)
-	# Load the TV loop only when the player actually turns the TV on.
-	# This avoids loading a potentially large optional sound during game startup.
+	# Preload the TV loop before the player interacts with the television.
+	# This moves its resource loading cost out of the interaction click path.
+	tv_stream = TV_SOUND_PRELOAD
+	_set_stream_loop(tv_stream, true)
+	tv_player.stream = tv_stream
 	if ambient_stream:
 		_set_stream_loop(ambient_stream, true)
 		ambient_player.stream = ambient_stream
@@ -193,63 +198,16 @@ func play_page_flip() -> void:
 	page_flip_player.stream = paper_flip
 	page_flip_player.play()
 
-## Poll the threaded TV resource load without blocking the HTML5 main loop.
-func _process(_delta: float) -> void:
-	if not _tv_load_requested:
-		return
-
-	var status := ResourceLoader.load_threaded_get_status(_tv_requested_path)
-	if status == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-		return
-
-	_tv_load_requested = false
-	if status != ResourceLoader.THREAD_LOAD_LOADED:
-		push_warning("TV audio could not be loaded: " + _tv_requested_path)
-		tv_is_playing = false
-		return
-
-	tv_stream = ResourceLoader.load_threaded_get(_tv_requested_path) as AudioStream
-	if tv_stream == null:
-		push_warning("TV audio loaded, but it is not a supported AudioStream.")
-		tv_is_playing = false
-		return
-
-	_set_stream_loop(tv_stream, true)
-	# The user may have turned the TV off while the sound was loading.
-	if tv_is_playing and tv_player != null:
-		tv_player.stream = tv_stream
-		tv_player.play()
-
-## Call when the player turns the television on. The sound is requested
-## through ResourceLoader's threaded path so a large MP3 does not block input.
+## Start playback from the stream that was preloaded during initialization.
 func play_tv() -> void:
 	if tv_is_playing:
 		return
+	if tv_stream == null or tv_player == null:
+		push_warning("TV audio preload is unavailable. Check the tv sounds.mp3 asset path.")
+		return
 	tv_is_playing = true
-
-	if tv_stream != null:
-		_set_stream_loop(tv_stream, true)
-		tv_player.stream = tv_stream
-		tv_player.play()
-		return
-
-	if _tv_load_requested:
-		return
-
-	for path in TV_SOUND_PATHS:
-		if not ResourceLoader.exists(path):
-			continue
-		_tv_requested_path = path
-		var request_error: Error = ResourceLoader.load_threaded_request(_tv_requested_path, "", true)
-		if request_error == OK:
-			_tv_load_requested = true
-			return
-		push_warning("Could not start background loading for TV audio (error %d)." % request_error)
-		tv_is_playing = false
-		return
-
-	push_warning("tv sounds.mp3 not found. Add it to the game's SFX folder.")
-	tv_is_playing = false
+	tv_player.stream = tv_stream
+	tv_player.play()
 
 ## Call when the player turns the television off.
 func stop_tv() -> void:
