@@ -29,6 +29,9 @@ var _heritage_dialogue_open := false
 var _recorded_story_ids: Array[String] = []
 var _visited_story_ids: Array[String] = []
 var _final_kitchen_dialogue_started := false
+# Cache opaque bounds once during scene setup. This avoids repeated texture readbacks
+# during mouse movement while keeping hitboxes around the actual visible artwork.
+var _sprite_used_rects: Dictionary = {}
 
 func _ready() -> void:
 	add_to_group("living_room_scene")
@@ -60,12 +63,13 @@ func _ready() -> void:
 		lola_not_looking.visible = false
 		lola_looking.visible = false
 
+	_cache_interactable_used_rects()
 	_create_tv_button()
 	_create_interaction_button(window_open, Callable(self, "_on_window_clicked"), "WindowButton")
 	if not lola_has_moved:
 		_create_interaction_button(lola_not_looking, Callable(self, "_on_lola_clicked"), "LolaNenaButton")
 
-	# Use Sprite2D bounds for hit-testing to avoid expensive texture readback in web builds.
+	# Interaction buttons are positioned from cached opaque bounds, not full transparent canvases.
 
 	if hud != null and bool(hud.get_meta("opening_intro_transition", false)):
 		modulate = Color(0, 0, 0, 1)
@@ -525,10 +529,34 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 
+func _cache_interactable_used_rects() -> void:
+	_sprite_used_rects.clear()
+	var wanted_names: Array[String] = []
+	for object_name in HERITAGE_STORIES.keys():
+		wanted_names.append(str(object_name))
+	wanted_names.append_array(["Stand+closedTV", "Stand+openTv", "WindowOpen", "WindowClosed", "LolaNenaNotLooking", "LolaNenaLooking"])
+	for node_name in wanted_names:
+		var sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
+		if sprite == null or sprite.texture == null:
+			continue
+		var image := sprite.texture.get_image()
+		if image != null and not image.is_empty():
+			_sprite_used_rects[node_name] = image.get_used_rect()
+
+func _sprite_opaque_bounds(sprite: Sprite2D) -> Rect2:
+	if sprite.texture == null:
+		return Rect2()
+	var used_rect: Rect2i = _sprite_used_rects.get(sprite.name, Rect2i())
+	if used_rect.size == Vector2i.ZERO:
+		return Rect2()
+	# Sprite2D local coordinates are centered; Image.get_used_rect() starts at (0, 0).
+	var centered_position := Vector2(used_rect.position) - sprite.texture.get_size() * 0.5
+	return Rect2(centered_position, Vector2(used_rect.size))
+
 func _is_sprite_bounds_clicked(sprite: Sprite2D, mouse_position: Vector2) -> bool:
 	if not sprite.visible or sprite.texture == null:
 		return false
-	return sprite.get_rect().has_point(sprite.to_local(mouse_position))
+	return _sprite_opaque_bounds(sprite).has_point(sprite.to_local(mouse_position))
 
 func _open_heritage_story(object_name: String) -> void:
 	if _heritage_dialogue_open or not HERITAGE_STORIES.has(object_name):
@@ -755,10 +783,10 @@ func _is_tv_screen_hovered(sprite: Sprite2D, mouse_position: Vector2) -> bool:
 	if sprite.texture == null or not sprite.visible:
 		return false
 	var local_point := sprite.to_local(mouse_position)
-	var rect := sprite.get_rect()
+	var rect := _sprite_opaque_bounds(sprite)
 	if not rect.has_point(local_point):
 		return false
-	# Restrict the cursor to the upper portion of the combined TV/stand artwork.
+	# Restrict the cursor to the screen portion of the TV/stand artwork.
 	return local_point.y < rect.position.y + rect.size.y * 0.58
 
 func can_go_to_kitchen() -> bool:
@@ -773,6 +801,11 @@ func set_lola_dialogue_pose(is_looking_at_migs: bool) -> void:
 	lola_not_looking.visible = not is_looking_at_migs
 
 func _create_tv_button() -> void:
+	# Use the opaque TV artwork bounds, excluding the stand below the screen.
+	var sprite := closed_tv
+	var rect := _sprite_opaque_bounds(sprite)
+	if rect.size.x <= 0.0 or rect.size.y <= 0.0:
+		return
 	var button := Button.new()
 	button.name = "TVButton"
 	button.text = ""
@@ -785,15 +818,16 @@ func _create_tv_button() -> void:
 	button.add_theme_stylebox_override("hover", empty_style)
 	button.add_theme_stylebox_override("pressed", empty_style)
 	button.add_theme_stylebox_override("focus", empty_style)
-	button.size = Vector2(192, 185)
-	button.position = Vector2(189.5, 329.0) - (button.size / 2.0)
+	var screen_rect := Rect2(rect.position, Vector2(rect.size.x, rect.size.y * 0.58))
+	button.position = sprite.position + screen_rect.position * sprite.scale
+	button.size = screen_rect.size * sprite.scale
 	button.pressed.connect(_on_tv_clicked)
 	add_child(button)
 
 func _create_interaction_button(sprite: Sprite2D, callback: Callable, button_name: String) -> void:
 	if sprite.texture == null:
 		return
-	var local_rect := sprite.get_rect()
+	var local_rect := _sprite_opaque_bounds(sprite)
 	if local_rect.size.x <= 0.0 or local_rect.size.y <= 0.0:
 		return
 	var button := Button.new()
