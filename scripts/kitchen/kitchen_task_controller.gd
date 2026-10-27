@@ -1,0 +1,627 @@
+extends Node
+## Kitchen task controller. The model owns task rules/progress; this controller
+## handles object clicks and builds the checklist/recipe views dynamically.
+
+const KitchenTaskModelScript = preload("res://scripts/kitchen/kitchen_task_model.gd")
+const DIALOGUE_SCENE_PATH := "res://game_scenes/UI scenes/dialogue.tscn"
+const POT_TEXTURE_PATH := "res://GAME ASSETS/Kitchen/sinigang pot empty.png"
+const FULL_POT_TEXTURE_PATH := "res://GAME ASSETS/Kitchen/sinigang pot full.png"
+const LIVING_ROOM_SCENE_PATH := "res://game_scenes/levels/living_room.tscn"
+const LEAVE_ARROW_TEXTURE = preload("res://GAME ASSETS/UI/HUD/leave_arrow.png")
+
+const PANEL_BG := Color(0.10, 0.12, 0.15, 0.97)
+const ACCENT := Color(0.88, 0.72, 0.42, 1.0)
+const TEXT_COLOR := Color(0.97, 0.95, 0.88, 1.0)
+const OBJECT_TO_INGREDIENT := {
+	"Bangus": "bangus",
+	"Condiments": "condiments",
+	"Kamatis": "kamatis",
+	"Kangkong": "kangkong",
+	"MeasuringCup": "water",
+	"Peppers": "peppers",
+	"Radish": "radish",
+	"SinigangMix": "sinigang_mix",
+	"Talong": "talong"
+}
+
+const INVENTORY_TEXTURE_PATHS := {
+	"bangus": "res://GAME ASSETS/Kitchen/inventory images/inv bangus.png",
+	"condiments": "res://GAME ASSETS/Kitchen/inventory images/inv condiments.png",
+	"talong": "res://GAME ASSETS/Kitchen/inventory images/inv eggplant.png",
+	"peppers": "res://GAME ASSETS/Kitchen/inventory images/inv finger peppers.png",
+	"kamatis": "res://GAME ASSETS/Kitchen/inventory images/inv kamatis.png",
+	"kangkong": "res://GAME ASSETS/Kitchen/inventory images/inv kangkong.png",
+	"radish": "res://GAME ASSETS/Kitchen/inventory images/inv radish.png",
+	"sinigang_mix": "res://GAME ASSETS/Kitchen/inventory images/inv sinigang mix.png",
+	"water": "res://GAME ASSETS/Kitchen/inventory images/inv water.png"
+}
+
+var task_model = KitchenTaskModelScript.new()
+var _dialogue_view: Control
+var _hud: Node
+var _recipe_overlay: Control
+var _pot_overlay: Control
+var _pot_drop_area: Control
+var _pot_dialogue_open := false
+var _pot_filled_items: Array[String] = []
+
+
+func _ready() -> void:
+	await get_tree().process_frame
+	_hud = get_node_or_null("/root/HUD")
+	var kitchen := get_parent()
+	var lola := kitchen.get_node_or_null("LolaNenaStanding") as Sprite2D if kitchen != null else null
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		_pot_filled_items.assign(game_state.get_state("kitchen_pot_ingredient_ids", []))
+		# Keep Lola out of the kitchen on later visits once lunch has happened.
+		if bool(game_state.get_state("lunch_completed", false)) and lola != null:
+			lola.visible = false
+	_restore_collected_ingredients(kitchen)
+
+	if task_model.can_start(_hud, lola):
+		_start_task_introduction()
+	_setup_recipe_hotspot()
+	if _hud != null and _hud.has_signal("inventory_item_dropped"):
+		var drop_callable := Callable(self, "_on_inventory_item_dropped")
+		if not _hud.is_connected("inventory_item_dropped", drop_callable):
+			_hud.connect("inventory_item_dropped", drop_callable)
+	# If the player leaves the kitchen while the kawali overlay is open,
+	# clean up its separate CanvasLayer so the pot cannot remain over other rooms.
+	var exit_callable := Callable(self, "_cleanup_pot_overlay_on_scene_exit")
+	if not tree_exiting.is_connected(exit_callable):
+		tree_exiting.connect(exit_callable)
+
+
+func _input(event: InputEvent) -> void:
+	# A modal HUD overlay (such as the journal) blocks all kitchen world interactions.
+	var hud := get_node_or_null("/root/HUD")
+	if hud != null and bool(hud.get("navigation_locked")):
+		return
+	if not (event is InputEventMouseButton):
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
+		return
+	var game_state := get_node_or_null("/root/GameState")
+	# Handle the recipe close action in _input as a fallback to the Button's
+	# pressed signal. In embedded HTML5 builds, GUI input can be intercepted by
+	# the full-screen dimmer before the button receives its pressed event.
+	if is_instance_valid(_recipe_overlay):
+		var close_button := _recipe_overlay.find_child("RecipeCloseButton", true, false) as Button
+		var click_position := get_viewport().get_mouse_position()
+		if close_button != null and close_button.get_global_rect().has_point(click_position):
+			_recipe_overlay.queue_free()
+			_recipe_overlay = null
+			get_viewport().set_input_as_handled()
+		return
+	if is_instance_valid(_pot_overlay):
+		return
+
+	var kitchen := get_parent()
+	var mouse_position := get_viewport().get_mouse_position()
+
+	# The recipe is a readable environmental object, not part of the cooking
+	# task gate. Handle it before checking whether Lola's introduction completed
+	# so the hotspot remains clickable in the embedded HTML5 build as well.
+	var recipe_area := kitchen.get_node_or_null("Container2") as Control
+	# The authored recipe hotspot is small, and HTML5 canvas scaling can make
+	# its GUI button miss clicks. Expand the direct hit area around the fridge.
+	if recipe_area != null and recipe_area.get_global_rect().grow(42.0).has_point(mouse_position):
+		_open_recipe()
+		get_viewport().set_input_as_handled()
+		return
+
+	if _hud == null or game_state == null:
+		return
+	if not bool(game_state.get_state(task_model.KITCHEN_INTRO_COMPLETED_META, false)):
+		return
+
+	# Once Migs has added every ingredient, do not replay Lola's pot instructions.
+	# The completion dialogue already thanks him and explains that she will finish cooking.
+	var lola := kitchen.get_node_or_null("LolaNenaStanding") as Sprite2D
+	if lola != null and lola.visible and _sprite_pixel_hit(lola, mouse_position):
+		var lunch_state := bool(game_state.get_state("lunch_completed", false))
+		var eggs_collected := bool(game_state.get_state("coop_eggs_collected", false))
+		if eggs_collected and not lunch_state:
+			_show_full_pot()
+		elif not task_model.is_task_completed(_hud):
+			_start_pot_dialogue()
+		get_viewport().set_input_as_handled()
+		return
+
+	if task_model.is_task_completed(_hud):
+		return
+
+	# Check actual ingredient sprites, not buttons in the checklist.
+	for object_name in OBJECT_TO_INGREDIENT:
+		var sprite := kitchen.get_node_or_null(object_name) as Sprite2D
+		if sprite == null or not sprite.visible:
+			continue
+		if _sprite_pixel_hit(sprite, mouse_position):
+			var ingredient_id := str(OBJECT_TO_INGREDIENT[object_name])
+			if task_model.prepare_ingredient(_hud, ingredient_id):
+				# Persist collection on the HUD so changing rooms cannot make the
+				# ingredient reappear. Hide it immediately before updating the inventory.
+				_mark_ingredient_collected(ingredient_id, sprite)
+				var item_name := _ingredient_display_name(ingredient_id)
+				var inventory_texture_path := str(INVENTORY_TEXTURE_PATHS.get(ingredient_id, ""))
+				var inventory_texture := load(inventory_texture_path) as Texture2D if not inventory_texture_path.is_empty() else null
+				var hud_layer := get_node_or_null("/root/HUD")
+				if inventory_texture == null:
+					push_warning("Kitchen inventory image not found for %s: %s" % [ingredient_id, inventory_texture_path])
+				elif hud_layer != null and hud_layer.has_method("add_inventory_item"):
+					hud_layer.call("add_inventory_item", ingredient_id, item_name, inventory_texture)
+			get_viewport().set_input_as_handled()
+			return
+
+
+func _start_task_introduction() -> void:
+	var packed := load(DIALOGUE_SCENE_PATH) as PackedScene
+	if packed == null:
+		push_warning("Kitchen task: could not load the dialogue scene.")
+		return
+	_dialogue_view = packed.instantiate() as Control
+	if _dialogue_view == null:
+		push_warning("Kitchen task: dialogue scene root must be a Control.")
+		return
+	_dialogue_view.sequence_finished.connect(_on_introduction_finished)
+	_hud.add_child(_dialogue_view)
+	_dialogue_view.call("start_custom_sequence", task_model.get_intro_dialogue())
+
+
+func _on_introduction_finished() -> void:
+	task_model.mark_intro_completed(_hud)
+	_dialogue_view = null
+
+
+func _start_pot_dialogue() -> void:
+	if _pot_dialogue_open or is_instance_valid(_pot_overlay):
+		return
+	_pot_dialogue_open = true
+
+	# Show the empty sinigang pot immediately on Lola's click, then run her
+	# instructions automatically over it so the player does not need another click.
+	_show_empty_pot()
+
+	var packed := load(DIALOGUE_SCENE_PATH) as PackedScene
+	if packed == null:
+		_pot_dialogue_open = false
+		push_warning("Kitchen task: could not load the pot instructions dialogue.")
+		return
+	var view := packed.instantiate() as Control
+	if view == null:
+		_pot_dialogue_open = false
+		return
+	_hud.add_child(view)
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "Migs, please put all the ingredients you gathered into this pot. Drag each item from your inventory and drop it into the pot."}
+	]
+	view.sequence_finished.connect(func():
+		_pot_dialogue_open = false
+	)
+	view.call("start_custom_sequence", lines)
+
+
+
+func _show_full_pot() -> void:
+	if is_instance_valid(_pot_overlay) or _hud == null:
+		return
+	var pot_texture := load(FULL_POT_TEXTURE_PATH) as Texture2D
+	if pot_texture == null:
+		push_warning("Kitchen task: full pot image not found: " + FULL_POT_TEXTURE_PATH)
+		return
+
+	_pot_overlay = Control.new()
+	_pot_overlay.name = "SinigangPotOverlay"
+	_pot_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pot_overlay.z_index = 1100
+	_pot_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	var pot_canvas := CanvasLayer.new()
+	pot_canvas.name = "SinigangPotCanvas"
+	# Keep the pot behind the HUD layer so Lola's dialogue and inventory remain visible.
+	pot_canvas.layer = 0
+	get_tree().current_scene.add_child(pot_canvas)
+	_pot_overlay.set_meta("pot_canvas", pot_canvas)
+	pot_canvas.add_child(_pot_overlay)
+
+	var dimmer := ColorRect.new()
+	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0, 0, 0, 0.62)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pot_overlay.add_child(dimmer)
+
+	var pot := TextureRect.new()
+	pot.name = "SinigangPotFullImage"
+	pot.texture = pot_texture
+	pot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	pot.size = Vector2(680, 520)
+	pot.position = (get_viewport().get_visible_rect().size - pot.size) * 0.5 + Vector2(20, 0)
+	pot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_pot_overlay.add_child(pot)
+
+	# Reuse the same leave-arrow artwork and hit-area style as the ingredient-pot view.
+	var leave_sprite := Sprite2D.new()
+	leave_sprite.texture = LEAVE_ARROW_TEXTURE
+	leave_sprite.position = Vector2(576, 324)
+	leave_sprite.scale = Vector2(0.3, 0.3)
+	_pot_overlay.add_child(leave_sprite)
+	var leave_button := _make_leave_arrow_button(leave_sprite)
+	leave_button.pressed.connect(_on_full_pot_leave_pressed)
+
+
+func _on_full_pot_leave_pressed() -> void:
+	_close_pot_overlay()
+	_show_meal_dialogue()
+
+
+func _show_meal_dialogue() -> void:
+	if _hud == null:
+		return
+	var packed := load(DIALOGUE_SCENE_PATH) as PackedScene
+	if packed == null:
+		push_warning("Kitchen task: could not load the lunch dialogue.")
+		return
+	var view := packed.instantiate() as Control
+	if view == null:
+		return
+	_hud.set("navigation_locked", true)
+	_hud.add_child(view)
+	var lines: Array[Dictionary] = [
+		{"speaker": "Migs", "text": "Lola, the sinigang na bangus looks delicious! It’s ready."},
+		{"speaker": "Lola Nena", "text": "It turned out nicely, apo. Thank you for helping me prepare everything and take care of the chickens."},
+		{"speaker": "Lola Nena", "text": "Come, Migs. Let’s sit down and eat together before our lunch gets cold."},
+		{"speaker": "Migs", "text": "Sige, Lola! I’m hungry already."}
+	]
+	view.sequence_finished.connect(_on_meal_dialogue_finished)
+	view.call("start_custom_sequence", lines)
+
+
+func _on_meal_dialogue_finished() -> void:
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("lunch_completed", true)
+
+	# Lola has finished the kitchen conversation and is joining Migs for lunch.
+	# Hide her before the HUD starts its fade-to-black room transition.
+	var kitchen := get_parent()
+	var lola := kitchen.get_node_or_null("LolaNenaStanding") as Sprite2D if kitchen != null else null
+	if lola != null:
+		lola.visible = false
+
+	if _hud == null:
+		return
+	_hud.set("navigation_locked", false)
+	await get_tree().process_frame
+	_hud.call("_change_scene", LIVING_ROOM_SCENE_PATH)
+
+
+func _show_empty_pot() -> void:
+	if is_instance_valid(_pot_overlay):
+		return
+	var pot_texture := load(POT_TEXTURE_PATH) as Texture2D
+	if pot_texture == null:
+		push_warning("Kitchen task: empty pot image not found: " + POT_TEXTURE_PATH)
+		return
+	_pot_overlay = Control.new()
+	_pot_overlay.name = "SinigangPotOverlay"
+	_pot_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pot_overlay.z_index = 1100
+	_pot_overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	# Put the dimmed pot screen on a lower CanvasLayer than the HUD,
+	# so inventory slots remain visible and draggable above it.
+	var pot_canvas := CanvasLayer.new()
+	pot_canvas.name = "SinigangPotCanvas"
+	pot_canvas.layer = 99
+	get_tree().current_scene.add_child(pot_canvas)
+	_pot_overlay.set_meta("pot_canvas", pot_canvas)
+	pot_canvas.add_child(_pot_overlay)
+
+	var dimmer := ColorRect.new()
+	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0, 0, 0, 0.62)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pot_overlay.add_child(dimmer)
+
+	var pot := TextureRect.new()
+	pot.name = "SinigangPotDropArea"
+	pot.texture = pot_texture
+	pot.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	pot.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	# Make the kawali a little larger so ingredient drops are easier to see.
+	pot.size = Vector2(680, 520)
+	pot.position = (get_viewport().get_visible_rect().size - pot.size) * 0.5 + Vector2(20, 0)
+	pot.mouse_filter = Control.MOUSE_FILTER_STOP
+	_pot_overlay.add_child(pot)
+	_pot_drop_area = pot
+
+	var leave_sprite := Sprite2D.new()
+	leave_sprite.texture = LEAVE_ARROW_TEXTURE
+	leave_sprite.position = Vector2(576, 324)
+	leave_sprite.scale = Vector2(0.3, 0.3)
+	_pot_overlay.add_child(leave_sprite)
+	var leave_button := _make_leave_arrow_button(leave_sprite)
+	# Keep the leave button on the HUD's higher CanvasLayer so it can receive
+	# clicks above the dimmer, while the inventory remains visible and draggable.
+	leave_button.pressed.connect(_close_pot_overlay)
+	_hud.call("set_inventory_drop_rect", pot.get_global_rect())
+
+
+func _make_leave_arrow_button(sprite: Sprite2D) -> Button:
+	var button := Button.new()
+	button.name = "LeavePotButton"
+	button.text = ""
+	button.flat = true
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	for style_name in ["normal", "hover", "pressed", "focus"]:
+		button.add_theme_stylebox_override(style_name, StyleBoxEmpty.new())
+	var image := LEAVE_ARROW_TEXTURE.get_image()
+	var used_rect := image.get_used_rect()
+	var scaled_size := Vector2(image.get_width(), image.get_height()) * sprite.scale
+	var scaled_used_position := Vector2(used_rect.position) * sprite.scale
+	var scaled_used_size := Vector2(used_rect.size) * sprite.scale
+	button.position = sprite.position - scaled_size / 2.0 + scaled_used_position
+	button.size = scaled_used_size
+	button.z_index = 1201
+	_hud.add_child(button)
+	return button
+
+
+func _cleanup_pot_overlay_on_scene_exit() -> void:
+	var pot_canvas_node = _pot_overlay.get_meta("pot_canvas") if is_instance_valid(_pot_overlay) else null
+	var leave_button := _hud.get_node_or_null("LeavePotButton") if is_instance_valid(_hud) else null
+	if is_instance_valid(leave_button):
+		leave_button.queue_free()
+	if is_instance_valid(_pot_overlay):
+		_pot_overlay.queue_free()
+	if is_instance_valid(pot_canvas_node):
+		pot_canvas_node.queue_free()
+	_pot_overlay = null
+	_pot_drop_area = null
+	if is_instance_valid(_hud):
+		_hud.call("set_inventory_drop_rect", Rect2())
+
+
+func _close_pot_overlay() -> void:
+	var pot_canvas_node = _pot_overlay.get_meta("pot_canvas") if is_instance_valid(_pot_overlay) else null
+	var leave_button := _hud.get_node_or_null("LeavePotButton") if is_instance_valid(_hud) else null
+	if is_instance_valid(leave_button):
+		leave_button.queue_free()
+	if is_instance_valid(_pot_overlay):
+		_pot_overlay.queue_free()
+	if is_instance_valid(pot_canvas_node):
+		pot_canvas_node.queue_free()
+	_pot_overlay = null
+	_pot_drop_area = null
+	if is_instance_valid(_hud):
+		_hud.call("set_inventory_drop_rect", Rect2())
+
+
+func _on_inventory_item_dropped(item_id: String) -> void:
+	if not is_instance_valid(_pot_overlay):
+		return
+
+	# Only the nine recipe ingredients may be placed into the kawali.
+	# Other inventory items (such as the salakot) must remain in inventory and
+	# must not count toward cooking progress.
+	if not OBJECT_TO_INGREDIENT.values().has(item_id):
+		return
+
+	if _hud.call("remove_inventory_item", item_id):
+		var game_state := get_node_or_null("/root/GameState")
+		if not _pot_filled_items.has(item_id):
+			_pot_filled_items.append(item_id)
+			if game_state != null:
+				game_state.set_state("kitchen_pot_ingredient_ids", _pot_filled_items)
+		var progress: Dictionary = task_model.get_progress(_hud)
+		progress[item_id] = true
+		if game_state != null:
+			game_state.set_state(task_model.KITCHEN_PROGRESS_META, progress)
+		if _pot_filled_items.size() >= task_model.get_ingredients().size() and not task_model.is_task_completed(_hud):
+			if game_state != null:
+				game_state.set_state(task_model.KITCHEN_TASK_COMPLETED_META, true)
+			var achievement_manager := get_node_or_null("/root/AchievementManager")
+			if achievement_manager != null:
+				achievement_manager.call("unlock", "ingredients_in_pot")
+			_finish_pot_task()
+
+
+func _finish_pot_task() -> void:
+	# Fade away the empty-pot screen once every available ingredient has been added.
+	if is_instance_valid(_pot_overlay):
+		var fade := create_tween()
+		fade.tween_property(_pot_overlay, "modulate:a", 0.0, 0.8)
+		await fade.finished
+	_close_pot_overlay()
+	_show_cooking_thanks_dialogue()
+
+
+func _show_cooking_thanks_dialogue() -> void:
+	if not is_instance_valid(_hud):
+		return
+	var packed := load(DIALOGUE_SCENE_PATH) as PackedScene
+	if packed == null:
+		push_warning("Kitchen task: could not load the completion dialogue.")
+		return
+	var view := packed.instantiate() as Control
+	if view == null:
+		return
+	_hud.add_child(view)
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "Thank you for helping me prepare the ingredients, Migs. I’ll take it from here and finish cooking the sinigang."},
+		{"speaker": "Migs", "text": "You’re welcome, Lola! I’m glad I could help."},
+		{"speaker": "Lola Nena", "text": "Since you’re already helping me around the house, could you do a few more things for me, apo?"},
+		{"speaker": "Migs", "text": "Of course, Lola! What do you need me to do?"},
+		{"speaker": "Lola Nena", "text": "The chickens in the coop need to be fed. You’ll find the feeding seeds outside, along with some cups and baskets. Put the seeds into the cups, then place the filled cups in the feeder inside the chicken coop."},
+		{"speaker": "Lola Nena", "text": "And while you’re there, please collect the eggs the chickens have laid. We can use them later. Thank you again for helping me, Migs!"},
+		{"speaker": "Migs", "text": "Got it, Lola! I’ll feed the chickens and collect the eggs."}
+	]
+	view.call("start_custom_sequence", lines)
+	if view.has_signal("sequence_finished"):
+		view.sequence_finished.connect(_on_chicken_chores_instructions_finished)
+
+
+func _on_chicken_chores_instructions_finished() -> void:
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("backyard_chore_instructions_given", true)
+
+
+func _ingredient_display_name(ingredient_id: String) -> String:
+	for ingredient in task_model.get_ingredients():
+		if str(ingredient.get("id", "")) == ingredient_id:
+			return str(ingredient.get("name", ingredient_id))
+	return ingredient_id.capitalize()
+
+
+const COLLECTED_INGREDIENTS_META := "kitchen_collected_ingredient_ids"
+
+
+func _restore_collected_ingredients(kitchen: Node) -> void:
+	if kitchen == null or not is_instance_valid(_hud):
+		return
+	var game_state := get_node_or_null("/root/GameState")
+	var collected: Array = game_state.get_state(COLLECTED_INGREDIENTS_META, []) if game_state != null else []
+	for object_name in OBJECT_TO_INGREDIENT:
+		var sprite := kitchen.get_node_or_null(object_name) as Sprite2D
+		if sprite == null:
+			continue
+		var ingredient_id := str(OBJECT_TO_INGREDIENT[object_name])
+		if collected.has(ingredient_id):
+			sprite.set_meta("ingredient_collected", true)
+			sprite.visible = false
+
+
+func _mark_ingredient_collected(ingredient_id: String, sprite: Sprite2D) -> void:
+	if is_instance_valid(_hud):
+		var game_state := get_node_or_null("/root/GameState")
+		var collected: Array = game_state.get_state(COLLECTED_INGREDIENTS_META, []) if game_state != null else []
+		if not collected.has(ingredient_id):
+			collected.append(ingredient_id)
+			if game_state != null:
+				game_state.set_state(COLLECTED_INGREDIENTS_META, collected)
+	if is_instance_valid(sprite):
+		# Mark it as collected immediately so it cannot be interacted with again,
+		# but let the existing fade animation finish before hiding the sprite.
+		_fade_collected_ingredient(sprite, ingredient_id)
+
+func _fade_collected_ingredient(sprite: Sprite2D, ingredient_id: String) -> void:
+	sprite.set_meta("ingredient_collected", true)
+	var tween := create_tween()
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.45)
+	tween.tween_callback(func():
+		if is_instance_valid(sprite):
+			sprite.visible = false
+	)
+
+
+func _sprite_pixel_hit(sprite: Sprite2D, viewport_position: Vector2) -> bool:
+	if sprite.texture == null or not sprite.visible:
+		return false
+
+	#convert viewport coordinates into canvas coordinates before transforming
+	#into the sprite's local texture coordinates haha omai
+	var canvas_position := get_viewport().get_canvas_transform().affine_inverse() * viewport_position
+	var local := sprite.to_local(canvas_position)
+	var rect := sprite.get_rect()
+	if not rect.has_point(local):
+		return false
+
+	var texture_image := sprite.texture.get_image()
+	if texture_image == null or texture_image.is_empty():
+		return true
+	var uv := (local - rect.position) / rect.size
+	var px := clampi(int(uv.x * texture_image.get_width()), 0, texture_image.get_width() - 1)
+	var py := clampi(int(uv.y * texture_image.get_height()), 0, texture_image.get_height() - 1)
+	return texture_image.get_pixel(px, py).a > 0.15
+
+func _setup_recipe_hotspot() -> void:
+	var kitchen := get_parent()
+	var container := kitchen.get_node_or_null("Container2") as Control if kitchen != null else null
+	if container == null:
+		push_warning("Kitchen task: Container2 recipe hotspot was not found.")
+		return
+	var button := Button.new()
+	button.name = "RecipeHotspot"
+	button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	button.text = ""
+	button.flat = true
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.tooltip_text = "View Lola Nena's Recipe"
+	button.z_index = 100
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	for style_name in ["normal", "hover", "pressed", "focus"]:
+		button.add_theme_stylebox_override(style_name, StyleBoxEmpty.new())
+	button.pressed.connect(_open_recipe)
+	container.add_child(button)
+
+
+func _open_recipe() -> void:
+	if not is_instance_valid(_hud):
+		push_warning("Kitchen task: HUD was not found; cannot display Lola Nena's recipe.")
+		return
+	if is_instance_valid(_recipe_overlay):
+		return
+	var texture := load(task_model.RECIPE_TEXTURE_PATH) as Texture2D
+	if texture == null:
+		push_warning("Kitchen task: recipe image was not found at " + task_model.RECIPE_TEXTURE_PATH)
+		return
+	_recipe_overlay = Control.new()
+	_recipe_overlay.name = "LolaRecipeOverlay"
+	_recipe_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_recipe_overlay.z_index = 500
+	_hud.add_child(_recipe_overlay)
+	var dimmer := ColorRect.new()
+	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dimmer.color = Color(0, 0, 0, 0.78)
+	dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
+	_recipe_overlay.add_child(dimmer)
+	var card := PanelContainer.new()
+	card.position = Vector2(180, 35)
+	card.size = Vector2(790, 575)
+	card.add_theme_stylebox_override("panel", _panel_style(PANEL_BG, ACCENT, 3))
+	_recipe_overlay.add_child(card)
+	var content := VBoxContainer.new()
+	content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	content.mouse_filter = Control.MOUSE_FILTER_PASS
+	card.add_child(content)
+	var title := Label.new()
+	title.text = "LOLA NENA'S RECIPE"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_color_override("font_color", ACCENT)
+	content.add_child(title)
+	var image := TextureRect.new()
+	image.texture = texture
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	image.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(image)
+	var close_button := Button.new()
+	close_button.name = "RecipeCloseButton"
+	close_button.text = "← Leave Recipe"
+	close_button.custom_minimum_size = Vector2(0, 48)
+	close_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	close_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	close_button.z_index = 1
+	close_button.pressed.connect(_close_recipe)
+	content.add_child(close_button)
+
+
+func _close_recipe() -> void:
+	if is_instance_valid(_recipe_overlay):
+		_recipe_overlay.queue_free()
+	_recipe_overlay = null
+
+
+func _panel_style(background: Color, border_color: Color, border_size: int) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = background
+	style.border_color = border_color
+	style.set_border_width_all(border_size)
+	style.set_corner_radius_all(10)
+	style.set_content_margin_all(16)
+	return style

@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://ccnlyg0s5rn3a"]
+
+[ext_resource type="Script" uid="uid://bnm850hwf35rs" path="res://scripts/UI/intro.gd" id="1_mgj2j"]
+
+[sub_resource type="SystemFont" id="SystemFont_cursive"]
+font_names = PackedStringArray("Segoe Script", "Segoe Print", "Comic Sans MS")
+
+[node name="Intro" type="Control" unique_id=1334714212]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mgj2j")
+
+[node name="Background" type="ColorRect" parent="." unique_id=102175489]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0352941, 0.0313726, 0.027451, 1)
+
+[node name="Quote" type="RichTextLabel" parent="." unique_id=129287797]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.12
+anchor_top = 0.3
+anchor_right = 0.88
+anchor_bottom = 0.7
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/default_color = Color(0.941176, 0.894118, 0.8, 1)
+theme_override_fonts/normal_font = SubResource("SystemFont_cursive")
+theme_override_font_sizes/normal_font_size = 49
+bbcode_enabled = true
+text = "[center][i]“Some places hold more than memories. They hold the stories of the people who came before us.”[/i][/center]"
+scroll_active = false
+autowrap_mode = 2
+vertical_alignment = 1

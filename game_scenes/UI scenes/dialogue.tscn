@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://cqurl0ix4y2t3"]
+
+[ext_resource type="Texture2D" uid="uid://clgq41l36iy1l" path="res://GAME ASSETS/UI/dialogue/dialogue_box.png" id="1_tnwt8"]
+[ext_resource type="Texture2D" uid="uid://dvhomds0hasc" path="res://GAME ASSETS/UI/dialogue/dialogue_design.png" id="2_nhraa"]
+[ext_resource type="Texture2D" uid="uid://cd7ei2fofvgj7" path="res://GAME ASSETS/UI/dialogue/dialogue_name_box.png" id="3_sfr7b"]
+[ext_resource type="Texture2D" uid="uid://sa30f2jt3oqf" path="res://GAME ASSETS/UI/dialogue/lola_nena_name_dialogue_box.png" id="4_tsr54"]
+[ext_resource type="Script" uid="uid://dh18r14y1wnt2" path="res://scripts/UI/scene1_dialogue.gd" id="5_dialogue"]
+[ext_resource type="Texture2D" uid="uid://cnav18jmpeg14" path="res://GAME ASSETS/UI/dialogue/migs_name_dialogue_box.png" id="6_2x82u"]
+
+[node name="Control" type="Control" unique_id=1517289160]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_dialogue")
+
+[node name="DialogueBox" type="Sprite2D" parent="." unique_id=1011845970]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("1_tnwt8")
+
+[node name="DialogueDesign" type="Sprite2D" parent="." unique_id=830891069]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("2_nhraa")
+
+[node name="DialogueNameBox" type="Sprite2D" parent="." unique_id=57714727]
+position = Vector2(576, 324)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("3_sfr7b")
+
+[node name="LolaNenaNameDialogueBox" type="Sprite2D" parent="." unique_id=967066297]
+position = Vector2(576, 326.00003)
+scale = Vector2(0.24, 0.24)
+texture = ExtResource("4_tsr54")
+
+[node name="DialogueText" type="RichTextLabel" parent="." unique_id=1861120102]
+layout_mode = 0
+offset_left = 249.0
+offset_top = 526.0
+offset_right = 904.0
+offset_bottom = 601.0
+mouse_filter = 2
+theme_override_colors/default_color = Color(0.18, 0.12, 0.08, 1)
+theme_override_font_sizes/normal_font_size = 16
+text = "Dialogue goes here."
+scroll_active = false
+autowrap_mode = 2
+
+[node name="ContinueHint" type="Label" parent="." unique_id=1861120103]
+layout_mode = 0
+offset_left = 640.0
+offset_top = 590.0
+offset_right = 910.0
+offset_bottom = 613.0
+theme_override_colors/font_color = Color(0.31, 0.22, 0.14, 0.85)
+theme_override_font_sizes/font_size = 12
+text = "CLICK OR PRESS ENTER  ›"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="MigsNameDialogueBox" type="Sprite2D" parent="." unique_id=1831730883]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("6_2x82u")

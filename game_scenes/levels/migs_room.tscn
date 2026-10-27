@@ -1,0 +1,54 @@
+[gd_scene format=3 uid="uid://c0visnntkasro"]
+
+[ext_resource type="Texture2D" path="res://GAME ASSETS/Migs Room/Mig's Room.png" id="1_0kr71"]
+[ext_resource type="Texture2D" uid="uid://dbd7my5fjgi65" path="res://GAME ASSETS/Migs Room/baskets.png" id="2_t46rn"]
+[ext_resource type="Texture2D" uid="uid://72iiqdyv026v" path="res://GAME ASSETS/Migs Room/table.png" id="3_bt2dd"]
+[ext_resource type="Texture2D" uid="uid://by3pa8s1wrj1l" path="res://GAME ASSETS/Migs Room/bed.png" id="4_peogm"]
+[ext_resource type="Texture2D" uid="uid://btxa7awki5bhm" path="res://GAME ASSETS/Migs Room/camera.png" id="5_h1phc"]
+[ext_resource type="Texture2D" uid="uid://bmbxb4ag5xqxl" path="res://GAME ASSETS/Migs Room/journal.png" id="6_4poho"]
+[ext_resource type="Texture2D" uid="uid://b4dddi4qdbebe" path="res://GAME ASSETS/Migs Room/phone.png" id="7_2n41w"]
+[ext_resource type="Script" path="res://scripts/migs room/migs_room.gd" id="8_interact"]
+
+[node name="Control" type="Control" unique_id=805999452]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("8_interact")
+
+[node name="Mig\'sRoom" type="Sprite2D" parent="." unique_id=1069283325]
+position = Vector2(576, 323.99997)
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("1_0kr71")
+
+[node name="Baskets" type="Sprite2D" parent="." unique_id=1811453378]
+position = Vector2(576, 324)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("2_t46rn")
+
+[node name="Table" type="Sprite2D" parent="." unique_id=538049361]
+position = Vector2(576, 330)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("3_bt2dd")
+
+[node name="Bed" type="Sprite2D" parent="." unique_id=712442047]
+position = Vector2(576, 324)
+scale = Vector2(0.3, 0.3)
+texture = ExtResource("4_peogm")
+
+[node name="Camera" type="Sprite2D" parent="." unique_id=1712108330]
+position = Vector2(576, 330)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("5_h1phc")
+
+[node name="Journal" type="Sprite2D" parent="." unique_id=1555022407]
+position = Vector2(576, 324)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("6_4poho")
+
+[node name="Phone" type="Sprite2D" parent="." unique_id=1692116068]
+position = Vector2(576, 324)
+scale = Vector2(0.6, 0.6)
+texture = ExtResource("7_2n41w")

@@ -1,0 +1,19 @@
+[remap]
+
+importer="mp3"
+type="AudioStreamMP3"
+uid="uid://clb32se3gdbya"
+path="res://.godot/imported/photograph.mp3-111831139e9d56872b2686707c4a3ca9.mp3str"
+
+[deps]
+
+source_file="res://GAME ASSETS/SFX/photograph.mp3"
+dest_files=["res://.godot/imported/photograph.mp3-111831139e9d56872b2686707c4a3ca9.mp3str"]
+
+[params]
+
+loop=false
+loop_offset=0
+bpm=0
+beat_count=0
+bar_beats=4

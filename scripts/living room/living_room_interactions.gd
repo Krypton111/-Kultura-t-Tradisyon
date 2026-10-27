@@ -1,0 +1,858 @@
+extends Control
+
+const HeritageStoryCatalog = preload("res://scripts/living room/heritage_story_catalog.gd")
+const HERITAGE_STORIES: Dictionary = HeritageStoryCatalog.STORIES
+
+# Journal artwork is intentionally separate from the in-room sprites.
+const JOURNAL_IMAGE_PATHS := {
+	"FamilyPicture": "res://GAME ASSETS/Living Room/journal images/journal FamilyPicture.png",
+	"LolaNenaPortrait": "res://GAME ASSETS/Living Room/journal images/journal lola nena.png",
+	"Salakot": "res://GAME ASSETS/Living Room/journal images/journal and inv salakot.png",
+	"Books": "res://GAME ASSETS/Living Room/journal images/journal books.png",
+	"Urn": "res://GAME ASSETS/Living Room/journal images/journal urnn.png",
+	"Plants": "res://GAME ASSETS/Living Room/journal images/journal plants.png",
+	"Plants3": "res://GAME ASSETS/Living Room/journal images/journal plants3.png",
+	"Banig": "res://GAME ASSETS/Living Room/journal images/journal banig.png",
+	"PictureFrameTopleft": "res://GAME ASSETS/Living Room/journal images/journal picture frame top left.png",
+	"Plants2Up": "res://GAME ASSETS/Living Room/journal images/journal plants2up.png",
+	"TableRadio": "res://GAME ASSETS/Living Room/journal images/journal radio.png"
+}
+
+@onready var closed_tv: Sprite2D = get_node("Stand+closedTV")
+@onready var open_tv: Sprite2D = get_node("Stand+openTv")
+@onready var window_open: Sprite2D = get_node("WindowOpen")
+@onready var window_closed: Sprite2D = get_node("WindowClosed")
+@onready var lola_not_looking: Sprite2D = get_node("LolaNenaNotLooking")
+@onready var lola_looking: Sprite2D = get_node("LolaNenaLooking")
+
+var _heritage_dialogue_open := false
+var _story_images: Dictionary = {}
+var _recorded_story_ids: Array[String] = []
+var _visited_story_ids: Array[String] = []
+var _final_kitchen_dialogue_started := false
+
+func _ready() -> void:
+	add_to_group("living_room_scene")
+	closed_tv.visible = true
+	open_tv.visible = false
+
+	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	var salakot_reward_received := bool(game_state.get_state("salakot_reward_received", false)) if game_state != null else false
+	var salakot_sprite := get_node_or_null("Salakot") as Sprite2D
+	if salakot_reward_received and salakot_sprite != null:
+		salakot_sprite.visible = false
+		salakot_sprite.modulate.a = 1.0
+	var lola_has_moved := false
+	if game_state != null:
+		lola_has_moved = bool(game_state.get_state("living_room_heritage_completed", false))
+		var saved_visited: Array = game_state.get_state("living_room_visited_story_ids", [])
+		var saved_recorded: Array = game_state.get_state("living_room_recorded_story_ids", [])
+		_visited_story_ids.assign(saved_visited)
+		_recorded_story_ids.assign(saved_recorded)
+		_final_kitchen_dialogue_started = bool(game_state.get_state("living_room_final_dialogue_started", false))
+	var lunch_completed := bool(game_state.get_state("lunch_completed", false)) if game_state != null else false
+	if lunch_completed:
+		# The meal sequence returns Migs and Lola to the living room together.
+		# Show Lola's seated, relaxed pose instead of the earlier empty-room state.
+		lola_not_looking.visible = true
+		lola_looking.visible = false
+	elif lola_has_moved:
+		lola_not_looking.visible = false
+		lola_looking.visible = false
+
+	_create_tv_button()
+	_create_interaction_button(window_open, Callable(self, "_on_window_clicked"), "WindowButton")
+	if not lola_has_moved:
+		_create_interaction_button(lola_not_looking, Callable(self, "_on_lola_clicked"), "LolaNenaButton")
+
+	# Cache each heritage object's texture once; hit-testing uses its actual
+	# opaque pixels so transparent parts of layered artwork don't steal clicks.
+	for object_name in HERITAGE_STORIES.keys():
+		var sprite := get_node_or_null(NodePath(str(object_name))) as Sprite2D
+		if sprite != null and sprite.texture != null:
+			_story_images[object_name] = sprite.texture.get_image()
+
+	if hud != null and bool(hud.get_meta("opening_intro_transition", false)):
+		modulate = Color(0, 0, 0, 1)
+		hud.visible = true
+		var hud_tween := create_tween()
+		hud_tween.set_parallel(true)
+		for hud_child in hud.get_children():
+			if hud_child is CanvasItem:
+				var target_alpha: float = hud_child.modulate.a
+				hud_child.modulate.a = 0.0
+				hud_tween.tween_property(hud_child, "modulate:a", target_alpha, 1.2)
+		await get_tree().create_timer(0.5).timeout
+		var room_tween := create_tween()
+		room_tween.tween_property(self, "modulate", Color.WHITE, 1.2)
+		await room_tween.finished
+		hud.set_meta("opening_intro_transition", false)
+		var dialogue_scene := load("res://game_scenes/UI scenes/dialogue.tscn") as PackedScene
+		if dialogue_scene != null:
+			var dialogue_instance := dialogue_scene.instantiate()
+			hud.add_child(dialogue_instance)
+			if dialogue_instance.has_method("start_opening_sequence"):
+				# Start the run only after the opening dialogue reports completion.
+				# The autoload persists through every scene transition and pauses with the game.
+				var gameplay_timer := get_node_or_null("/root/GameplayTimer")
+				if gameplay_timer != null and dialogue_instance.has_signal("sequence_finished"):
+					dialogue_instance.sequence_finished.connect(Callable(gameplay_timer, "start_gameplay"), CONNECT_ONE_SHOT)
+				dialogue_instance.call("start_opening_sequence")
+			else:
+				dialogue_instance.queue_free()
+				hud.set("navigation_locked", false)
+		else:
+			push_warning("Could not load the opening dialogue scene.")
+			hud.set("navigation_locked", false)
+
+	# Resume the ending flow after the room and persistent HUD are ready.
+	call_deferred("_resume_ending_if_needed")
+	# Introduce the camera and journal automatically on the first return from Migs room.
+	call_deferred("_start_camera_intro_dialogue_if_needed")
+
+func _start_camera_intro_dialogue_if_needed() -> void:
+	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	if hud == null or game_state == null:
+		return
+	if bool(hud.get_meta("opening_intro_transition", false)):
+		return
+	if not bool(game_state.get_state("camera_collected", false)) or not bool(game_state.get_state("journal_collected", false)):
+		return
+	if bool(game_state.get_state("camera_intro_dialogue_shown", false)):
+		return
+	# Persist before displaying so a scene reload cannot replay this introduction.
+	game_state.set_state("camera_intro_dialogue_shown", true)
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "Oh perfect, apo! You have your camera. Why don't you take pictures of some old stuff here and maybe i can give you a background about where they came from."}
+	]
+	_start_living_room_dialogue(lines, Callable(self, "_on_camera_intro_dialogue_finished"))
+
+
+func _on_camera_intro_dialogue_finished() -> void:
+	_heritage_dialogue_open = false
+	var hud := get_node_or_null("/root/HUD")
+	if hud != null:
+		hud.set("navigation_locked", false)
+
+
+func _resume_ending_if_needed() -> void:
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null or not bool(game_state.get_state("lunch_completed", false)):
+		return
+	if bool(game_state.get_state("ending_completed", false)):
+		_show_ending_card(str(game_state.get_state("ending_choice", "")))
+		return
+	var saved_choice := str(game_state.get_state("ending_choice", ""))
+	if saved_choice in ["stay", "city"]:
+		_play_ending_dialogue(saved_choice)
+	else:
+		_start_ending_question()
+
+func _start_ending_question() -> void:
+	if _heritage_dialogue_open:
+		return
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null or not bool(game_state.get_state("lunch_completed", false)):
+		return
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "Migs, seeing you here in our home again makes me happy. Today, we shared a meal, remembered the stories behind our old belongings, and talked about the traditions our family has carried for generations."},
+		{"speaker": "Migs", "text": "I never realized how much meaning was hidden in the things around us, Lola. Every story helped me understand our family and where we came from a little better."},
+		{"speaker": "Lola Nena", "text": "That is why I have always wanted to share these things with you, hijo. Our heritage is more than old objects and stories. It lives in the food we prepare, the work we do, the celebrations we keep, and the lessons we pass from one generation to the next."},
+		{"speaker": "Migs", "text": "I understand that more now. I want other people to appreciate these traditions too, and I also want to make sure our family's stories are not forgotten."},
+		{"speaker": "Lola Nena", "text": "There are different ways you can help. You could stay here in the province with me, help care for our home, learn more of our customs, and pass them on to the younger ones."},
+		{"speaker": "Lola Nena", "text": "Or you could return to the city and share what you have learned with your friends and community. Even far from here, you can keep our traditions alive by telling our stories and encouraging others to value their own heritage."},
+		{"speaker": "Migs", "text": "Both choices matter, Lola. I just need to think about where I can do the most good."},
+		{"speaker": "Lola Nena", "text": "You do not have to carry every responsibility alone, Migs. Whatever you choose, remember that heritage survives when people care for it and share it. Take your time, hijo. The decision is yours."}
+	]
+	_start_living_room_dialogue(lines, Callable(self, "_on_ending_question_finished"))
+
+func _on_ending_question_finished() -> void:
+	_heritage_dialogue_open = false
+	var hud := get_node_or_null("/root/HUD")
+	if hud != null:
+		hud.set("navigation_locked", true)
+	_show_ending_choice_panel()
+
+func _show_ending_choice_panel() -> void:
+	var hud := get_node_or_null("/root/HUD")
+	if hud == null:
+		push_warning("HUD was not found; cannot show the ending choice popup.")
+		return
+	hud.set("navigation_locked", true)
+	var existing := hud.get_node_or_null("EndingChoiceOverlay")
+	if existing != null:
+		existing.queue_free()
+	var overlay := Control.new()
+	overlay.name = "EndingChoiceOverlay"
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	hud.add_child(overlay)
+
+	var dim := ColorRect.new()
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	dim.color = Color(0.035, 0.025, 0.018, 0.78)
+	dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(dim)
+
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(center)
+
+	var panel := PanelContainer.new()
+	panel.custom_minimum_size = Vector2(760, 420)
+	var panel_style := StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.16, 0.13, 0.10, 0.99)
+	panel_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	panel_style.set_border_width_all(3)
+	panel_style.set_corner_radius_all(14)
+	panel_style.content_margin_left = 34.0
+	panel_style.content_margin_right = 34.0
+	panel_style.content_margin_top = 28.0
+	panel_style.content_margin_bottom = 28.0
+	panel.add_theme_stylebox_override("panel", panel_style)
+	center.add_child(panel)
+
+	var layout := VBoxContainer.new()
+	layout.add_theme_constant_override("separation", 18)
+	panel.add_child(layout)
+
+	var heading := Label.new()
+	heading.text = "A CHOICE FOR THE FUTURE"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 30)
+	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	layout.add_child(heading)
+
+	var prompt := Label.new()
+	prompt.text = "What will Migs do with the traditions and heritage he has learned?"
+	prompt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	prompt.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	prompt.add_theme_font_size_override("font_size", 20)
+	prompt.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	layout.add_child(prompt)
+
+	layout.add_child(_make_ending_choice_button("Stay and Help Lola Nena", "Remain in the province and preserve their family heritage together.", Callable(self, "_choose_ending").bind("stay")))
+	layout.add_child(_make_ending_choice_button("Return to the City", "Share what he learned with others in the city.", Callable(self, "_choose_ending").bind("city")))
+
+func _make_ending_choice_button(title_text: String, description_text: String, callback: Callable) -> Button:
+	var button := Button.new()
+	button.text = title_text + "\n" + description_text
+	button.custom_minimum_size = Vector2(660, 88)
+	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	button.focus_mode = Control.FOCUS_ALL
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.add_theme_font_size_override("font_size", 20)
+	button.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	button.add_theme_color_override("font_hover_color", Color(1.0, 0.86, 0.59))
+	var normal := StyleBoxFlat.new()
+	normal.bg_color = Color(0.24, 0.19, 0.14, 1.0)
+	normal.border_color = Color(0.61, 0.46, 0.28, 1.0)
+	normal.set_border_width_all(1)
+	normal.set_corner_radius_all(8)
+	normal.content_margin_left = 14.0
+	normal.content_margin_right = 14.0
+	normal.content_margin_top = 10.0
+	normal.content_margin_bottom = 10.0
+	var hover := normal.duplicate() as StyleBoxFlat
+	hover.bg_color = Color(0.31, 0.24, 0.16, 1.0)
+	hover.border_color = Color(0.91, 0.76, 0.49, 1.0)
+	button.add_theme_stylebox_override("normal", normal)
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", hover)
+	button.add_theme_stylebox_override("focus", hover)
+	button.pressed.connect(callback)
+	return button
+
+func _choose_ending(choice: String) -> void:
+	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null:
+		return
+	var overlay := hud.get_node_or_null("EndingChoiceOverlay") if hud != null else null
+	if overlay != null:
+		overlay.queue_free()
+	game_state.set_state("ending_choice", choice)
+	var achievement_manager := get_node_or_null("/root/AchievementManager")
+	if achievement_manager != null:
+		achievement_manager.call("unlock", "ending_stay" if choice == "stay" else "ending_city")
+	_play_ending_dialogue(choice)
+
+func _play_ending_dialogue(choice: String) -> void:
+	var lines: Array[Dictionary] = []
+	if choice == "stay":
+		lines = [
+			{"speaker": "Migs", "text": "I have decided to stay here with you, Lola. I want to learn more about our traditions instead of only hearing about them once in a while."},
+			{"speaker": "Lola Nena", "text": "I would love that, hijo. There is still so much I can teach you, from the stories of our elders to the little everyday practices that make our culture special."},
+			{"speaker": "Migs", "text": "I can help with the house, join in our traditions, and write down the stories so we can share them with the younger members of our family."},
+			{"speaker": "Lola Nena", "text": "Remember that preserving heritage is not only about keeping the past untouched. It is also about understanding its meaning and finding thoughtful ways to pass it on as life changes."},
+			{"speaker": "Migs", "text": "I’ll keep learning from you and from our community, Lola. I want the next generation to feel connected to these stories just as I do now."},
+			{"speaker": "Lola Nena", "text": "Then we will do it together, hijo. As long as we keep caring, practicing, and teaching, our traditions will continue to live in our home."}
+		]
+	else:
+		lines = [
+			{"speaker": "Migs", "text": "I think I should return to the city, Lola. I want to share what I learned with my friends and help them understand why our traditions matter."},
+			{"speaker": "Lola Nena", "text": "I will miss having you here, hijo, but I understand. Distance does not mean you have to leave your heritage behind."},
+			{"speaker": "Migs", "text": "I could tell my friends about our stories, share the meaning behind our food and customs, and encourage them to learn about their own families too."},
+			{"speaker": "Lola Nena", "text": "That would make me proud. Share our stories with care and respect, and remember that every community has traditions worth understanding and protecting."},
+			{"speaker": "Migs", "text": "I’ll keep in touch and come back whenever I can. I want to keep learning from you even while I share what you have taught me with others."},
+			{"speaker": "Lola Nena", "text": "Then take these memories with you, hijo. Wherever life brings you, you can help our heritage live on by remembering it, practicing it, and passing it along."}
+		]
+	_start_living_room_dialogue(lines, Callable(self, "_on_ending_dialogue_finished").bind(choice))
+
+func _on_ending_dialogue_finished(choice: String) -> void:
+	_heritage_dialogue_open = false
+	var game_state := get_node_or_null("/root/GameState")
+	# This is the single successful-completion point shared by both endings.
+	# complete_gameplay() is idempotent, so resumed ending scenes cannot double-count.
+	var gameplay_timer := get_node_or_null("/root/GameplayTimer")
+	if gameplay_timer != null:
+		var completion_seconds: int = gameplay_timer.complete_gameplay()
+		print("Kultura at Tradisyon completion time: %d seconds (%s)" % [completion_seconds, gameplay_timer.get_formatted_time()])
+	if game_state != null:
+		game_state.set_state("ending_completed", true)
+	_show_ending_card(choice)
+
+func _show_ending_card(choice: String) -> void:
+	var hud := get_node_or_null("/root/HUD")
+	if hud == null:
+		push_warning("HUD was not found; cannot show the ending screen.")
+		return
+	hud.set("navigation_locked", true)
+
+	var existing := hud.get_node_or_null("EndingChoiceOverlay")
+	if existing != null:
+		existing.queue_free()
+
+	var overlay := Control.new()
+	overlay.name = "EndingChoiceOverlay"
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	hud.add_child(overlay)
+
+	# The screen begins completely black.
+	var black := ColorRect.new()
+	black.name = "EndingBlackScreen"
+	black.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# Start transparent so the current room fades smoothly to black after
+	# the player confirms an ending, instead of cutting to black instantly.
+	black.color = Color(0.0, 0.0, 0.0, 0.0)
+	black.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.add_child(black)
+
+	# Build a photograph-like card using existing project artwork as placeholders.
+	var photo_frame := PanelContainer.new()
+	photo_frame.name = "EndingPhotographFrame"
+	photo_frame.anchor_left = 0.08
+	photo_frame.anchor_top = 0.05
+	photo_frame.anchor_right = 0.92
+	photo_frame.anchor_bottom = 0.82
+	var frame_style := StyleBoxFlat.new()
+	frame_style.bg_color = Color(0.96, 0.93, 0.84, 1.0)
+	frame_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	frame_style.set_border_width_all(5)
+	frame_style.content_margin_left = 12.0
+	frame_style.content_margin_right = 12.0
+	frame_style.content_margin_top = 12.0
+	frame_style.content_margin_bottom = 12.0
+	photo_frame.add_theme_stylebox_override("panel", frame_style)
+	photo_frame.modulate.a = 0.0
+	photo_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(photo_frame)
+
+	var photo_layout := VBoxContainer.new()
+	photo_layout.add_theme_constant_override("separation", 8)
+	photo_frame.add_child(photo_layout)
+
+	var photo := TextureRect.new()
+	photo.name = "EndingPlaceholderPhoto"
+	# Use the photograph that matches the player's selected ending.
+	var ending_photo_path := ""
+	if choice == "stay":
+		ending_photo_path = "res://GAME ASSETS/Living Room/helping lola ending.png"
+	else:
+		ending_photo_path = "res://GAME ASSETS/Living Room/going to city ending.png"
+	photo.texture = load(ending_photo_path) as Texture2D
+	if photo.texture == null:
+		push_warning("Could not load ending photograph: " + ending_photo_path)
+	photo.custom_minimum_size = Vector2(600, 340)
+	photo.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	photo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	photo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	photo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	photo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	photo_layout.add_child(photo)
+
+
+	var ending_caption := PanelContainer.new()
+	ending_caption.name = "EndingCaption"
+	ending_caption.anchor_left = 0.08
+	ending_caption.anchor_top = 0.85
+	ending_caption.anchor_right = 0.92
+	ending_caption.anchor_bottom = 0.97
+	# Move the caption panel 20 pixels upward to keep it clear of the screen edge.
+	ending_caption.offset_top = -20.0
+	ending_caption.offset_bottom = -20.0
+	var caption_style := StyleBoxFlat.new()
+	caption_style.bg_color = Color(0.10, 0.075, 0.05, 0.96)
+	caption_style.border_color = Color(0.78, 0.61, 0.35, 1.0)
+	caption_style.set_border_width_all(2)
+	caption_style.set_corner_radius_all(10)
+	caption_style.content_margin_left = 20.0
+	caption_style.content_margin_right = 20.0
+	caption_style.content_margin_top = 8.0
+	caption_style.content_margin_bottom = 8.0
+	ending_caption.add_theme_stylebox_override("panel", caption_style)
+	ending_caption.modulate.a = 0.0
+	ending_caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(ending_caption)
+
+	var caption_layout := VBoxContainer.new()
+	caption_layout.alignment = BoxContainer.ALIGNMENT_CENTER
+	caption_layout.add_theme_constant_override("separation", 4)
+	ending_caption.add_child(caption_layout)
+
+	var heading := Label.new()
+	heading.text = "THE END"
+	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	heading.add_theme_font_size_override("font_size", 30)
+	heading.add_theme_color_override("font_color", Color(0.91, 0.76, 0.49))
+	caption_layout.add_child(heading)
+
+	var ending_text := Label.new()
+	if choice == "stay":
+		ending_text.text = "Migs stays in the province to help Lola Nena care for their home, learn their traditions, and pass their family heritage on to future generations."
+	else:
+		ending_text.text = "Migs returns to the city with the stories Lola Nena shared, ready to help others appreciate and preserve their own cultural heritage."
+	ending_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ending_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	ending_text.add_theme_font_size_override("font_size", 16)
+	ending_text.add_theme_color_override("font_color", Color(0.97, 0.94, 0.86))
+	caption_layout.add_child(ending_text)
+
+	# Fade the gameplay view fully to black before the camera flash.
+	# The photograph and caption stay hidden throughout this transition.
+	var fade_to_black := create_tween()
+	fade_to_black.tween_property(black, "color:a", 1.0, 0.75)
+	await fade_to_black.finished
+
+	# Camera flash: a brief white burst while the screen is still black.
+	var flash := ColorRect.new()
+	flash.name = "CameraFlash"
+	flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	flash.color = Color(1.0, 1.0, 1.0, 0.0)
+	flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.add_child(flash)
+
+	# Play the camera shutter exactly when the ending flash begins.
+	var audio_feedback := get_node_or_null("/root/AudioFeedback")
+	if audio_feedback != null:
+		audio_feedback.call("play_photograph")
+
+	var flash_tween := create_tween()
+	flash_tween.tween_property(flash, "color:a", 1.0, 0.08)
+	flash_tween.tween_interval(0.10)
+	flash_tween.tween_property(flash, "color:a", 0.0, 0.28)
+	await flash_tween.finished
+	flash.queue_free()
+
+	# Reveal the photograph after the flash, then fade away from black.
+	var reveal_tween := create_tween()
+	reveal_tween.tween_property(photo_frame, "modulate:a", 1.0, 0.75)
+	reveal_tween.parallel().tween_property(ending_caption, "modulate:a", 1.0, 0.75)
+	reveal_tween.tween_property(black, "color:a", 0.0, 0.8)
+	await reveal_tween.finished
+
+	# Keep the ending photograph visible for three seconds.
+	await get_tree().create_timer(3.0).timeout
+
+	# Fade the photograph out to black, then close the application.
+	var closing_tween := create_tween()
+	closing_tween.tween_property(photo_frame, "modulate:a", 0.0, 0.8)
+	closing_tween.parallel().tween_property(ending_caption, "modulate:a", 0.0, 0.8)
+	closing_tween.tween_property(black, "color:a", 1.0, 1.0)
+	await closing_tween.finished
+
+	# The game is launched inside UGAT's dashboard when running as an HTML5 export.
+	# Record the completed run while the user's PHP session cookie is still available,
+	# then return to the dashboard. Desktop builds should continue to quit normally.
+	var gameplay_timer := get_node_or_null("/root/GameplayTimer")
+	var elapsed_seconds := 0
+	if gameplay_timer != null:
+		elapsed_seconds = int(gameplay_timer.call("get_elapsed_seconds"))
+
+	if OS.has_feature("web"):
+		var javascript := "(async function(){try{await fetch('../../../record_game_run.php',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({elapsed_seconds:" + str(elapsed_seconds) + "})});}catch(e){console.error('Could not record game completion:',e);}window.location.href='../../../dashboard.php';})();"
+		JavaScriptBridge.eval(javascript)
+	else:
+		get_tree().quit()
+
+func _process(_delta: float) -> void:
+	# Keep button-based interactions locked until both required room items are collected.
+	var unlocked := _room_interactables_unlocked()
+	for button_name in ["TVButton", "WindowButton", "LolaNenaButton"]:
+		var button := get_node_or_null(NodePath(button_name)) as Button
+		if button != null:
+			button.disabled = not unlocked
+
+func _room_interactables_unlocked() -> bool:
+	var hud := get_node_or_null("/root/HUD")
+	return hud != null and hud.has_method("has_collected_room_items") and bool(hud.call("has_collected_room_items"))
+
+func _input(event: InputEvent) -> void:
+	var hud := get_node_or_null("/root/HUD")
+	if not _room_interactables_unlocked() or _heritage_dialogue_open or (hud != null and bool(get_node("/root/GameState").get_state("living_room_heritage_completed", false))) or not (event is InputEventMouseButton):
+		return
+	if event.button_index != MOUSE_BUTTON_LEFT or not event.pressed:
+		return
+	# Do not intercept clicks intended for the opening dialogue or room transitions.
+	if hud == null or bool(hud.get("navigation_locked")):
+		return
+	# Once the camera has been collected, heritage objects are only activated
+	# through CameraController. This prevents ordinary clicks from skipping
+	# the required camera-first interaction.
+	if bool(hud.get("camera_collected")):
+		return
+
+	var mouse_position := get_global_mouse_position()
+	var children := get_children()
+	# Later Sprite2D children are drawn above earlier ones, so test them first.
+	for i in range(children.size() - 1, -1, -1):
+		var sprite := children[i] as Sprite2D
+		if sprite == null or not HERITAGE_STORIES.has(sprite.name):
+			continue
+		# A completed story remains completed when the player returns to this room.
+		if _visited_story_ids.has(sprite.name):
+			continue
+		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(sprite.name)):
+			_open_heritage_story(sprite.name)
+			get_viewport().set_input_as_handled()
+			return
+
+func _is_opaque_pixel_clicked(sprite: Sprite2D, mouse_position: Vector2, image: Image) -> bool:
+	if image == null or image.is_empty() or not sprite.visible:
+		return false
+	var local_point := sprite.to_local(mouse_position)
+	var pixel := Vector2i(floori(local_point.x + image.get_width() * 0.5), floori(local_point.y + image.get_height() * 0.5))
+	if pixel.x < 0 or pixel.y < 0 or pixel.x >= image.get_width() or pixel.y >= image.get_height():
+		return false
+	return image.get_pixelv(pixel).a > 0.12
+
+func _open_heritage_story(object_name: String) -> void:
+	if _heritage_dialogue_open or not HERITAGE_STORIES.has(object_name):
+		return
+	var hud := get_node_or_null("/root/HUD")
+	if hud == null or bool(hud.get("navigation_locked")):
+		return
+
+	var story: Dictionary = HERITAGE_STORIES[object_name]
+	var lines: Array[Dictionary] = [
+		{"speaker": "Migs", "text": str(story["migs"])},
+		{"speaker": "Lola Nena", "text": str(story["lola"])}
+	]
+	_start_living_room_dialogue(lines, Callable(self, "_on_object_dialogue_finished").bind(object_name))
+
+func _start_living_room_dialogue(lines: Array[Dictionary], finished_callback: Callable) -> void:
+	var hud := get_node_or_null("/root/HUD")
+	if hud == null:
+		return
+	var dialogue_scene := load("res://game_scenes/UI scenes/dialogue.tscn") as PackedScene
+	if dialogue_scene == null:
+		push_warning("Could not load the dialogue scene.")
+		return
+	_heritage_dialogue_open = true
+	hud.set("navigation_locked", true)
+	var dialogue := dialogue_scene.instantiate()
+	hud.add_child(dialogue)
+	dialogue.sequence_finished.connect(finished_callback)
+	dialogue.call("start_custom_sequence", lines)
+
+func _on_object_dialogue_finished(object_name: String) -> void:
+	_heritage_dialogue_open = false
+	var story: Dictionary = HERITAGE_STORIES[object_name]
+	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	if hud != null and not _recorded_story_ids.has(object_name):
+		_recorded_story_ids.append(object_name)
+		if hud.has_method("record_heritage_entry"):
+			hud.call("record_heritage_entry", str(story["title"]), str(story["entry"]), object_name)
+	if not _visited_story_ids.has(object_name):
+		_visited_story_ids.append(object_name)
+	# Persist progress immediately so leaving the room cannot reset completed stories.
+	if game_state != null:
+		game_state.set_state("living_room_visited_story_ids", _visited_story_ids)
+		game_state.set_state("living_room_recorded_story_ids", _recorded_story_ids)
+	if _visited_story_ids.size() >= HERITAGE_STORIES.size() and not _final_kitchen_dialogue_started:
+		_final_kitchen_dialogue_started = true
+		if game_state != null:
+			game_state.set_state("living_room_final_dialogue_started", true)
+		_start_salakot_reward_dialogue()
+	elif hud != null:
+		hud.set("navigation_locked", false)
+
+func _start_salakot_reward_dialogue() -> void:
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "You’ve helped me remember the stories behind our family’s old belongings, Migs. As a thank-you, I’d like you to have this salakot."},
+		{"speaker": "Migs", "text": "Really, Lola? Thank you! I’ll take good care of it."}
+	]
+	_start_living_room_dialogue(lines, Callable(self, "_on_salakot_reward_dialogue_finished"))
+
+
+func _on_salakot_reward_dialogue_finished() -> void:
+	_heritage_dialogue_open = false
+	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	var salakot_sprite := get_node_or_null("Salakot") as Sprite2D
+	if hud != null:
+		hud.set("navigation_locked", true)
+	# Use the dedicated journal/inventory artwork for the reward icon, while
+	# leaving the in-room Salakot sprite unchanged.
+	var salakot_inventory_texture := load(str(JOURNAL_IMAGE_PATHS.get("Salakot", "res://GAME ASSETS/Living Room/journal images/journal and inv salakot.png"))) as Texture2D
+	if salakot_inventory_texture == null and salakot_sprite != null:
+		push_warning("Could not load the salakot journal/inventory image; falling back to the living-room sprite.")
+		salakot_inventory_texture = salakot_sprite.texture
+	if salakot_sprite != null:
+		var fade_out := create_tween()
+		fade_out.tween_property(salakot_sprite, "modulate:a", 0.0, 0.6)
+		await fade_out.finished
+		salakot_sprite.visible = false
+		salakot_sprite.modulate.a = 1.0
+	if hud != null and hud.has_method("add_inventory_item") and salakot_inventory_texture != null:
+		hud.call("add_inventory_item", "salakot", "Salakot", salakot_inventory_texture)
+	if game_state != null:
+		game_state.set_state("salakot_reward_received", true)
+	# The inventory item fades in after the room sprite fades out. Only after
+	# that animation completes do we let Lola begin the tanghali/cooking dialogue.
+	await get_tree().create_timer(0.55).timeout
+	_start_kitchen_reminder_dialogue()
+
+
+func _start_kitchen_reminder_dialogue() -> void:
+	var lines: Array[Dictionary] = [
+		{"speaker": "Lola Nena", "text": "We’ve remembered so many stories today, Migs."},
+		{"speaker": "Migs", "text": "I’m glad we wrote them down, Lola."},
+		{"speaker": "Lola Nena", "text": "It’s already tanghali. I need to start cooking in the kitchen."},
+		{"speaker": "Migs", "text": "Sige, Lola. I’ll let you get started!"}
+	]
+	_start_living_room_dialogue(lines, Callable(self, "_on_kitchen_reminder_finished"))
+
+func _on_kitchen_reminder_finished() -> void:
+	_heritage_dialogue_open = false
+	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state != null:
+		game_state.set_state("living_room_heritage_completed", true)
+		var achievement_manager := get_node_or_null("/root/AchievementManager")
+		var visited: Array = game_state.get_state("living_room_visited_story_ids", [])
+		if achievement_manager != null and bool(game_state.get_state("salakot_reward_received", false)) and visited.size() >= HERITAGE_STORIES.size():
+			achievement_manager.call("unlock", "heritage_collector")
+	if hud != null:
+		hud.set("navigation_locked", false)
+	# Lola has left the living room to begin preparing lunch.
+	lola_not_looking.visible = false
+	lola_looking.visible = false
+
+func get_heritage_photo_target(mouse_position: Vector2) -> Dictionary:
+	if _heritage_dialogue_open:
+		return {}
+	# The player must activate the camera first. A photo can start the object's
+	# story even if the player has not clicked the object normally beforehand.
+	var children := get_children()
+	for i in range(children.size() - 1, -1, -1):
+		var sprite := children[i] as Sprite2D
+		if sprite == null or not HERITAGE_STORIES.has(sprite.name):
+			continue
+		if not sprite.visible or sprite.texture == null:
+			continue
+		var story: Dictionary = HERITAGE_STORIES[sprite.name]
+		if _heritage_entry_has_photo(str(story.get("title", ""))):
+			continue
+		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(sprite.name)):
+			return {
+				"object_name": str(sprite.name),
+				"title": str(story.get("title", "")),
+				"texture_path": str(JOURNAL_IMAGE_PATHS.get(sprite.name, sprite.texture.resource_path))
+			}
+	return {}
+
+
+func on_camera_photo_taken(target: Dictionary) -> void:
+	if _heritage_dialogue_open or target.is_empty():
+		return
+	var object_name := str(target.get("object_name", ""))
+	if not HERITAGE_STORIES.has(object_name):
+		return
+	var audio_feedback := get_node_or_null("/root/AudioFeedback")
+	if audio_feedback != null and audio_feedback.has_method("play_photograph"):
+		audio_feedback.call("play_photograph")
+	var story: Dictionary = HERITAGE_STORIES[object_name]
+	var lines: Array[Dictionary] = [
+		{"speaker": "Migs", "text": str(story["migs"])},
+		{"speaker": "Lola Nena", "text": str(story["lola"])}
+	]
+	_start_living_room_dialogue(lines, Callable(self, "_on_camera_story_finished").bind(object_name, str(target.get("title", "")), str(target.get("texture_path", ""))))
+
+
+func _on_camera_story_finished(object_name: String, entry_title: String, texture_path: String) -> void:
+	_heritage_dialogue_open = false
+	var story: Dictionary = HERITAGE_STORIES.get(object_name, {})
+	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	if hud != null:
+		if hud.has_method("record_heritage_entry_with_photo"):
+			hud.call("record_heritage_entry_with_photo", entry_title, str(story.get("entry", "")), object_name, texture_path)
+		elif hud.has_method("record_heritage_entry"):
+			hud.call("record_heritage_entry", entry_title, str(story.get("entry", "")), object_name)
+		if hud.has_method("show_journal_notification"):
+			hud.call("show_journal_notification", str(story.get("title", entry_title)))
+	if not _recorded_story_ids.has(object_name):
+		_recorded_story_ids.append(object_name)
+	if not _visited_story_ids.has(object_name):
+		_visited_story_ids.append(object_name)
+	if game_state != null:
+		game_state.set_state("living_room_visited_story_ids", _visited_story_ids)
+		game_state.set_state("living_room_recorded_story_ids", _recorded_story_ids)
+	var audio_feedback := get_node_or_null("/root/AudioFeedback")
+	if audio_feedback != null and audio_feedback.has_method("play_journal_writing"):
+		audio_feedback.call("play_journal_writing")
+	if _visited_story_ids.size() >= HERITAGE_STORIES.size() and not _final_kitchen_dialogue_started:
+		_final_kitchen_dialogue_started = true
+		if game_state != null:
+			game_state.set_state("living_room_final_dialogue_started", true)
+		_start_salakot_reward_dialogue()
+	elif hud != null:
+		hud.set("navigation_locked", false)
+
+
+func _heritage_entry_has_photo(entry_title: String) -> bool:
+	var hud := get_node_or_null("/root/HUD")
+	if hud == null:
+		return false
+	var entries: Array = hud.get("heritage_entries")
+	for entry in entries:
+		if str(entry.get("title", "")) == entry_title:
+			return not str(entry.get("photo_path", "")).is_empty()
+	return false
+
+
+func is_hovering_room_interactable(mouse_position: Vector2) -> bool:
+	if not _room_interactables_unlocked() or _heritage_dialogue_open:
+		return false
+	for object_name in HERITAGE_STORIES.keys():
+		if _visited_story_ids.has(str(object_name)):
+			continue
+		var sprite := get_node_or_null(NodePath(str(object_name))) as Sprite2D
+		if sprite == null or not sprite.visible:
+			continue
+		if _is_opaque_pixel_clicked(sprite, mouse_position, _story_images.get(object_name)):
+			return true
+	# The TV and window are interactable, but the TV stand itself is not.
+	# The TV screen occupies the upper portion of the combined TV/stand artwork.
+	for node_name in ["Stand+closedTV", "Stand+openTv"]:
+		var tv_sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
+		if tv_sprite != null and tv_sprite.visible and _is_tv_screen_hovered(tv_sprite, mouse_position):
+			return true
+	for node_name in ["WindowOpen", "WindowClosed"]:
+		var window_sprite := get_node_or_null(NodePath(node_name)) as Sprite2D
+		if window_sprite != null and window_sprite.visible and _is_opaque_pixel_clicked(window_sprite, mouse_position, window_sprite.texture.get_image()):
+			return true
+	return false
+
+
+func _is_tv_screen_hovered(sprite: Sprite2D, mouse_position: Vector2) -> bool:
+	if sprite.texture == null or not sprite.visible:
+		return false
+	var image := sprite.texture.get_image()
+	if image == null or image.is_empty():
+		return false
+	var local_point := sprite.to_local(mouse_position)
+	var pixel := Vector2i(
+		floori(local_point.x + image.get_width() * 0.5),
+		floori(local_point.y + image.get_height() * 0.5)
+	)
+	if pixel.x < 0 or pixel.y < 0 or pixel.x >= image.get_width() or pixel.y >= image.get_height():
+		return false
+	# Restrict the cursor to the TV portion at the top of the combined artwork,
+	# excluding the stand in the lower section.
+	if pixel.y >= int(image.get_height() * 0.58):
+		return false
+	return image.get_pixelv(pixel).a > 0.12
+
+func can_go_to_kitchen() -> bool:
+	var hud := get_node_or_null("/root/HUD")
+	var game_state := get_node_or_null("/root/GameState")
+	return game_state != null and bool(game_state.get_state("living_room_heritage_completed", false))
+
+func set_lola_dialogue_pose(is_looking_at_migs: bool) -> void:
+	if not lola_not_looking.visible and not lola_looking.visible:
+		return
+	lola_looking.visible = is_looking_at_migs
+	lola_not_looking.visible = not is_looking_at_migs
+
+func _create_tv_button() -> void:
+	var button := Button.new()
+	button.name = "TVButton"
+	button.text = ""
+	button.flat = true
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	var empty_style := StyleBoxEmpty.new()
+	button.add_theme_stylebox_override("normal", empty_style)
+	button.add_theme_stylebox_override("hover", empty_style)
+	button.add_theme_stylebox_override("pressed", empty_style)
+	button.add_theme_stylebox_override("focus", empty_style)
+	button.size = Vector2(192, 185)
+	button.position = Vector2(189.5, 329.0) - (button.size / 2.0)
+	button.pressed.connect(_on_tv_clicked)
+	add_child(button)
+
+func _create_interaction_button(sprite: Sprite2D, callback: Callable, button_name: String) -> void:
+	if sprite.texture == null:
+		return
+	var image := sprite.texture.get_image()
+	if image == null:
+		return
+	var used_rect := image.get_used_rect()
+	if used_rect.size.x <= 0 or used_rect.size.y <= 0:
+		return
+	var button := Button.new()
+	button.name = button_name
+	button.text = ""
+	button.flat = true
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	var empty_style := StyleBoxEmpty.new()
+	button.add_theme_stylebox_override("normal", empty_style)
+	button.add_theme_stylebox_override("hover", empty_style)
+	button.add_theme_stylebox_override("pressed", empty_style)
+	button.add_theme_stylebox_override("focus", empty_style)
+	var scaled_size := Vector2(image.get_width(), image.get_height()) * sprite.scale
+	var scaled_used_position := Vector2(used_rect.position) * sprite.scale
+	var scaled_used_size := Vector2(used_rect.size) * sprite.scale
+	button.position = sprite.position - (scaled_size / 2.0) + scaled_used_position
+	button.size = scaled_used_size
+	button.pressed.connect(callback)
+	add_child(button)
+
+func _on_tv_clicked() -> void:
+	closed_tv.visible = not closed_tv.visible
+	open_tv.visible = not open_tv.visible
+	var audio_feedback := get_node_or_null("/root/AudioFeedback")
+	if audio_feedback != null:
+		if open_tv.visible:
+			audio_feedback.call("play_tv")
+		else:
+			audio_feedback.call("stop_tv")
+
+func _on_window_clicked() -> void:
+	window_open.visible = not window_open.visible
+	window_closed.visible = not window_closed.visible
+
+
+func _on_lola_clicked() -> void:
+	lola_not_looking.visible = not lola_not_looking.visible
+	lola_looking.visible = not lola_looking.visible
